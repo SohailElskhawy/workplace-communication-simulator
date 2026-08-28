@@ -6,7 +6,7 @@
 
 **Architecture:** A root pnpm workspace orchestrates a Next.js web app, an Express API, and a buildable shared Zod contracts package. Strict TypeScript, flat ESLint configuration, Prettier, and Vitest are centralized; app-specific runtime configuration stays inside each app.
 
-**Tech Stack:** pnpm 11.23.0, Node.js 24, Next.js 16, React 19, Tailwind CSS 4, Express 5, TypeScript, Zod 4, ESLint 10, Prettier, Vitest 4, Supertest
+**Tech Stack:** pnpm 11.24.0, Node.js 24, Next.js 16.3.3, React 19, Tailwind CSS 4, Express 5, TypeScript, Zod 4, ESLint 9, Prettier, Vitest 4, Supertest
 
 **Spec:** `docs/superpowers/specs/2026-08-28-repository-foundation-design.md`
 
@@ -42,7 +42,7 @@
 
 - [ ] **Step 1: Create the pnpm workspace manifest and root scripts**
 
-Use a private ESM root package pinned to `pnpm@11.23.0`. Define `apps/*` and `packages/*` in `pnpm-workspace.yaml`. Root commands must use workspace filters or recursive execution; `dev` runs web and API in parallel, and `test` runs Vitest once.
+Use a private ESM root package pinned to `pnpm@11.24.0`. Define `apps/*` and `packages/*` in `pnpm-workspace.yaml`. Root commands must use workspace filters or recursive execution; `dev` runs web and API in parallel, and `test` runs Vitest once.
 
 - [ ] **Step 2: Create strict shared TypeScript settings**
 
@@ -63,7 +63,7 @@ Create `prisma/README.md` stating that schema and migrations begin in Milestone 
 Run:
 
 ```powershell
-corepack prepare pnpm@11.23.0 --activate
+corepack prepare pnpm@11.24.0 --activate
 corepack pnpm install
 ```
 

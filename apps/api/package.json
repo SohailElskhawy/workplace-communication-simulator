@@ -1,0 +1,23 @@
+{
+  "name": "@kalemny/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "corepack pnpm --filter @kalemny/contracts build && tsx watch src/server.ts",
+    "build": "corepack pnpm --filter @kalemny/contracts build && tsc -p tsconfig.build.json",
+    "start": "node dist/server.js",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kalemny/contracts": "workspace:*",
+    "express": "5.2.1",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@types/express": "5.0.6",
+    "@types/supertest": "7.2.1",
+    "supertest": "7.2.2",
+    "tsx": "4.23.12"
+  }
+}

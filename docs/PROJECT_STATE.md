@@ -221,7 +221,31 @@ Do not implement:
 
 ## Current Development Milestone
 
-Build the first end-to-end **text-only vertical slice** using:
+Milestone 1 â€” Repository Foundation is complete.
+
+Completed foundation:
+
+- pnpm workspace with `apps/web`, `apps/api`, and `packages/contracts`;
+- minimal Next.js App Router and Express TypeScript applications;
+- tracked `prisma/` boundary without schema or domain models;
+- strict shared TypeScript, ESLint, Prettier, and Vitest setup;
+- Zod environment-validation foundations for web and API;
+- shared Zod health response contract;
+- `GET /api/v1/health`;
+- root development, build, typecheck, lint, format, and test scripts.
+
+Verified on August 28, 2026 with:
+
+```text
+corepack pnpm typecheck
+corepack pnpm lint
+corepack pnpm test
+corepack pnpm build
+corepack pnpm format:check
+API and web local-start smoke checks
+```
+
+The active development target remains the first end-to-end **text-only vertical slice** using:
 
 **Salary Negotiation / Medium**
 
@@ -267,6 +291,12 @@ Some of these documents may not exist yet. Do not invent missing requirements; u
 
 ## Current Next Task
 
-Create the remaining source-of-truth documentation before implementation, beginning with:
+Start Milestone 2 â€” Authentication + Database:
 
-**`docs/PRODUCT_REQUIREMENTS.md`**
+- Clerk in Next.js and Clerk verification in Express;
+- lazy local User provisioning;
+- Neon/PostgreSQL connection;
+- initial Prisma models and migration;
+- ownership-safe user foundation.
+
+Do not start scenario, AI, voice, or other product work before Milestone 2 exit criteria pass.
