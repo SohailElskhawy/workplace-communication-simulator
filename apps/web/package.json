@@ -10,6 +10,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@clerk/nextjs": "^7.8.2",
+    "@kalemny/contracts": "workspace:*",
     "next": "16.3.3",
     "react": "19.2.8",
     "react-dom": "19.2.8",

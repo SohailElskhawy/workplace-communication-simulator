@@ -1,3 +1,6 @@
+import { SignInButton, SignUpButton, Show, UserButton } from "@clerk/nextjs";
+import Link from "next/link";
+
 export default function HomePage() {
   return (
     <main className="flex min-h-screen items-center justify-center px-6">
@@ -6,12 +9,18 @@ export default function HomePage() {
           AI Workplace Communication Simulator
         </p>
         <h1 className="mt-3 text-4xl font-bold tracking-tight text-slate-950">
-          Repository foundation ready
+          Authentication foundation
         </h1>
-        <p className="mt-4 text-base leading-7 text-slate-600">
-          The web, API, and shared contracts workspaces are prepared for the
-          first product vertical slice.
-        </p>
+        <div className="mt-6 flex items-center justify-center gap-4">
+          <Show when="signed-out">
+            <SignInButton />
+            <SignUpButton />
+          </Show>
+          <Show when="signed-in">
+            <Link href="/app">Open authenticated app</Link>
+            <UserButton />
+          </Show>
+        </div>
       </section>
     </main>
   );

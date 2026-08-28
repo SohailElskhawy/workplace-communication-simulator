@@ -6,10 +6,12 @@ const ApiEnvSchema = z.object({
     .default("development"),
   PORT: z.coerce.number().int().min(1).max(65_535).default(4000),
   WEB_ORIGIN: z.url({ protocol: /^https?$/ }).default("http://localhost:3000"),
+  DATABASE_URL: z.url({ protocol: /^postgres(?:ql)?$/ }),
+  DIRECT_URL: z.url({ protocol: /^postgres(?:ql)?$/ }),
+  CLERK_PUBLISHABLE_KEY: z.string().min(1),
+  CLERK_SECRET_KEY: z.string().min(1),
 });
 
 export function parseApiEnv(input: Record<string, string | undefined>) {
   return ApiEnvSchema.parse(input);
 }
-
-export const apiEnv = parseApiEnv(process.env);

@@ -4,9 +4,11 @@ node_modules/
 .pnpm-store/
 .next/
 dist/
+apps/api/src/generated/
 coverage/
 *.tsbuildinfo
 .env
 .env.*
 !.env.example
 pnpm-debug.log*
+.agents

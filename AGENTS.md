@@ -114,6 +114,7 @@ Explicitly out of scope:
 - Do not hold DB transactions open during AI/network calls.
 - Include loading, empty, error, retry, permission, and unauthorized states where relevant.
 - Maintain accessibility fundamentals and text fallback for all voice features.
+- DO NOT WORK WITH TDD
 
 ## Testing Expectations During Development
 

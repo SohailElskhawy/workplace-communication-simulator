@@ -11,20 +11,25 @@
     "dev": "corepack pnpm --parallel --filter @kalemny/web --filter @kalemny/api dev",
     "dev:web": "corepack pnpm --filter @kalemny/web dev",
     "dev:api": "corepack pnpm --filter @kalemny/api dev",
-    "build": "corepack pnpm -r build",
-    "typecheck": "corepack pnpm -r typecheck",
+    "build": "corepack pnpm prisma:generate && corepack pnpm -r build",
+    "typecheck": "corepack pnpm prisma:generate && corepack pnpm -r typecheck",
     "lint": "eslint apps/api/src packages/contracts/src vitest.config.ts && corepack pnpm --filter @kalemny/web lint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "vitest run"
+    "test": "corepack pnpm prisma:generate && vitest run",
+    "prisma:generate": "prisma generate",
+    "prisma:validate": "prisma validate",
+    "prisma:migrate:deploy": "prisma migrate deploy"
   },
   "devDependencies": {
     "@eslint/js": "9.39.3",
     "@types/node": "26.4.0",
+    "dotenv": "^17.4.2",
     "eslint": "9.39.3",
     "eslint-config-next": "16.3.3",
     "globals": "17.11.0",
     "prettier": "3.9.6",
+    "prisma": "7.10.0",
     "typescript": "6.0.3",
     "typescript-eslint": "8.68.0",
     "vitest": "4.1.11"

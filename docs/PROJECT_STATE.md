@@ -221,18 +221,20 @@ Do not implement:
 
 ## Current Development Milestone
 
-Milestone 1 â€” Repository Foundation is complete.
+Milestone 2 — Authentication + Database is implemented and locally verified.
 
-Completed foundation:
+Completed authentication/database foundation:
 
-- pnpm workspace with `apps/web`, `apps/api`, and `packages/contracts`;
-- minimal Next.js App Router and Express TypeScript applications;
-- tracked `prisma/` boundary without schema or domain models;
-- strict shared TypeScript, ESLint, Prettier, and Vitest setup;
-- Zod environment-validation foundations for web and API;
-- shared Zod health response contract;
-- `GET /api/v1/health`;
-- root development, build, typecheck, lint, format, and test scripts.
+- Clerk provider, proxy, sign-in/sign-up routes, and protected `/app` route in Next.js;
+- bearer-token forwarding from Next.js to the Express API;
+- Clerk session-token verification in Express;
+- lazy, concurrency-safe local `User` provisioning by unique Clerk user ID;
+- `GET /api/v1/me` with frontend-safe Zod contract;
+- stable `UNAUTHENTICATED` response for unauthenticated requests;
+- Prisma 7 PostgreSQL/Neon configuration using pooled `DATABASE_URL` at runtime and `DIRECT_URL` for migrations;
+- initial migration containing only the `User` model required by this milestone;
+- required Clerk, database, origin, and API URL environment validation;
+- focused authentication, provisioning, contract, and environment tests.
 
 Verified on August 28, 2026 with:
 
@@ -242,8 +244,13 @@ corepack pnpm lint
 corepack pnpm test
 corepack pnpm build
 corepack pnpm format:check
-API and web local-start smoke checks
+corepack pnpm prisma:validate
+Prisma migration diff from an empty PostgreSQL schema
 ```
+
+Credentialed Clerk sign-in and Neon migration deployment remain environment
+smoke checks because this workspace has no Clerk or Neon credentials. Do not
+start Milestone 3 until those two checks pass in the target environment.
 
 The active development target remains the first end-to-end **text-only vertical slice** using:
 
@@ -291,12 +298,12 @@ Some of these documents may not exist yet. Do not invent missing requirements; u
 
 ## Current Next Task
 
-Start Milestone 2 â€” Authentication + Database:
+Complete Milestone 2 environment smoke checks:
 
-- Clerk in Next.js and Clerk verification in Express;
-- lazy local User provisioning;
-- Neon/PostgreSQL connection;
-- initial Prisma models and migration;
-- ownership-safe user foundation.
+1. configure the Clerk and Neon values documented in `.env.example`;
+2. run `corepack pnpm prisma:migrate:deploy` against Neon;
+3. sign in through Next.js and confirm `/app` receives one stable local user ID from `GET /api/v1/me`;
+4. confirm a direct unauthenticated request to `GET /api/v1/me` returns `401 UNAUTHENTICATED`.
 
-Do not start scenario, AI, voice, or other product work before Milestone 2 exit criteria pass.
+After those checks pass, begin Milestone 3 — Scenario System. Do not start AI,
+voice, attempts, turns, or evaluation work as part of the environment smoke.

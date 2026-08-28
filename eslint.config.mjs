@@ -9,6 +9,7 @@ export default tseslint.config(
       "**/.next/**",
       "**/dist/**",
       "**/coverage/**",
+      "apps/api/src/generated/**",
       ".serena/**",
     ],
   },
