@@ -233,25 +233,30 @@ Do not implement:
 
 ## Current Development Milestone
 
-**Milestone 6 — Evaluation Pipeline** is complete. Its planned implementation,
-prompt versioning, reference validation, deterministic scoring, persistence,
-and endpoints are verified locally.
+**Milestone 7 — Results Experience** is complete. The full vertical slice flow
+(`Auth → Scenario → Start Attempt → Text Conversation → Finish → Evaluation → Persisted Results`)
+is implemented and verified locally across frontend, backend, and shared contracts.
 
-Completed evaluation pipeline:
+Completed results experience:
 
-- `UniversalSkill` enum and `Evaluation` Prisma model with relational columns for universal/scenario/overall scores (with 0–100 check constraints), JSONB coaching moments/strengths/improvements/objectives, ownership/attempt relation, and cascade deletion;
-- `20260829030000_add_evaluation` PostgreSQL migration script with check constraints on all score columns;
-- frontend-safe shared Zod contracts in `@kalemny/contracts` (`UniversalSkillSchema`, `ObjectiveStatusSchema`, `CoachingMomentTypeSchema`, `SkillScoresSchema`, `ObjectiveResultSchema`, `StrengthFeedbackSchema`, `ImprovementFeedbackSchema`, `CoachingMomentSchema`, `NextFocusSchema`, `EvaluationDataSchema`, `EvaluationResponseSchema`);
-- `AttemptDetailResponseSchema` updated to include the canonical `EvaluationData` when present;
-- universal 5-skill rubric definition (Clarity, Assertiveness, Empathy, Structure, Conciseness) and versioned prompt (`EVALUATION_PROMPT_VERSION=evaluation-v1`);
-- OpenRouter structured JSON evaluation generation with explicit candidate model (`openai/gpt-5.6-luna-pro`), `provider.zdr=true`, `provider.data_collection="deny"`, and timeout cancellation;
-- runtime Zod schema validation and domain reference validation (ensuring all cited turn IDs exist on the evaluated attempt and all scenario objectives are evaluated without quote fabrication);
-- one automatic controlled retry on malformed/invalid evaluation output or transient provider failure;
-- deterministic 70/30 scoring: 70% universal skill average + 30% scenario objective score computed strictly in application logic;
-- atomic database transaction persisting canonical `Evaluation`, transitioning attempt status to `COMPLETED`, setting `progressEligible` (>= 3 completed learner turns), and recording safe `AiUsageEvent` with operation `EVALUATION`;
-- `POST /api/v1/attempts/:attemptId/evaluation` endpoint with ownership checks, state validation (`EVALUATING`, `EVALUATION_FAILED`, `COMPLETED`), and idempotent evaluation retrieval without re-calling the AI provider;
-- `GET /api/v1/attempts/:attemptId` returning the persisted evaluation when attempt is `COMPLETED`;
-- focused tests for rubric assembly, prompt building, structured output validation, reference integrity, deterministic scoring calculations, lifecycle transitions, automated retry, error handling, repository transactions, and route handlers.
+- Type-safe, validated API client (`createApiClient`, `ApiClientError`) handling REST communication with Express API and Clerk token authorization;
+- Scoring presentation utilities (`score-utils.ts`) for deterministic score bands (Exceptional, Strong, Competent, Developing, Needs Focus), universal skill metadata, objective status formatting, and coaching moment type badges;
+- App layout with persistent authenticated header (`AppHeader`), Clerk `UserButton`, and responsive navigation;
+- Scenario hub page (`/app`) displaying available scenarios (Salary Negotiation v1) with categories, summaries, and practice triggers;
+- Scenario briefing & configuration page (`/app/scenarios/[scenarioKey]`) with situation context, role details, primary objective, stakes, and difficulty selection (Easy / Medium / Hard);
+- Active text simulation conversation workspace (`/app/simulations/[attemptId]`) with counterpart opening message, learner/AI message stream, pending AI response indicator, turn error recovery with retry trigger, composer with Enter-to-send and character count, and simulation finish action;
+- Comprehensive Results Page (`/app/results/[attemptId]`):
+  - Overall score banner (0–100) with score band and clear explanation of the deterministic 70/30 formula (70% universal skills average + 30% scenario objectives);
+  - Executive coaching summary;
+  - 5 Universal Communication Skills visual breakdown (Clarity, Assertiveness, Empathy, Structure, Conciseness) with proficiency score bars and qualitative band badges;
+  - Scenario Objectives outcomes with status badges (Achieved, Partially Achieved, Missed), explanations, and evidence turn references;
+  - Key Strengths and Areas for Growth sections with evidence references;
+  - Evidence-linked Coaching Moments matching stored learner turn text (`moment.turnId` to `turn.userText` from attempt transcript, strictly avoiding quote fabrication), coach feedback, and Stronger Alternative Phrasing (`betterResponse`);
+  - Recommended Next Focus area with targeted skill and actionable rationale;
+  - Full toggleable conversation transcript review highlighting turns cited in coaching evidence;
+  - Asynchronous evaluation state handling (animated evaluating indicator with automatic evaluation triggering), error recovery state for `EVALUATION_FAILED` with "Retry Evaluation" button, and abandoned state handling for 0-turn sessions;
+  - "Practice Again (Retry)" action creating a new attempt linked via `retryOfAttemptId`;
+- Unit tests covering scoring utilities, formatting, API client, and error handling.
 
 Verified on August 29, 2026 with:
 
@@ -265,17 +270,7 @@ corepack pnpm prisma:validate
 corepack pnpm prisma:generate
 ```
 
-The full suite contains 93 passing tests across 22 test files.
-
-The active development target remains the first end-to-end **text-only vertical slice** using:
-
-**Salary Negotiation / Medium**
-
-Required path:
-
-`Auth → Scenario → Start Attempt → Text Conversation → Finish → Evaluation → Persisted Results`
-
-Voice, TTS, retry comparison, progress, history, and the remaining scenarios come after this vertical slice works reliably.
+The full suite contains 107 passing tests across 24 test files.
 
 ---
 
@@ -291,7 +286,8 @@ Voice, TTS, retry comparison, progress, history, and the remaining scenarios com
 8. Text roleplay (Complete)
 9. Structured evaluation + Zod validation (Complete)
 10. Deterministic 70/30 scoring (Complete)
-11. Results experience (Milestone 7)
+11. Results experience (Milestone 7 - Complete)
+12. Retry and comparison (Milestone 8)
 
 ---
 
@@ -313,4 +309,4 @@ Some of these documents may not exist yet. Do not invent missing requirements; u
 
 ## Current Next Task
 
-Milestone 6 is complete. Proceed to **Milestone 7 — Results Experience** to deliver the frontend results page, presenting the five universal skill scores, scenario objectives, evidence-linked moments, stronger responses, and next focus.
+Milestone 7 is complete. The full text-only vertical slice (`Auth → Scenario → Start Attempt → Text Conversation → Finish → Evaluation → Persisted Results`) is working end-to-end. Proceed to **Milestone 8 — Retry & Attempt Comparison** when directed.
