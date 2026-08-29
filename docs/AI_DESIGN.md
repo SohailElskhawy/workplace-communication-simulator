@@ -59,11 +59,11 @@ Preferred Release 1 model candidates:
 ROLEPLAY_MODEL=deepseek/deepseek-v4-flash-0731
 EVALUATION_MODEL=openai/gpt-5.6-luna-pro
 TRANSCRIPTION_MODEL=openai/whisper-large-v3-turbo
-TTS_MODEL=
+TTS_MODEL=hexgrad/kokoro-82m
 ```
 
-The evaluation model is a candidate pending Milestone 6 calibration. TTS is
-deliberately TBD until its milestone. These candidates are environment
+The evaluation model is a candidate pending Milestone 6 calibration. TTS uses
+the approved Milestone 11 model. These candidates are environment
 configuration, not irreversible architecture decisions.
 
 Project rule:
@@ -740,7 +740,7 @@ Agents must preserve:
 17. Do not add multi-provider orchestration.
 18. Optimize model choices by operation-specific quality per dollar.
 19. Prefer Zero Data Retention-compatible routing/providers where available.
-20. TTS stays optional and user-triggered; its model remains TBD until its milestone.
+20. TTS stays optional and user-triggered; its configured Release 1 model is `hexgrad/kokoro-82m`.
 
 ---
 

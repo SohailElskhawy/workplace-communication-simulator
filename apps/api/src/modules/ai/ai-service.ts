@@ -9,6 +9,7 @@ import {
 import type {
   OpenRouterEvaluationResult,
   OpenRouterRoleplayResult,
+  OpenRouterSpeechResult,
   OpenRouterProvider,
 } from "./openrouter-provider.js";
 import {
@@ -40,6 +41,7 @@ export interface AiService {
   readonly roleplayModel: string;
   readonly evaluationModel: string;
   readonly transcriptionModel: string;
+  readonly ttsModel: string;
   generateRoleplayReply(
     input: GenerateRoleplayReplyInput,
   ): Promise<OpenRouterRoleplayResult>;
@@ -49,6 +51,7 @@ export interface AiService {
   transcribeAudio(
     input: TranscribeAudioInput,
   ): Promise<{ text: string; latencyMs: number; estimatedCost: number | null }>;
+  generateSpeech(text: string): Promise<OpenRouterSpeechResult>;
 }
 
 export interface AiServiceOptions {
@@ -61,6 +64,8 @@ export interface AiServiceOptions {
   evaluationTimeoutMs: number;
   transcriptionModel: string;
   transcriptionTimeoutMs: number;
+  ttsModel: string;
+  ttsTimeoutMs: number;
 }
 
 export function createAiService(options: AiServiceOptions): AiService {
@@ -68,6 +73,7 @@ export function createAiService(options: AiServiceOptions): AiService {
     roleplayModel: options.roleplayModel,
     evaluationModel: options.evaluationModel,
     transcriptionModel: options.transcriptionModel,
+    ttsModel: options.ttsModel,
     generateRoleplayReply(input) {
       if (options.roleplayPromptVersion !== ROLEPLAY_PROMPT_VERSION) {
         throw new Error("Unsupported roleplay prompt version.");
@@ -97,6 +103,13 @@ export function createAiService(options: AiServiceOptions): AiService {
         mimeType: input.mimeType,
         fileName: input.fileName,
         timeoutMs: options.transcriptionTimeoutMs,
+      });
+    },
+    generateSpeech(text) {
+      return options.provider.generateSpeech({
+        model: options.ttsModel,
+        text,
+        timeoutMs: options.ttsTimeoutMs,
       });
     },
   };

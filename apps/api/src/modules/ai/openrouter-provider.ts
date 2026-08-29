@@ -84,6 +84,19 @@ export interface OpenRouterTranscriptionResult {
   estimatedCost: number | null;
 }
 
+export interface OpenRouterSpeechRequest {
+  model: string;
+  text: string;
+  timeoutMs: number;
+}
+
+export interface OpenRouterSpeechResult {
+  audio: Buffer;
+  contentType: string;
+  latencyMs: number;
+  estimatedCost: number | null;
+}
+
 const OpenRouterTranscriptionResponseSchema = z.object({
   text: z.string(),
 });
@@ -98,6 +111,9 @@ export interface OpenRouterProvider {
   transcribeAudio(
     request: OpenRouterTranscriptionRequest,
   ): Promise<OpenRouterTranscriptionResult>;
+  generateSpeech(
+    request: OpenRouterSpeechRequest,
+  ): Promise<OpenRouterSpeechResult>;
 }
 
 interface OpenRouterProviderOptions {
@@ -278,6 +294,59 @@ export function createOpenRouterProvider(
           latencyMs,
           estimatedCost: null,
         };
+      } catch (error) {
+        if (error instanceof AiProviderError) throw error;
+        throw new AiProviderError(
+          timedOut ? "AI_TIMEOUT" : "AI_PROVIDER_ERROR",
+          Math.max(0, clock() - startedAt),
+        );
+      } finally {
+        clearTimeout(timeout);
+      }
+    },
+
+    async generateSpeech(request) {
+      const startedAt = clock();
+      const controller = new AbortController();
+      let timedOut = false;
+      const timeout = setTimeout(() => {
+        timedOut = true;
+        controller.abort();
+      }, request.timeoutMs);
+
+      try {
+        const response = await fetchImplementation(
+          "https://openrouter.ai/api/v1/audio/speech",
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${options.apiKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: request.model,
+              input: request.text,
+              voice: "af_heart",
+              response_format: "mp3",
+              provider: { zdr: true, data_collection: "deny" },
+            }),
+            signal: controller.signal,
+          },
+        );
+        const latencyMs = Math.max(0, clock() - startedAt);
+        if (!response.ok) {
+          throw new AiProviderError("AI_PROVIDER_ERROR", latencyMs);
+        }
+        const contentType =
+          response.headers.get("content-type") ?? "audio/mpeg";
+        if (!contentType.toLowerCase().startsWith("audio/")) {
+          throw new AiProviderError("AI_PROVIDER_ERROR", latencyMs);
+        }
+        const audio = Buffer.from(await response.arrayBuffer());
+        if (audio.length === 0) {
+          throw new AiProviderError("AI_PROVIDER_ERROR", latencyMs);
+        }
+        return { audio, contentType, latencyMs, estimatedCost: null };
       } catch (error) {
         if (error instanceof AiProviderError) throw error;
         throw new AiProviderError(

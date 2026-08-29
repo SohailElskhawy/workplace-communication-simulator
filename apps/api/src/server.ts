@@ -24,6 +24,8 @@ import { createScenarioService } from "./modules/scenarios/scenario-service.js";
 import { createLocalUserProvisioner } from "./modules/users/provision-local-user.js";
 import { createPrismaVoiceRepository } from "./modules/voice/prisma-voice-repository.js";
 import { createVoiceService } from "./modules/voice/voice-service.js";
+import { createPrismaTtsRepository } from "./modules/tts/prisma-tts-repository.js";
+import { createTtsService } from "./modules/tts/tts-service.js";
 
 const rootEnvPath = resolve(process.cwd(), "../../.env");
 if (existsSync(rootEnvPath)) {
@@ -50,6 +52,8 @@ const aiService = createAiService({
   evaluationTimeoutMs: apiEnv.EVALUATION_TIMEOUT_MS,
   transcriptionModel: apiEnv.TRANSCRIPTION_MODEL,
   transcriptionTimeoutMs: apiEnv.TRANSCRIPTION_TIMEOUT_MS,
+  ttsModel: apiEnv.TTS_MODEL,
+  ttsTimeoutMs: apiEnv.TTS_TIMEOUT_MS,
 });
 const attemptService = createAttemptService(
   createPrismaAttemptRepository(prisma),
@@ -69,6 +73,10 @@ const voiceService = createVoiceService(
   createPrismaVoiceRepository(prisma),
   aiService,
 );
+const ttsService = createTtsService(
+  createPrismaTtsRepository(prisma),
+  aiService,
+);
 
 const app = createApp({
   attemptService,
@@ -83,6 +91,7 @@ const app = createApp({
   scenarioService,
   userProvisioner,
   voiceService,
+  ttsService,
   webOrigin: apiEnv.WEB_ORIGIN,
 });
 

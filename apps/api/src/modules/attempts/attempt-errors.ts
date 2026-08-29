@@ -6,6 +6,7 @@ export type AttemptErrorCode =
   | "AI_TIMEOUT"
   | "AI_PROVIDER_ERROR"
   | "TRANSCRIPTION_FAILED"
+  | "TTS_FAILED"
   | "EVALUATION_FAILED";
 
 const errorDetails: Record<
@@ -36,6 +37,10 @@ const errorDetails: Record<
   TRANSCRIPTION_FAILED: {
     status: 502,
     message: "Transcription failed. You can continue with text.",
+  },
+  TTS_FAILED: {
+    status: 502,
+    message: "Speech playback is unavailable. The text remains available.",
   },
   EVALUATION_FAILED: {
     status: 500,

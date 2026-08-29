@@ -8,10 +8,6 @@ const ExplicitOpenRouterModelSchema = z
     message: "OpenRouter automatic model routing is not allowed",
   });
 
-const OptionalExplicitOpenRouterModelSchema = z
-  .union([z.literal(""), ExplicitOpenRouterModelSchema])
-  .default("");
-
 const ApiEnvSchema = z.object({
   NODE_ENV: z
     .enum(["development", "test", "production"])
@@ -30,7 +26,7 @@ const ApiEnvSchema = z.object({
     .literal("evaluation-v1")
     .default("evaluation-v1"),
   TRANSCRIPTION_MODEL: ExplicitOpenRouterModelSchema,
-  TTS_MODEL: OptionalExplicitOpenRouterModelSchema,
+  TTS_MODEL: ExplicitOpenRouterModelSchema,
   ROLEPLAY_TIMEOUT_MS: z.coerce.number().int().positive().default(15_000),
   EVALUATION_TIMEOUT_MS: z.coerce.number().int().positive().default(30_000),
   TRANSCRIPTION_TIMEOUT_MS: z.coerce.number().int().positive().default(20_000),

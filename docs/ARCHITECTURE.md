@@ -344,7 +344,7 @@ Preferred Release 1 model candidates:
 - roleplay: `ROLEPLAY_MODEL=deepseek/deepseek-v4-flash-0731`;
 - evaluation: `EVALUATION_MODEL=openai/gpt-5.6-luna-pro`, pending Milestone 6 calibration;
 - STT: `TRANSCRIPTION_MODEL=openai/whisper-large-v3-turbo`;
-- TTS: `TTS_MODEL` remains blank/TBD until the TTS milestone.
+- TTS: `TTS_MODEL=hexgrad/kokoro-82m`.
 
 OpenRouter is the approved provider. Model candidates are replaceable
 configuration, not provider architecture. All selected model IDs must be
@@ -585,8 +585,7 @@ NEXT_PUBLIC_SENTRY_DSN
 
 Never expose server secrets through `NEXT_PUBLIC_*`.
 
-`ROLEPLAY_MODEL`, `EVALUATION_MODEL`, and `TRANSCRIPTION_MODEL` are required.
-`TTS_MODEL` may remain blank until the TTS milestone.
+`ROLEPLAY_MODEL`, `EVALUATION_MODEL`, `TRANSCRIPTION_MODEL`, and `TTS_MODEL` are required.
 
 ---
 

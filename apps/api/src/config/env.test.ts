@@ -14,6 +14,7 @@ describe("parseApiEnv", () => {
     EVALUATION_MODEL: "provider/evaluation-model",
     EVALUATION_PROMPT_VERSION: "evaluation-v1",
     TRANSCRIPTION_MODEL: "provider/transcription-model",
+    TTS_MODEL: "hexgrad/kokoro-82m",
   };
 
   it("applies safe local defaults when required settings exist", () => {
@@ -25,7 +26,6 @@ describe("parseApiEnv", () => {
       EVALUATION_TIMEOUT_MS: 30_000,
       TRANSCRIPTION_TIMEOUT_MS: 20_000,
       TTS_TIMEOUT_MS: 15_000,
-      TTS_MODEL: "",
       ...requiredEnvironment,
     });
   });
@@ -74,9 +74,9 @@ describe("parseApiEnv", () => {
     ).toThrow();
   });
 
-  it("keeps TTS unconfigured until its milestone", () => {
-    expect(
-      parseApiEnv({ ...requiredEnvironment, TTS_MODEL: "" }).TTS_MODEL,
-    ).toBe("");
+  it("requires an explicit TTS model", () => {
+    expect(() =>
+      parseApiEnv({ ...requiredEnvironment, TTS_MODEL: "" }),
+    ).toThrow();
   });
 });

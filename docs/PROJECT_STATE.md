@@ -120,15 +120,14 @@ A session contributes to progress only after at least **3 substantive user turns
 - no automatic model routing or multi-provider orchestration
 
 Roleplay, evaluation, transcription, and TTS model choices come from environment
-configuration. Configured model IDs and operation timeouts remain adjustable;
-TTS stays unset until its milestone.
+configuration. Configured model IDs and operation timeouts remain adjustable.
 
 Preferred Release 1 model candidates:
 
 - roleplay: `deepseek/deepseek-v4-flash-0731`;
 - evaluation: `openai/gpt-5.6-luna-pro`, pending Milestone 6 calibration;
 - transcription: `openai/whisper-large-v3-turbo`;
-- TTS: TBD until the TTS milestone; no model is locked.
+- TTS: `hexgrad/kokoro-82m`.
 
 The approved business rule is quality per dollar by operation: aggressively
 cost-optimize high-volume roleplay, spend more where evaluation quality affects
@@ -233,6 +232,10 @@ Do not implement:
 
 ## Current Development Milestone
 
+**Milestone 11 — Optional TTS** is complete. Stored assistant replies are synthesized on demand through the authenticated API and existing OpenRouter/AiService architecture, played from temporary browser object URLs, and discarded without audio persistence. TTS failure remains isolated from conversation state and text interaction.
+
+### Prior milestone: Push-to-Talk STT
+
 **Milestone 10 — Push-to-Talk STT** is complete. Browser MediaRecorder push-to-talk audio capture, microphone permission and error handling, memory-only audio parsing with zero audio persistence, OpenRouter Whisper transcription integration, editable composer insertion, and reliable text fallback are fully implemented and verified end-to-end.
 
 Completed Push-to-Talk STT features:
@@ -291,7 +294,7 @@ corepack pnpm prisma:generate
 12. Retry and comparison (Milestone 8 - Complete)
 13. Session history and progress profile (Milestone 9 - Complete)
 14. Voice input / Push-to-talk transcription (Milestone 10 - Complete)
-15. Text-to-Speech audio generation / Playback (Milestone 11)
+15. Text-to-Speech audio generation / Playback (Milestone 11 - Complete)
 
 ---
 
@@ -313,5 +316,4 @@ Some of these documents may not exist yet. Do not invent missing requirements; u
 
 ## Current Next Task
 
-Milestone 10 is complete. Push-to-talk recording, microphone permissions, memory-only transcription via OpenRouter Whisper, 120s limit, editable composer insertion, and reliable text fallback are fully verified across contracts, API, and web. Proceed to **Milestone 11 — Text-to-Speech (TTS)** when directed. Do not start Milestone 11 without user approval.
-
+Milestone 11 is complete. Optional, user-triggered speech playback uses `TTS_MODEL=hexgrad/kokoro-82m`, stored `assistantText`, the authenticated `/speech` endpoint, memory-only binary responses, and safe TTS usage telemetry. Proceed to the next approved P0 milestone only when directed.

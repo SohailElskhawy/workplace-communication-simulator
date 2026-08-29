@@ -156,6 +156,8 @@ describe("EvaluationService", () => {
       roleplayModel: "deepseek/deepseek-v4-flash-0731",
       evaluationModel: "openai/gpt-5.6-luna-pro",
       transcriptionModel: "openai/whisper-large-v3-turbo",
+      ttsModel: "hexgrad/kokoro-82m",
+      generateSpeech: vi.fn(),
       generateRoleplayReply: vi.fn(),
       evaluateSimulation: vi.fn(),
       transcribeAudio: vi.fn(),
@@ -206,6 +208,8 @@ describe("EvaluationService", () => {
       roleplayModel: "deepseek/deepseek-v4-flash-0731",
       evaluationModel: "openai/gpt-5.6-luna-pro",
       transcriptionModel: "openai/whisper-large-v3-turbo",
+      ttsModel: "hexgrad/kokoro-82m",
+      generateSpeech: vi.fn(),
       generateRoleplayReply: vi.fn(),
       evaluateSimulation: vi.fn().mockResolvedValue({
         evaluation: validRawEvaluation,
@@ -273,6 +277,8 @@ describe("EvaluationService", () => {
       roleplayModel: "deepseek/deepseek-v4-flash-0731",
       evaluationModel: "openai/gpt-5.6-luna-pro",
       transcriptionModel: "openai/whisper-large-v3-turbo",
+      ttsModel: "hexgrad/kokoro-82m",
+      generateSpeech: vi.fn(),
       generateRoleplayReply: vi.fn(),
       evaluateSimulation: vi
         .fn()
@@ -306,6 +312,8 @@ describe("EvaluationService", () => {
       roleplayModel: "deepseek/deepseek-v4-flash-0731",
       evaluationModel: "openai/gpt-5.6-luna-pro",
       transcriptionModel: "openai/whisper-large-v3-turbo",
+      ttsModel: "hexgrad/kokoro-82m",
+      generateSpeech: vi.fn(),
       generateRoleplayReply: vi.fn(),
       evaluateSimulation: vi
         .fn()
@@ -346,6 +354,8 @@ describe("EvaluationService", () => {
       roleplayModel: "deepseek/deepseek-v4-flash-0731",
       evaluationModel: "openai/gpt-5.6-luna-pro",
       transcriptionModel: "openai/whisper-large-v3-turbo",
+      ttsModel: "hexgrad/kokoro-82m",
+      generateSpeech: vi.fn(),
       generateRoleplayReply: vi.fn(),
       evaluateSimulation: vi.fn(),
       transcribeAudio: vi.fn(),

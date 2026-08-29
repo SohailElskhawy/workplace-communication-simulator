@@ -25,6 +25,8 @@ function createMockAiService(overrides?: Partial<AiService>): AiService {
     roleplayModel: "deepseek/deepseek-v4-flash-0731",
     evaluationModel: "openai/gpt-5.6-luna-pro",
     transcriptionModel: "openai/whisper-large-v3-turbo",
+    ttsModel: "hexgrad/kokoro-82m",
+    generateSpeech: vi.fn(),
     generateRoleplayReply: vi.fn(),
     evaluateSimulation: vi.fn(),
     transcribeAudio: vi.fn().mockResolvedValue({

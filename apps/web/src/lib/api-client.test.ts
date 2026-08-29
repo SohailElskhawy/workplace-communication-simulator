@@ -289,4 +289,19 @@ describe("api-client", () => {
     );
     expect(result.transcript).toBe("I would like to discuss compensation.");
   });
+
+  it("requests stored assistant speech as a temporary audio blob", async () => {
+    const audio = new Blob([new Uint8Array([1, 2, 3])], { type: "audio/mpeg" });
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      blob: async () => audio,
+    } as Response);
+    const result = await client.generateSpeech(
+      token,
+      "123e4567-e89b-12d3-a456-426614174000",
+      "223e4567-e89b-12d3-a456-426614174000",
+    );
+    expect(result).toBe(audio);
+  });
 });

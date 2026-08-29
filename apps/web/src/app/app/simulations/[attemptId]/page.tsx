@@ -10,6 +10,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { ApiClientError, createApiClient } from "../../../../lib/api-client";
+import { SpeechButton } from "../../../../components/speech-button";
 import {
   MAX_RECORDING_DURATION_SECONDS,
   useVoiceRecorder,
@@ -370,6 +371,7 @@ export default function SimulationPage() {
                   <p className="text-sm leading-relaxed whitespace-pre-wrap">
                     {turn.assistantText}
                   </p>
+                  <SpeechButton attemptId={attemptId} turnId={turn.id} />
                 </div>
               </div>
             )}

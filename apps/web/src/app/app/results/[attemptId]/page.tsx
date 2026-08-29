@@ -15,6 +15,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { ApiClientError, createApiClient } from "../../../../lib/api-client";
+import { SpeechButton } from "../../../../components/speech-button";
 import {
   formatCoachingMomentType,
   formatDelta,
@@ -1205,6 +1206,7 @@ export default function ResultsPage() {
                       <span className="text-slate-800 whitespace-pre-wrap">
                         {turn.assistantText}
                       </span>
+                      <SpeechButton attemptId={attemptId} turnId={turn.id} />
                     </div>
                   )}
                 </div>

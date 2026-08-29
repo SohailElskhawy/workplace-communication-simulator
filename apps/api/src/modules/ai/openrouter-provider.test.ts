@@ -281,6 +281,34 @@ describe("OpenRouterProvider", () => {
     });
   });
 
+  it("generates MP3 speech as raw bytes", async () => {
+    const fetchImplementation = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(new Uint8Array([1, 2, 3]), {
+        status: 200,
+        headers: { "Content-Type": "audio/mpeg" },
+      }),
+    );
+    const provider = createOpenRouterProvider({
+      apiKey: "secret-api-key",
+      fetchImplementation,
+      clock: vi.fn().mockReturnValueOnce(100).mockReturnValueOnce(220),
+    });
+    const result = await provider.generateSpeech({
+      model: "hexgrad/kokoro-82m",
+      text: "Stored assistant reply",
+      timeoutMs: 15_000,
+    });
+    expect(result.audio).toEqual(Buffer.from([1, 2, 3]));
+    const [url, init] = fetchImplementation.mock.calls[0] ?? [];
+    expect(url).toBe("https://openrouter.ai/api/v1/audio/speech");
+    expect(JSON.parse(String(init?.body))).toMatchObject({
+      model: "hexgrad/kokoro-82m",
+      input: "Stored assistant reply",
+      voice: "af_heart",
+      response_format: "mp3",
+    });
+  });
+
   it("aborts transcription on timeout", async () => {
     vi.useFakeTimers();
     const fetchImplementation = vi.fn(

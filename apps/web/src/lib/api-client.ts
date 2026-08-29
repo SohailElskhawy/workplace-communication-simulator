@@ -393,5 +393,45 @@ export function createApiClient(baseUrl: string) {
         TranscriptionResponseSchema,
       );
     },
+
+    async generateSpeech(
+      token: string,
+      attemptId: string,
+      turnId: string,
+    ): Promise<Blob> {
+      let response: Response;
+      try {
+        response = await fetch(
+          `${baseUrl}/api/v1/attempts/${encodeURIComponent(attemptId)}/turns/${encodeURIComponent(turnId)}/speech`,
+          {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
+      } catch {
+        throw new ApiClientError(
+          "Network connection failure. Please check your internet connection.",
+          "NETWORK_ERROR",
+          0,
+        );
+      }
+      if (!response.ok) {
+        const rawJson = await response.json().catch(() => null);
+        const parsed = ApiErrorResponseSchema.safeParse(rawJson);
+        if (parsed.success)
+          throw new ApiClientError(
+            parsed.data.error.message,
+            parsed.data.error.code,
+            response.status,
+            parsed.data.error.requestId,
+          );
+        throw new ApiClientError(
+          "Speech playback is unavailable.",
+          "TTS_FAILED",
+          response.status,
+        );
+      }
+      return response.blob();
+    },
   };
 }
