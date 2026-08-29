@@ -567,7 +567,7 @@ set attempt COMPLETED
 set progressEligible
 ```
 
-Do not keep a database transaction open while calling OpenAI.
+Do not keep a database transaction open while calling OpenRouter or any upstream AI provider.
 
 ---
 

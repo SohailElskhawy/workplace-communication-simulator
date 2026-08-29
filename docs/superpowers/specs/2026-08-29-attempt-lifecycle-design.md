@@ -2,7 +2,7 @@
 
 ## Scope
 
-Milestone 4 adds persistence and authenticated REST behavior for simulation attempts and learner conversation turns. It includes attempt creation, attempt retrieval, learner-turn acceptance, and attempt finishing. It does not call OpenAI or implement roleplay replies, evaluation generation, voice, history, progress, retry comparison, or deletion.
+Milestone 4 adds persistence and authenticated REST behavior for simulation attempts and learner conversation turns. It includes attempt creation, attempt retrieval, learner-turn acceptance, and attempt finishing. It does not call an AI provider or implement roleplay replies, evaluation generation, voice, history, progress, retry comparison, or deletion.
 
 The implementation follows `PRODUCT_REQUIREMENTS.md`, `ARCHITECTURE.md`, `DATABASE_DESIGN.md`, and `API_CONTRACT.md`. The initial vertical slice uses the active Salary Negotiation scenario and Medium difficulty, while domain contracts retain the approved difficulty enum.
 

@@ -42,8 +42,20 @@ Read these in order when present:
 - Auth: Clerk
 - Database: PostgreSQL on Neon
 - ORM: Prisma
-- AI/STT/TTS: OpenAI behind an internal `AiService`
+- AI/STT/TTS: OpenRouter behind an internal `AiService`
 - Deployment: Vercel (web), Railway (API), Neon (DB)
+
+Release 1 model strategy:
+
+- roleplay preferred candidate: `deepseek/deepseek-v4-flash-0731`;
+- evaluation candidate: `openai/gpt-5.6-luna-pro`, pending Milestone 6 calibration;
+- transcription preferred candidate: `openai/whisper-large-v3-turbo`;
+- TTS model: TBD until its milestone.
+
+Optimize every AI operation independently for quality per dollar. Judge model
+changes by user-perceived quality, reliability, latency, schema/instruction
+compliance, privacy compatibility, and measured cost per completed simulation.
+Do not choose solely by benchmark rank or lowest token price.
 
 Do not introduce new infrastructure or major libraries without a concrete P0 need.
 
@@ -81,7 +93,7 @@ Explicitly out of scope:
 
 ## Architectural Invariants
 
-1. Browser never calls OpenAI directly.
+1. Browser never calls OpenRouter or any upstream AI provider directly.
 2. Browser never supplies the authoritative user identity.
 3. Hidden scenario/persona/rubric data never leaves the API.
 4. Historical attempts reference immutable scenario versions.
@@ -98,6 +110,8 @@ Explicitly out of scope:
 15. Transcripts, prompts, audio, tokens, and secrets must never be written to standard logs.
 16. Every protected resource must be authorized on the backend.
 17. External AI calls require explicit timeouts and safe failure handling.
+18. Release 1 uses one explicitly configured OpenRouter provider; automatic model routing and multi-provider orchestration are prohibited.
+19. OpenRouter routing must preserve workplace-transcript privacy; prefer Zero Data Retention-compatible routes/providers where available.
 
 ## Engineering Rules
 

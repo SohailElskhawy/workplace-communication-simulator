@@ -16,7 +16,7 @@ Next.js Web (Vercel)
 Express API (Railway)
   ├── PostgreSQL / Neon
   └── AiService
-       └── OpenAI
+       └── OpenRouterProvider
             ├── Roleplay
             ├── Evaluation
             ├── STT
@@ -55,8 +55,8 @@ Owns:
 - local UI state.
 
 Must not:
-- contain OpenAI secrets;
-- call OpenAI directly;
+- contain OpenRouter secrets;
+- call OpenRouter or any upstream AI provider directly;
 - authorize resource ownership;
 - calculate authoritative scores;
 - expose hidden scenario configuration.
@@ -325,10 +325,12 @@ Application services
       ↓
    AiService
       ↓
-OpenAiProvider
+OpenRouterProvider
 ```
 
-Only the provider layer imports the OpenAI SDK.
+Only `OpenRouterProvider` may call the OpenRouter API. Release 1 has one AI
+provider and no generic provider registry, fallback chain, or multi-provider
+orchestration.
 
 Conceptual operations:
 - `generateRoleplayReply()`
@@ -338,13 +340,22 @@ Conceptual operations:
 
 Do not build generic multi-provider orchestration.
 
-Initial model roles:
-- roleplay: GPT-5.6 Luna;
-- evaluation: GPT-5.6 Terra;
-- STT: GPT-Transcribe;
-- TTS: GPT-4o Mini TTS.
+Preferred Release 1 model candidates:
+- roleplay: `ROLEPLAY_MODEL=deepseek/deepseek-v4-flash-0731`;
+- evaluation: `EVALUATION_MODEL=openai/gpt-5.6-luna-pro`, pending Milestone 6 calibration;
+- STT: `TRANSCRIPTION_MODEL=openai/whisper-large-v3-turbo`;
+- TTS: `TTS_MODEL` remains blank/TBD until the TTS milestone.
 
-All model IDs must be environment-configurable.
+OpenRouter is the approved provider. Model candidates are replaceable
+configuration, not provider architecture. All selected model IDs must be
+explicit; never use automatic model routing.
+
+Optimize each operation independently for quality per dollar. Roleplay is the
+high-volume cost center, evaluation has low volume but high trust impact, STT
+needs adequate accuracy because its output is editable, and TTS remains optional
+and usage-controlled. Compare models using user-perceived quality, reliability,
+latency, schema/instruction compliance, privacy compatibility, and measured cost
+per completed simulation—not benchmark rank or token price alone.
 
 ---
 
@@ -532,6 +543,9 @@ Safe metadata:
 
 AI usage metadata is stored separately via `AiUsageEvent`.
 
+It must support approximate cost per roleplay turn, evaluation, transcription,
+TTS request, and completed simulation without adding billing infrastructure.
+
 Do not store transcript or prompt contents in telemetry.
 
 Use Sentry for frontend/backend exceptions with sensitive request-body capture disabled.
@@ -548,11 +562,15 @@ API examples:
 DATABASE_URL
 DIRECT_URL
 CLERK_SECRET_KEY
-OPENAI_API_KEY
+OPENROUTER_API_KEY
 ROLEPLAY_MODEL
 EVALUATION_MODEL
 TRANSCRIPTION_MODEL
 TTS_MODEL
+ROLEPLAY_TIMEOUT_MS
+EVALUATION_TIMEOUT_MS
+TRANSCRIPTION_TIMEOUT_MS
+TTS_TIMEOUT_MS
 WEB_ORIGIN
 SENTRY_DSN
 ```
@@ -567,6 +585,9 @@ NEXT_PUBLIC_SENTRY_DSN
 
 Never expose server secrets through `NEXT_PUBLIC_*`.
 
+`ROLEPLAY_MODEL`, `EVALUATION_MODEL`, and `TRANSCRIPTION_MODEL` are required.
+`TTS_MODEL` may remain blank until the TTS milestone.
+
 ---
 
 ## 19. Deployment
@@ -576,7 +597,7 @@ Next.js Web     → Vercel
 Express API     → Railway
 PostgreSQL      → Neon
 Authentication  → Clerk
-AI              → OpenAI
+AI              → OpenRouter
 ```
 
 Environments:
@@ -603,7 +624,7 @@ Do not first-deploy the product on release day.
 
 Agents must preserve these:
 
-1. Browser never calls OpenAI directly.
+1. Browser never calls OpenRouter or any upstream AI provider directly.
 2. Browser never controls authoritative user identity.
 3. Hidden scenario configuration remains backend-only.
 4. Used scenario versions are immutable.
@@ -623,6 +644,8 @@ Agents must preserve these:
 18. Transcripts are never written to standard logs.
 19. AI calls have explicit timeouts.
 20. Do not add infrastructure without a concrete P0 need.
+21. Release 1 uses only `OpenRouterProvider`; no automatic model routing or multi-provider orchestration.
+22. Prefer Zero Data Retention-compatible OpenRouter routing/providers where available; privacy outranks the cheapest route.
 
 ---
 

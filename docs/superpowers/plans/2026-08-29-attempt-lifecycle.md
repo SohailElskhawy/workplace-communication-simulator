@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- Implement only Milestone 4; no OpenAI, evaluation generation, voice, history, progress, comparison, or deletion.
+- Implement only Milestone 4; no AI provider calls, evaluation generation, voice, history, progress, comparison, or deletion.
 - Preserve all existing uncommitted Milestone 3 work.
 - Never accept authoritative user identity from request data.
 - Never expose hidden scenario definition fields or transcript content in logs.

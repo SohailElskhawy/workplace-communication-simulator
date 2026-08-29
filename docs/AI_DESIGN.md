@@ -24,10 +24,13 @@ Application Service
       ↓
    AiService
       ↓
-OpenAiProvider
+OpenRouterProvider
 ```
 
-Only the provider layer imports the OpenAI SDK.
+Only `OpenRouterProvider` calls the OpenRouter API. Release 1 does not include a
+provider registry, fallback provider, or multi-provider orchestration.
+`OPENROUTER_API_KEY` is a required server-only credential and must never be
+exposed through frontend configuration.
 
 Conceptual interface:
 
@@ -42,22 +45,60 @@ Do not build multi-provider orchestration for Release 1.
 
 ---
 
-## 3. Initial Model Roles
+## 3. Model Strategy and Unit Economics
 
-Environment-configurable defaults:
+Approved provider:
 
 ```text
-ROLEPLAY_MODEL      = GPT-5.6 Luna
-EVALUATION_MODEL    = GPT-5.6 Terra
-TRANSCRIPTION_MODEL = GPT-Transcribe
-TTS_MODEL           = GPT-4o Mini TTS
+OpenRouter
 ```
 
-Roleplay prioritizes latency/cost.
+Preferred Release 1 model candidates:
 
-Evaluation prioritizes reasoning quality and consistency.
+```text
+ROLEPLAY_MODEL=deepseek/deepseek-v4-flash-0731
+EVALUATION_MODEL=openai/gpt-5.6-luna-pro
+TRANSCRIPTION_MODEL=openai/whisper-large-v3-turbo
+TTS_MODEL=
+```
 
-Never hard-code model IDs inside domain logic.
+The evaluation model is a candidate pending Milestone 6 calibration. TTS is
+deliberately TBD until its milestone. These candidates are environment
+configuration, not irreversible architecture decisions.
+
+Project rule:
+
+> Optimize each AI operation independently for quality per dollar. Spend more where quality materially affects user trust, and aggressively optimize high-volume operations where cheaper models provide equivalent user-perceived quality.
+
+Operational policy:
+
+```text
+Roleplay      = high volume; aggressively cost optimized
+Evaluation    = low volume + high trust impact; quality optimized within reasonable cost
+STT           = cost optimized with adequate accuracy and editable output
+TTS           = optional, user-triggered, and usage controlled
+```
+
+Do not select models solely by public benchmark rank or lowest price. Justify
+changes using user-perceived quality, reliability, latency, schema/instruction
+compliance, privacy compatibility, and measured cost per completed simulation.
+
+Roleplay's preferred candidate balances instruction following, conversational
+quality, persona consistency, realistic objections, latency, and price. Keep it
+unless testing reveals a material user-perceived quality problem.
+
+Evaluation quality carries greater trust impact because one call controls skill
+scores, objectives, evidence, coaching, stronger responses, and next focus. Keep
+the candidate only if the Milestone 6 calibration passes. If it materially
+fails, test stronger Gemini-class or higher-tier OpenAI alternatives before
+accepting greater production cost. Do not upgrade for benchmark prestige alone.
+
+Transcription uses a reliable low-cost candidate because learners can edit its
+output before sending. TTS has no selected model yet and must not be generated
+automatically for every assistant reply without product evidence.
+
+Never hard-code model IDs inside domain logic. Every configured model must be
+explicit. Do not use automatic model routing.
 
 ---
 
@@ -499,6 +540,8 @@ browser playback
 Rules:
 
 - TTS is optional;
+- TTS is user-triggered and usage-controlled;
+- do not synthesize every assistant reply automatically without product evidence;
 - AI text is canonical;
 - TTS failure never fails the conversation turn;
 - generated speech is not persisted.
@@ -517,6 +560,15 @@ Evaluation     ~30s
 ```
 
 Make configurable.
+
+Environment variables:
+
+```text
+ROLEPLAY_TIMEOUT_MS
+EVALUATION_TIMEOUT_MS
+TRANSCRIPTION_TIMEOUT_MS
+TTS_TIMEOUT_MS
+```
 
 Retry policy:
 
@@ -554,6 +606,11 @@ Prompt changes that materially change behavior or scoring should increment the r
 ---
 
 ## 22. Privacy / Logging
+
+When `OpenRouterProvider` is implemented, configure appropriate privacy and
+data-retention routing controls. Prefer Zero Data Retention-compatible
+routing/providers where available. Do not sacrifice transcript privacy for the
+absolute cheapest provider route.
 
 Where supported, use provider requests with response storage disabled.
 
@@ -614,6 +671,18 @@ Goal:
 
 > measure cost and reliability per completed simulation.
 
+The stored metadata must support approximate calculation of:
+
+```text
+cost per roleplay turn
+cost per evaluation
+cost per transcription
+cost per TTS request
+cost per completed simulation
+```
+
+Do not add billing infrastructure solely for this tracking.
+
 ---
 
 ## 24. Evaluation Calibration
@@ -633,12 +702,18 @@ Do not test AI with brittle exact-string assertions.
 
 Test:
 
-- schema;
-- valid references;
+- structured-output/schema reliability;
+- correct `turnId` evidence references;
+- correct objective IDs;
 - score ranges;
-- required sections;
-- invariants;
-- reasonable ordering across calibration cases.
+- score consistency;
+- reasonable ordering across weak/average/strong cases;
+- explanation and coaching usefulness;
+- stronger-response quality;
+- hallucination and fabrication behavior.
+
+If `openai/gpt-5.6-luna-pro` passes, keep it. If it materially fails these
+criteria, test stronger candidates before increasing production cost.
 
 ---
 
@@ -660,7 +735,12 @@ Agents must preserve:
 12. Raw audio/TTS audio are not persisted.
 13. Prompts/transcripts are not written to standard logs.
 14. Model IDs and prompt versions are configurable/versioned.
-15. Do not add a second AI provider without a demonstrated P0 blocker.
+15. Release 1 uses only `OpenRouterProvider`.
+16. Do not use OpenRouter automatic model routing.
+17. Do not add multi-provider orchestration.
+18. Optimize model choices by operation-specific quality per dollar.
+19. Prefer Zero Data Retention-compatible routing/providers where available.
+20. TTS stays optional and user-triggered; its model remains TBD until its milestone.
 
 ---
 

@@ -142,7 +142,8 @@ Exit criteria:
 Deliver:
 
 - `AiService`;
-- `OpenAiProvider`;
+- `OpenRouterProvider` as the single Release 1 provider;
+- explicit environment-selected model IDs; no automatic model routing;
 - roleplay prompt v1;
 - transcript/context assembly;
 - model timeout handling;
@@ -389,8 +390,11 @@ Before accepting a milestone verify:
 
 # Current Task
 
-Start only:
+Remain on:
 
-## Milestone 1 — Repository Foundation
+## Milestone 4 — Attempt Lifecycle
 
-Do **not** implement Clerk, Prisma domain models, OpenAI, voice, or product UI until the foundation milestone is verified.
+Milestone 4 implementation exists and must remain the only active milestone
+while provider documentation and environment configuration are aligned for
+OpenRouter. Do not start Milestone 5 AI implementation until explicitly
+authorized after Milestone 4 verification.

@@ -115,15 +115,26 @@ A session contributes to progress only after at least **3 substantive user turns
 - lazy local User provisioning
 
 ### AI
-- OpenAI behind internal `AiService`
+- OpenRouter behind internal `AiService`
+- single Release 1 provider: `OpenRouterProvider`
+- no automatic model routing or multi-provider orchestration
 
-Initial model allocation:
-- roleplay: GPT-5.6 Luna
-- evaluation: GPT-5.6 Terra
-- STT: GPT-Transcribe
-- TTS: GPT-4o Mini TTS
+Roleplay, evaluation, transcription, and TTS model choices come from environment
+configuration. Configured model IDs and operation timeouts remain adjustable;
+TTS stays unset until its milestone.
 
-Models must remain environment-configurable.
+Preferred Release 1 model candidates:
+
+- roleplay: `deepseek/deepseek-v4-flash-0731`;
+- evaluation: `openai/gpt-5.6-luna-pro`, pending Milestone 6 calibration;
+- transcription: `openai/whisper-large-v3-turbo`;
+- TTS: TBD until the TTS milestone; no model is locked.
+
+The approved business rule is quality per dollar by operation: aggressively
+cost-optimize high-volume roleplay, spend more where evaluation quality affects
+trust, use adequate low-cost editable transcription, and keep TTS optional and
+usage-controlled. Model decisions must consider privacy and measured cost per
+completed simulation, not benchmark rank or token price alone.
 
 ### Deployment
 - Next.js → Vercel
@@ -206,13 +217,14 @@ Do not implement:
 
 ## Security / Privacy Invariants
 
-- browser never talks directly to OpenAI;
+- browser never talks directly to OpenRouter or any upstream AI provider;
 - browser never supplies authoritative user identity;
 - hidden scenario configuration never leaves backend;
 - users may access only their own sessions/evaluations;
 - no secrets in frontend code;
 - no transcripts in standard logs;
 - no raw audio persistence;
+- prefer OpenRouter Zero Data Retention-compatible routing/providers where available;
 - AI calls have explicit timeouts;
 - expensive AI endpoints are rate-limited;
 - structured AI output is runtime-validated.
@@ -221,7 +233,9 @@ Do not implement:
 
 ## Current Development Milestone
 
-Milestone 4 — Attempt Lifecycle is implemented and locally verified.
+**Milestone 4 — Attempt Lifecycle** remains the current milestone. Its planned
+implementation and OpenRouter environment/configuration alignment are locally
+verified. No Milestone 5 AI implementation has started.
 
 Completed attempt lifecycle:
 
@@ -236,6 +250,9 @@ Completed attempt lifecycle:
 - stable recovery from unique-constraint races through idempotent replay or pending-turn conflict;
 - safe lifecycle errors and 64 KB JSON request limit without logging learner content;
 - focused ownership, retry validation, lifecycle, expiry, turn-limit, pending-turn, idempotency, contract, and endpoint tests.
+- required server-only OpenRouter credential; explicit roleplay, evaluation,
+  and transcription model IDs; optional blank TTS model until its milestone;
+  automatic-routing rejection; and configurable per-operation timeout budgets.
 
 Verified on August 29, 2026 with:
 
@@ -250,7 +267,7 @@ corepack pnpm prisma:generate
 Prisma migration diff from an empty PostgreSQL schema
 ```
 
-The full suite contains 44 passing tests across 14 files. Applying migrations
+The full suite contains 48 passing tests across 14 files. Applying migrations
 and running `corepack pnpm prisma:seed` against the configured Neon target remain
 deployment smoke checks; local verification does not use production or staging
 credentials.
@@ -301,9 +318,7 @@ Some of these documents may not exist yet. Do not invent missing requirements; u
 
 ## Current Next Task
 
-Begin Milestone 5 — Text Roleplay for Salary Negotiation / Medium only.
-
-Build on the persisted `PENDING` learner turn: generate the roleplay response
-behind the internal `AiService`, update the same turn to `COMPLETED` or `FAILED`,
-and preserve accepted learner text through provider failure. Do not start
-evaluation, voice, retry comparison, history, progress, or additional scenarios.
+No Milestone 4 implementation work remains in the approved plan. Await explicit
+authorization before beginning Milestone 5. Do not implement `AiService`,
+`OpenRouterProvider`, roleplay generation, evaluation, transcription, or TTS
+while Milestone 4 remains current.
