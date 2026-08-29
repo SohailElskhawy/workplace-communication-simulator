@@ -112,4 +112,106 @@ describe("Prisma attempt repository race recovery", () => {
       }),
     });
   });
+
+  it("finds owned attempt and computes comparison from retryOfAttempt", async () => {
+    const rawAttempt = {
+      id: "22222222-2222-4222-8222-222222222222",
+      userId: input.userId,
+      difficulty: "MEDIUM" as const,
+      status: "COMPLETED" as const,
+      retryOfAttemptId: "11111111-1111-4111-8111-111111111111",
+      startedAt: input.currentTime,
+      endedAt: input.currentTime,
+      expiresAt: input.currentTime,
+      evaluationStartedAt: input.currentTime,
+      scenario: {
+        id: "scenario-1",
+        key: "salary-negotiation",
+        version: 1,
+        title: "Salary Negotiation",
+        definition: {},
+      },
+      conversationTurns: [],
+      evaluation: {
+        id: "eval-2",
+        attemptId: "22222222-2222-4222-8222-222222222222",
+        clarity: 80,
+        assertiveness: 75,
+        empathy: 80,
+        structure: 75,
+        conciseness: 80,
+        universalScore: 78,
+        scenarioScore: 100,
+        overallScore: 85,
+        objectiveResults: [
+          {
+            objectiveId: "CLEAR_REQUEST",
+            status: "ACHIEVED",
+            explanation: "...",
+            evidenceTurnIds: [],
+          },
+        ],
+        strengths: [],
+        improvements: [],
+        moments: [],
+        nextFocusSkill: "STRUCTURE",
+        nextFocusReason: "...",
+        summary: "Current summary",
+        model: "model",
+        promptVersion: "v1",
+        createdAt: input.currentTime,
+      },
+      retryOfAttempt: {
+        id: "11111111-1111-4111-8111-111111111111",
+        difficulty: "MEDIUM" as const,
+        evaluation: {
+          id: "eval-1",
+          attemptId: "11111111-1111-4111-8111-111111111111",
+          clarity: 65,
+          assertiveness: 60,
+          empathy: 75,
+          structure: 65,
+          conciseness: 75,
+          universalScore: 68,
+          scenarioScore: 50,
+          overallScore: 63,
+          objectiveResults: [
+            {
+              objectiveId: "CLEAR_REQUEST",
+              status: "PARTIALLY_ACHIEVED",
+              explanation: "...",
+              evidenceTurnIds: [],
+            },
+          ],
+          strengths: [],
+          improvements: [],
+          moments: [],
+          nextFocusSkill: "ASSERTIVENESS",
+          nextFocusReason: "...",
+          summary: "Previous summary",
+          model: "model",
+          promptVersion: "v1",
+          createdAt: input.currentTime,
+        },
+      },
+    };
+
+    const prisma = {
+      simulationAttempt: {
+        findFirst: vi.fn().mockResolvedValue(rawAttempt),
+      },
+    } as unknown as PrismaClient;
+    const repository = createPrismaAttemptRepository(prisma);
+
+    const result = await repository.findOwnedAttempt(
+      rawAttempt.id,
+      input.userId,
+    );
+    expect(result).not.toBeNull();
+    expect(result?.comparison).not.toBeNull();
+    expect(result?.comparison?.comparable).toBe(true);
+    expect(result?.comparison?.overallDelta).toBe(22);
+    expect(result?.comparison?.skillDeltas.assertiveness).toBe(15);
+    expect(result?.comparison?.weakArea?.improved).toBe(true);
+  });
 });

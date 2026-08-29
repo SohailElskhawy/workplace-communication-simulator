@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { AttemptComparisonSchema } from "./comparison.js";
 import { EvaluationDataSchema } from "./evaluation.js";
 import { DifficultySchema } from "./scenario.js";
 
@@ -63,6 +64,7 @@ export const AttemptDetailResponseSchema = z.strictObject({
     retryOfAttemptId: ResourceIdSchema.nullable(),
     turns: z.array(ConversationTurnSchema),
     evaluation: EvaluationDataSchema.nullable(),
+    comparison: AttemptComparisonSchema.nullable().optional().default(null),
     startedAt: TimestampSchema,
     endedAt: TimestampSchema.nullable(),
     expiresAt: TimestampSchema,

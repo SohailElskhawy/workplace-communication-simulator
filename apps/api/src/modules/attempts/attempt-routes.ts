@@ -1,6 +1,7 @@
 import {
   CreateAttemptRequestSchema,
   CreateTurnRequestSchema,
+  type AttemptComparisonResponse,
   type AttemptDetailResponse,
   type CreateAttemptResponse,
   type FinishAttemptResponse,
@@ -80,6 +81,40 @@ export function registerAttemptRoutes(
       if (!handleAttemptError(response, error)) next(error);
     }
   });
+
+  app.get(
+    "/api/v1/attempts/:attemptId/comparison",
+    async (request, response, next) => {
+      try {
+        const userId = await resolveLocalUserId(
+          request,
+          response,
+          dependencies,
+        );
+        if (!userId) return;
+
+        const parsed = AttemptParamsSchema.safeParse(request.params);
+        if (!parsed.success) {
+          sendError(
+            response,
+            400,
+            "VALIDATION_FAILED",
+            "Attempt ID is invalid.",
+          );
+          return;
+        }
+
+        const comparison = await dependencies.attemptService.getComparison(
+          userId,
+          parsed.data.attemptId,
+        );
+        const body: AttemptComparisonResponse = { data: comparison };
+        response.status(200).json(body);
+      } catch (error) {
+        if (!handleAttemptError(response, error)) next(error);
+      }
+    },
+  );
 
   app.post(
     "/api/v1/attempts/:attemptId/turns",

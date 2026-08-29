@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   formatCoachingMomentType,
+  formatDelta,
+  formatObjectiveDeltaStatus,
   formatObjectiveStatus,
   getScoreBand,
   getSkillMetadata,
@@ -80,6 +82,42 @@ describe("score-utils", () => {
       expect(formatCoachingMomentType("MISSED_OPPORTUNITY").label).toBe(
         "Missed Opportunity",
       );
+    });
+  });
+
+  describe("formatDelta", () => {
+    it("formats positive delta with plus sign and green style", () => {
+      const positive = formatDelta(12);
+      expect(positive.text).toBe("+12");
+      expect(positive.direction).toBe("positive");
+      expect(positive.arrow).toBe("↑");
+      expect(positive.textClass).toContain("emerald");
+    });
+
+    it("formats negative delta with minus sign and rose style", () => {
+      const negative = formatDelta(-7);
+      expect(negative.text).toBe("-7");
+      expect(negative.direction).toBe("negative");
+      expect(negative.arrow).toBe("↓");
+      expect(negative.textClass).toContain("rose");
+    });
+
+    it("formats zero delta with neutral style", () => {
+      const zero = formatDelta(0);
+      expect(zero.text).toBe("0");
+      expect(zero.direction).toBe("neutral");
+      expect(zero.arrow).toBe("–");
+    });
+  });
+
+  describe("formatObjectiveDeltaStatus", () => {
+    it("formats IMPROVED, REGRESSED, and UNCHANGED", () => {
+      expect(formatObjectiveDeltaStatus("IMPROVED").label).toBe("Improved");
+      expect(formatObjectiveDeltaStatus("IMPROVED").icon).toBe("↑");
+      expect(formatObjectiveDeltaStatus("REGRESSED").label).toBe("Regressed");
+      expect(formatObjectiveDeltaStatus("REGRESSED").icon).toBe("↓");
+      expect(formatObjectiveDeltaStatus("UNCHANGED").label).toBe("No Change");
+      expect(formatObjectiveDeltaStatus("UNCHANGED").icon).toBe("–");
     });
   });
 });

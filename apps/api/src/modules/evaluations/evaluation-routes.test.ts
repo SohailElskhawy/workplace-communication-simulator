@@ -80,6 +80,7 @@ function createEvaluationApp(
   const attemptService: AttemptService = {
     create: vi.fn(),
     getOwned: vi.fn(),
+    getComparison: vi.fn(),
     createTurn: vi.fn(),
     retryTurn: vi.fn(),
     finish: vi.fn(),

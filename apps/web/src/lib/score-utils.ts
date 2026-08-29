@@ -1,5 +1,6 @@
 import type {
   CoachingMomentType,
+  ObjectiveDeltaStatus,
   ObjectiveStatus,
   UniversalSkill,
 } from "@kalemny/contracts";
@@ -185,6 +186,74 @@ export function formatCoachingMomentType(type: CoachingMomentType): {
         badgeClass: "bg-rose-100 text-rose-800 border-rose-200",
         cardBorderClass: "border-rose-200",
         bgClass: "bg-rose-50/50",
+      };
+  }
+}
+
+export function formatDelta(delta: number): {
+  text: string;
+  textClass: string;
+  bgClass: string;
+  badgeClass: string;
+  arrow: string;
+  direction: "positive" | "negative" | "neutral";
+} {
+  const rounded = Math.round(delta);
+  if (rounded > 0) {
+    return {
+      text: `+${rounded}`,
+      textClass: "text-emerald-700",
+      bgClass: "bg-emerald-50",
+      badgeClass: "bg-emerald-100 text-emerald-800 border-emerald-200",
+      arrow: "↑",
+      direction: "positive",
+    };
+  }
+  if (rounded < 0) {
+    return {
+      text: `${rounded}`,
+      textClass: "text-rose-700",
+      bgClass: "bg-rose-50",
+      badgeClass: "bg-rose-100 text-rose-800 border-rose-200",
+      arrow: "↓",
+      direction: "negative",
+    };
+  }
+  return {
+    text: "0",
+    textClass: "text-slate-600",
+    bgClass: "bg-slate-50",
+    badgeClass: "bg-slate-100 text-slate-700 border-slate-200",
+    arrow: "–",
+    direction: "neutral",
+  };
+}
+
+export function formatObjectiveDeltaStatus(
+  statusChanged: ObjectiveDeltaStatus,
+): {
+  label: string;
+  badgeClass: string;
+  icon: string;
+} {
+  switch (statusChanged) {
+    case "IMPROVED":
+      return {
+        label: "Improved",
+        badgeClass: "bg-emerald-100 text-emerald-800 border-emerald-200",
+        icon: "↑",
+      };
+    case "REGRESSED":
+      return {
+        label: "Regressed",
+        badgeClass: "bg-rose-100 text-rose-800 border-rose-200",
+        icon: "↓",
+      };
+    case "UNCHANGED":
+      return {
+        label: "No Change",
+        badgeClass: "bg-slate-100 text-slate-700 border-slate-200",
+        icon: "–",
       };
   }
 }

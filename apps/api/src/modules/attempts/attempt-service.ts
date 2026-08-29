@@ -1,4 +1,5 @@
 import type {
+  AttemptComparison,
   AttemptDetailResponse,
   AttemptStatus,
   ConversationTurn,
@@ -51,6 +52,7 @@ export interface AttemptRecord {
   scenario: AttemptScenarioRecord;
   turns: ConversationTurnRecord[];
   evaluation: EvaluationData | null;
+  comparison: AttemptComparison | null;
 }
 
 export interface CreateAttemptRepositoryInput {
@@ -153,6 +155,10 @@ export interface AttemptService {
     userId: string,
     attemptId: string,
   ): Promise<AttemptDetailResponse["data"]>;
+  getComparison(
+    userId: string,
+    attemptId: string,
+  ): Promise<AttemptComparison | null>;
   createTurn(
     userId: string,
     attemptId: string,
@@ -199,6 +205,7 @@ function mapAttempt(attempt: AttemptRecord): AttemptDetailResponse["data"] {
     retryOfAttemptId: attempt.retryOfAttemptId,
     turns: attempt.turns.map(mapTurn),
     evaluation: attempt.evaluation,
+    comparison: attempt.comparison,
     startedAt: attempt.startedAt.toISOString(),
     endedAt: attempt.endedAt?.toISOString() ?? null,
     expiresAt: attempt.expiresAt.toISOString(),
@@ -330,6 +337,16 @@ export function createAttemptService(
       }
 
       return mapAttempt(attempt);
+    },
+
+    async getComparison(userId, attemptId) {
+      const attempt = await repository.findOwnedAttempt(attemptId, userId);
+
+      if (!attempt) {
+        throw new AttemptError("NOT_FOUND");
+      }
+
+      return attempt.comparison ?? null;
     },
 
     async createTurn(userId, attemptId, request) {

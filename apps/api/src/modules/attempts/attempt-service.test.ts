@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { AiService } from "../ai/ai-service.js";
 import { AiProviderError } from "../ai/openrouter-provider.js";
 import { salaryNegotiationV1 } from "../scenarios/definitions/salary-negotiation.js";
+import { calculateAttemptComparison } from "./attempt-comparison.js";
 import { getFinishStatus, getTurnRejection } from "./attempt-rules.js";
 import {
   createAttemptService,
@@ -98,6 +99,7 @@ function createMemoryRepository() {
         },
         turns: [],
         evaluation: null,
+        comparison: null,
       };
       attempts.set(id, attempt);
       return { kind: "created", attempt };
@@ -105,7 +107,12 @@ function createMemoryRepository() {
 
     async findOwnedAttempt(attemptId, userId) {
       const attempt = attempts.get(attemptId);
-      return attempt?.userId === userId ? attempt : null;
+      if (!attempt || attempt.userId !== userId) return null;
+      const source = attempt.retryOfAttemptId
+        ? attempts.get(attempt.retryOfAttemptId)
+        : null;
+      const comparison = calculateAttemptComparison(attempt, source ?? null);
+      return { ...attempt, comparison };
     },
 
     async createTurn(input) {
@@ -542,5 +549,109 @@ describe("attempt service", () => {
       id: eligible.id,
       status: "EVALUATING",
     });
+  });
+
+  it("computes attempt comparison when both current and previous attempts are evaluated", async () => {
+    const { attempts, repository } = createMemoryRepository();
+    const service = createAttemptService(
+      repository,
+      createSuccessfulAiService(),
+      () => now,
+    );
+
+    const first = await service.create(ownerId, {
+      scenarioKey: "salary-negotiation",
+      difficulty: "MEDIUM",
+      retryOfAttemptId: null,
+    });
+    const firstStored = attempts.get(first.id);
+    if (!firstStored) throw new Error("Expected first attempt");
+    firstStored.status = "COMPLETED";
+    firstStored.evaluation = {
+      attemptId: first.id,
+      skills: {
+        clarity: 60,
+        assertiveness: 55,
+        empathy: 70,
+        structure: 65,
+        conciseness: 75,
+      },
+      universalScore: 65,
+      scenarioScore: 50,
+      overallScore: 61,
+      objectives: [
+        {
+          objectiveId: "CLEAR_REQUEST",
+          status: "PARTIALLY_ACHIEVED",
+          explanation: "...",
+          evidenceTurnIds: [],
+        },
+      ],
+      strengths: [],
+      improvements: [],
+      moments: [],
+      summary: "First summary",
+      nextFocus: { skill: "ASSERTIVENESS", reason: "Focus on assertiveness" },
+      createdAt: now.toISOString(),
+    };
+
+    const retry = await service.create(ownerId, {
+      scenarioKey: "salary-negotiation",
+      difficulty: "MEDIUM",
+      retryOfAttemptId: first.id,
+    });
+    const retryStored = attempts.get(retry.id);
+    if (!retryStored) throw new Error("Expected retry attempt");
+    retryStored.status = "COMPLETED";
+    retryStored.evaluation = {
+      attemptId: retry.id,
+      skills: {
+        clarity: 75,
+        assertiveness: 70,
+        empathy: 75,
+        structure: 70,
+        conciseness: 80,
+      },
+      universalScore: 74,
+      scenarioScore: 100,
+      overallScore: 82,
+      objectives: [
+        {
+          objectiveId: "CLEAR_REQUEST",
+          status: "ACHIEVED",
+          explanation: "...",
+          evidenceTurnIds: [],
+        },
+      ],
+      strengths: [],
+      improvements: [],
+      moments: [],
+      summary: "Retry summary",
+      nextFocus: { skill: "STRUCTURE", reason: "Structure focus" },
+      createdAt: now.toISOString(),
+    };
+
+    const comparison = await service.getComparison(ownerId, retry.id);
+    expect(comparison).not.toBeNull();
+    expect(comparison?.comparable).toBe(true);
+    expect(comparison?.overallDelta).toBe(21);
+    expect(comparison?.skillDeltas.assertiveness).toBe(15);
+    expect(comparison?.weakArea?.improved).toBe(true);
+
+    const retryDetail = await service.getOwned(ownerId, retry.id);
+    expect(retryDetail.comparison).toEqual(comparison);
+  });
+
+  it("returns null comparison when attempt is not a retry", async () => {
+    const { repository } = createMemoryRepository();
+    const service = createAttemptService(
+      repository,
+      createSuccessfulAiService(),
+      () => now,
+    );
+    const attempt = await startAttempt(service);
+
+    const comparison = await service.getComparison(ownerId, attempt.id);
+    expect(comparison).toBeNull();
   });
 });

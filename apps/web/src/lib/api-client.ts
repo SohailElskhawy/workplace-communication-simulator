@@ -1,5 +1,6 @@
 import {
   ApiErrorResponseSchema,
+  AttemptComparisonResponseSchema,
   AttemptDetailResponseSchema,
   CreateAttemptResponseSchema,
   EvaluationResponseSchema,
@@ -7,6 +8,7 @@ import {
   ScenarioDetailResponseSchema,
   ScenarioListResponseSchema,
   TurnResponseSchema,
+  type AttemptComparison,
   type AttemptDetailResponse,
   type CreateAttemptRequest,
   type CreateAttemptResponse,
@@ -206,6 +208,19 @@ export function createApiClient(baseUrl: string) {
           method: "POST",
         },
         EvaluationResponseSchema,
+      );
+    },
+
+    async fetchAttemptComparison(
+      token: string,
+      attemptId: string,
+    ): Promise<AttemptComparison | null> {
+      return request(
+        baseUrl,
+        `/api/v1/attempts/${encodeURIComponent(attemptId)}/comparison`,
+        token,
+        { method: "GET" },
+        AttemptComparisonResponseSchema,
       );
     },
   };

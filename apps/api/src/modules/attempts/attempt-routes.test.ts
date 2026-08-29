@@ -1,5 +1,6 @@
 import {
   ApiErrorResponseSchema,
+  AttemptComparisonResponseSchema,
   CreateAttemptResponseSchema,
   FinishAttemptResponseSchema,
   TurnResponseSchema,
@@ -57,10 +58,14 @@ function createAttemptApp(
         retryOfAttemptId: null,
         turns: [],
         evaluation: null,
+        comparison: null,
         startedAt: createdAttempt.startedAt,
         endedAt: null,
         expiresAt: createdAttempt.expiresAt,
       }),
+      getComparison: vi
+        .fn<AttemptService["getComparison"]>()
+        .mockResolvedValue(null),
       createTurn: vi
         .fn<AttemptService["createTurn"]>()
         .mockResolvedValue({ data: pendingTurn, created: true }),
@@ -245,5 +250,86 @@ describe("attempt endpoints", () => {
       data: { id: attemptId, status: "EVALUATING" },
     });
     expect(attemptService.finish).toHaveBeenCalledWith(ownerId, attemptId);
+  });
+
+  it("returns comparison data for an owned attempt", async () => {
+    const mockComparison = {
+      previousAttemptId: "11111111-1111-4111-8111-111111111111",
+      previousDifficulty: "MEDIUM" as const,
+      currentDifficulty: "MEDIUM" as const,
+      comparable: true,
+      nonEquivalentReason: null,
+      previousOverallScore: 65,
+      currentOverallScore: 78,
+      overallDelta: 13,
+      previousSkills: {
+        clarity: 60,
+        assertiveness: 55,
+        empathy: 70,
+        structure: 65,
+        conciseness: 75,
+      },
+      currentSkills: {
+        clarity: 75,
+        assertiveness: 70,
+        empathy: 75,
+        structure: 70,
+        conciseness: 80,
+      },
+      skillDeltas: {
+        clarity: 15,
+        assertiveness: 15,
+        empathy: 5,
+        structure: 5,
+        conciseness: 5,
+      },
+      objectives: [
+        {
+          objectiveId: "CLEAR_REQUEST",
+          previousStatus: "PARTIALLY_ACHIEVED" as const,
+          currentStatus: "ACHIEVED" as const,
+          statusChanged: "IMPROVED" as const,
+        },
+      ],
+      weakArea: {
+        skill: "ASSERTIVENESS" as const,
+        previousScore: 55,
+        currentScore: 70,
+        delta: 15,
+        improved: true,
+      },
+    };
+
+    const getComparison = vi
+      .fn<AttemptService["getComparison"]>()
+      .mockResolvedValue(mockComparison);
+    const { app } = createAttemptApp({ getComparison });
+
+    const response = await request(app).get(
+      `/api/v1/attempts/${attemptId}/comparison`,
+    );
+
+    expect(response.status).toBe(200);
+    expect(AttemptComparisonResponseSchema.parse(response.body).data).toEqual(
+      mockComparison,
+    );
+    expect(getComparison).toHaveBeenCalledWith(ownerId, attemptId);
+  });
+
+  it("returns null comparison when attempt is not a retry or not comparable", async () => {
+    const getComparison = vi
+      .fn<AttemptService["getComparison"]>()
+      .mockResolvedValue(null);
+    const { app } = createAttemptApp({ getComparison });
+
+    const response = await request(app).get(
+      `/api/v1/attempts/${attemptId}/comparison`,
+    );
+
+    expect(response.status).toBe(200);
+    expect(
+      AttemptComparisonResponseSchema.parse(response.body).data,
+    ).toBeNull();
+    expect(getComparison).toHaveBeenCalledWith(ownerId, attemptId);
   });
 });

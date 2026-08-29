@@ -20,6 +20,9 @@ const unusedAttemptService = {
   getOwned: async () => {
     throw new Error("Attempt service should not run");
   },
+  getComparison: async () => {
+    throw new Error("Attempt service should not run");
+  },
   createTurn: async () => {
     throw new Error("Attempt service should not run");
   },

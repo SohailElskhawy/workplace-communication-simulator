@@ -1,5 +1,19 @@
 export { ApiErrorResponseSchema, type ApiErrorResponse } from "./error.js";
 export {
+  AttemptComparisonResponseSchema,
+  AttemptComparisonSchema,
+  ObjectiveDeltaSchema,
+  ObjectiveDeltaStatusSchema,
+  SkillDeltasSchema,
+  WeakAreaComparisonSchema,
+  type AttemptComparison,
+  type AttemptComparisonResponse,
+  type ObjectiveDelta,
+  type ObjectiveDeltaStatus,
+  type SkillDeltas,
+  type WeakAreaComparison,
+} from "./comparison.js";
+export {
   AttemptDetailResponseSchema,
   AttemptScenarioSchema,
   AttemptStatusSchema,

@@ -5,7 +5,9 @@ import type {
   AttemptDetailResponse,
   CoachingMoment,
   ConversationTurn,
+  Difficulty,
   EvaluationData,
+  ObjectiveDelta,
   ObjectiveResult,
 } from "@kalemny/contracts";
 import Link from "next/link";
@@ -15,6 +17,8 @@ import { useEffect, useMemo, useState } from "react";
 import { ApiClientError, createApiClient } from "../../../../lib/api-client";
 import {
   formatCoachingMomentType,
+  formatDelta,
+  formatObjectiveDeltaStatus,
   formatObjectiveStatus,
   getScoreBand,
   getSkillMetadata,
@@ -35,6 +39,9 @@ export default function ResultsPage() {
   const [error, setError] = useState<string | null>(null);
   const [retryingPractice, setRetryingPractice] = useState(false);
   const [showFullTranscript, setShowFullTranscript] = useState(false);
+  const [retryDifficulty, setRetryDifficulty] = useState<Difficulty | null>(
+    null,
+  );
 
   const turnMap = useMemo(() => {
     const map = new Map<string, ConversationTurn>();
@@ -70,16 +77,24 @@ export default function ResultsPage() {
           setEvaluating(true);
           try {
             const evalResult = await client.evaluateAttempt(token, attemptId);
+            const refreshed = await client
+              .fetchAttempt(token, attemptId)
+              .catch(() => null);
+
             if (!isMounted) return;
-            setAttempt((prev) =>
-              prev
-                ? {
-                    ...prev,
-                    status: "COMPLETED",
-                    evaluation: evalResult,
-                  }
-                : prev,
-            );
+            if (refreshed) {
+              setAttempt(refreshed);
+            } else {
+              setAttempt((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      status: "COMPLETED",
+                      evaluation: evalResult,
+                    }
+                  : prev,
+              );
+            }
           } catch (evalErr) {
             if (!isMounted) return;
             setError(
@@ -126,15 +141,23 @@ export default function ResultsPage() {
       const client = createApiClient(apiUrl);
 
       const evalResult = await client.evaluateAttempt(token, attemptId);
-      setAttempt((prev) =>
-        prev
-          ? {
-              ...prev,
-              status: "COMPLETED",
-              evaluation: evalResult,
-            }
-          : prev,
-      );
+      const refreshed = await client
+        .fetchAttempt(token, attemptId)
+        .catch(() => null);
+
+      if (refreshed) {
+        setAttempt(refreshed);
+      } else {
+        setAttempt((prev) =>
+          prev
+            ? {
+                ...prev,
+                status: "COMPLETED",
+                evaluation: evalResult,
+              }
+            : prev,
+        );
+      }
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Evaluation failed on retry.",
@@ -144,7 +167,7 @@ export default function ResultsPage() {
     }
   };
 
-  const handlePracticeAgain = async () => {
+  const handlePracticeAgain = async (customDifficulty?: Difficulty) => {
     if (!attempt || retryingPractice) return;
     try {
       setRetryingPractice(true);
@@ -155,9 +178,12 @@ export default function ResultsPage() {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
       const client = createApiClient(apiUrl);
 
+      const targetDifficulty =
+        customDifficulty ?? retryDifficulty ?? attempt.difficulty;
+
       const newAttempt = await client.createAttempt(token, {
         scenarioKey: attempt.scenario.key,
-        difficulty: attempt.difficulty,
+        difficulty: targetDifficulty,
         retryOfAttemptId: attempt.id,
       });
 
@@ -282,7 +308,7 @@ export default function ResultsPage() {
           <div className="mt-6 flex justify-center gap-3">
             <button
               type="button"
-              onClick={handlePracticeAgain}
+              onClick={() => handlePracticeAgain()}
               className="inline-flex items-center rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-500"
             >
               Start New Simulation
@@ -344,10 +370,30 @@ export default function ResultsPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center rounded-xl border border-slate-200 bg-slate-50 p-0.5 text-xs font-semibold">
+            {(["EASY", "MEDIUM", "HARD"] as const).map((diff) => {
+              const currentChoice = retryDifficulty ?? attempt.difficulty;
+              const isSelected = currentChoice === diff;
+              return (
+                <button
+                  key={diff}
+                  type="button"
+                  onClick={() => setRetryDifficulty(diff)}
+                  className={`rounded-lg px-2.5 py-1.5 transition ${
+                    isSelected
+                      ? "bg-white text-indigo-700 shadow-2xs font-bold"
+                      : "text-slate-500 hover:text-slate-900"
+                  }`}
+                >
+                  {diff}
+                </button>
+              );
+            })}
+          </div>
           <button
             type="button"
-            onClick={handlePracticeAgain}
+            onClick={() => handlePracticeAgain()}
             disabled={retryingPractice}
             className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-indigo-500 disabled:opacity-50"
           >
@@ -431,7 +477,278 @@ export default function ResultsPage() {
         </div>
       </section>
 
-      {/* 2. Universal Communication Skills Breakdown (5 Skills) */}
+      {/* 2. Attempt Comparison (when attempt was a retry and comparison is available) */}
+      {attempt.comparison && (
+        <section className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-bold tracking-tight text-slate-900">
+                  Attempt Comparison
+                </h2>
+                {attempt.comparison.comparable ? (
+                  <span className="inline-flex items-center rounded-full bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 text-xs font-semibold text-indigo-700">
+                    Same Difficulty ({attempt.comparison.currentDifficulty})
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center rounded-full bg-amber-50 border border-amber-200 px-2.5 py-0.5 text-xs font-semibold text-amber-800">
+                    Cross-Difficulty Notice (
+                    {attempt.comparison.previousDifficulty} →{" "}
+                    {attempt.comparison.currentDifficulty})
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-slate-500">
+                {attempt.comparison.comparable
+                  ? "Direct comparison against your previous attempt at this difficulty level."
+                  : "Exploratory comparison across different difficulty settings."}
+              </p>
+            </div>
+          </div>
+
+          {/* Non-Equivalent Alert when difficulties differ */}
+          {!attempt.comparison.comparable && (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-5 text-xs text-amber-900 shadow-xs">
+              <div className="flex items-start gap-3">
+                <span className="text-lg">⚠️</span>
+                <div className="space-y-1">
+                  <h3 className="font-bold text-amber-950">
+                    Non-Equivalent Difficulty Comparison
+                  </h3>
+                  <p className="leading-relaxed">
+                    {attempt.comparison.nonEquivalentReason}
+                  </p>
+                  <p className="text-amber-800/90 text-[11px] leading-relaxed">
+                    Score changes across different difficulty settings do not
+                    represent strict like-for-like improvement because AI
+                    objections, resistance, and concession thresholds change.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Comparison Cards Grid */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {/* Overall Score Delta Card */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs flex flex-col justify-between">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                  Overall Score Change
+                </span>
+                <div className="mt-3 flex items-baseline justify-between">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-bold text-slate-400">
+                      {attempt.comparison.previousOverallScore}
+                    </span>
+                    <span className="text-sm font-semibold text-slate-400">
+                      →
+                    </span>
+                    <span className="text-3xl font-extrabold text-slate-900">
+                      {attempt.comparison.currentOverallScore}
+                    </span>
+                  </div>
+                  {(() => {
+                    const deltaInfo = formatDelta(
+                      attempt.comparison.overallDelta,
+                    );
+                    return (
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold border ${deltaInfo.badgeClass}`}
+                      >
+                        <span>{deltaInfo.arrow}</span>
+                        <span>{deltaInfo.text} pts</span>
+                      </span>
+                    );
+                  })()}
+                </div>
+              </div>
+              <p className="mt-3 text-[11px] text-slate-500 border-t border-slate-100 pt-2.5">
+                {attempt.comparison.overallDelta > 0
+                  ? "Your overall performance improved in this attempt."
+                  : attempt.comparison.overallDelta < 0
+                    ? "Overall score declined compared to previous attempt."
+                    : "Overall score remained unchanged."}
+              </p>
+            </div>
+
+            {/* Targeted Weak Area Progress Card */}
+            {attempt.comparison.weakArea && (
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs flex flex-col justify-between sm:col-span-2">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                      Previous Coaching Target Progress
+                    </span>
+                    <span
+                      className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold border ${
+                        attempt.comparison.weakArea.improved
+                          ? "bg-emerald-100 text-emerald-800 border-emerald-200"
+                          : "bg-amber-100 text-amber-800 border-amber-200"
+                      }`}
+                    >
+                      {attempt.comparison.weakArea.improved
+                        ? "✓ Goal Improved"
+                        : "Needs Continued Focus"}
+                    </span>
+                  </div>
+                  <div className="mt-3 flex items-baseline justify-between">
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-900">
+                        {
+                          getSkillMetadata(attempt.comparison.weakArea.skill)
+                            .name
+                        }
+                      </h4>
+                      <p className="text-xs text-slate-500">
+                        Identified as primary growth area in previous session.
+                      </p>
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-lg font-bold text-slate-400">
+                        {attempt.comparison.weakArea.previousScore}
+                      </span>
+                      <span className="text-xs text-slate-400">→</span>
+                      <span className="text-xl font-extrabold text-slate-900">
+                        {attempt.comparison.weakArea.currentScore}
+                      </span>
+                      {(() => {
+                        const deltaInfo = formatDelta(
+                          attempt.comparison.weakArea.delta,
+                        );
+                        return (
+                          <span
+                            className={`ml-1 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold border ${deltaInfo.badgeClass}`}
+                          >
+                            {deltaInfo.text}
+                          </span>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                </div>
+                <p className="mt-3 text-[11px] text-slate-500 border-t border-slate-100 pt-2.5">
+                  {attempt.comparison.weakArea.improved
+                    ? `Successfully raised ${getSkillMetadata(attempt.comparison.weakArea.skill).name.toLowerCase()} score by ${attempt.comparison.weakArea.delta} points.`
+                    : `${getSkillMetadata(attempt.comparison.weakArea.skill).name} remains a priority growth area.`}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* 5 Skills Delta Breakdown */}
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
+            <div className="border-b border-slate-100 bg-slate-50/50 px-5 py-3 text-xs font-bold text-slate-700">
+              Universal Skills Delta Comparison
+            </div>
+            <div className="divide-y divide-slate-100">
+              {(
+                [
+                  "clarity",
+                  "assertiveness",
+                  "empathy",
+                  "structure",
+                  "conciseness",
+                ] as const
+              ).map((skillKey) => {
+                const prevScore = attempt.comparison!.previousSkills[skillKey];
+                const currScore = attempt.comparison!.currentSkills[skillKey];
+                const delta = attempt.comparison!.skillDeltas[skillKey];
+                const deltaInfo = formatDelta(delta);
+                const meta =
+                  UNIVERSAL_SKILLS_META[skillKey] ?? getSkillMetadata(skillKey);
+
+                return (
+                  <div
+                    key={skillKey}
+                    className="flex items-center justify-between px-5 py-3.5 text-xs"
+                  >
+                    <div>
+                      <div className="font-bold text-slate-900">
+                        {meta.name}
+                      </div>
+                      <div className="text-[11px] text-slate-400">
+                        {meta.description}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-baseline gap-1.5 text-xs text-slate-600">
+                        <span className="font-medium text-slate-400">
+                          {prevScore}
+                        </span>
+                        <span className="text-slate-300">→</span>
+                        <span className="font-bold text-slate-900">
+                          {currScore}
+                        </span>
+                      </div>
+                      <span
+                        className={`inline-flex min-w-14 items-center justify-center rounded-full px-2 py-0.5 text-xs font-bold border ${deltaInfo.badgeClass}`}
+                      >
+                        {deltaInfo.text}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Objectives Delta Breakdown */}
+          {attempt.comparison.objectives.length > 0 && (
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
+              <div className="border-b border-slate-100 bg-slate-50/50 px-5 py-3 text-xs font-bold text-slate-700">
+                Scenario Objectives Outcome Changes
+              </div>
+              <div className="divide-y divide-slate-100">
+                {attempt.comparison.objectives.map((obj: ObjectiveDelta) => {
+                  const prevStatusInfo = formatObjectiveStatus(
+                    obj.previousStatus,
+                  );
+                  const currStatusInfo = formatObjectiveStatus(
+                    obj.currentStatus,
+                  );
+                  const deltaStatusInfo = formatObjectiveDeltaStatus(
+                    obj.statusChanged,
+                  );
+
+                  return (
+                    <div
+                      key={obj.objectiveId}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-3.5 text-xs"
+                    >
+                      <div className="font-bold text-slate-900">
+                        {obj.objectiveId.replace(/_/g, " ")}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className={`inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold border ${prevStatusInfo.badgeClass}`}
+                          >
+                            {prevStatusInfo.label}
+                          </span>
+                          <span className="text-slate-400">→</span>
+                          <span
+                            className={`inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold border ${currStatusInfo.badgeClass}`}
+                          >
+                            {currStatusInfo.label}
+                          </span>
+                        </div>
+                        <span
+                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold border ${deltaStatusInfo.badgeClass}`}
+                        >
+                          {deltaStatusInfo.icon} {deltaStatusInfo.label}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* 3. Universal Communication Skills Breakdown (5 Skills) */}
       <section className="space-y-4">
         <div>
           <h2 className="text-lg font-bold tracking-tight text-slate-900">
@@ -522,7 +839,7 @@ export default function ResultsPage() {
 
           <button
             type="button"
-            onClick={handlePracticeAgain}
+            onClick={() => handlePracticeAgain()}
             disabled={retryingPractice}
             className="inline-flex shrink-0 items-center justify-center rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-indigo-500"
           >

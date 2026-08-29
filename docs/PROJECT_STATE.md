@@ -233,30 +233,38 @@ Do not implement:
 
 ## Current Development Milestone
 
-**Milestone 7 — Results Experience** is complete. The full vertical slice flow
-(`Auth → Scenario → Start Attempt → Text Conversation → Finish → Evaluation → Persisted Results`)
-is implemented and verified locally across frontend, backend, and shared contracts.
+**Milestone 8 — Retry & Attempt Comparison** is complete. The retry flow and deterministic comparison engine are implemented and verified end-to-end across contracts, backend, and frontend.
 
-Completed results experience:
+Completed Retry & Comparison features:
 
-- Type-safe, validated API client (`createApiClient`, `ApiClientError`) handling REST communication with Express API and Clerk token authorization;
-- Scoring presentation utilities (`score-utils.ts`) for deterministic score bands (Exceptional, Strong, Competent, Developing, Needs Focus), universal skill metadata, objective status formatting, and coaching moment type badges;
-- App layout with persistent authenticated header (`AppHeader`), Clerk `UserButton`, and responsive navigation;
-- Scenario hub page (`/app`) displaying available scenarios (Salary Negotiation v1) with categories, summaries, and practice triggers;
-- Scenario briefing & configuration page (`/app/scenarios/[scenarioKey]`) with situation context, role details, primary objective, stakes, and difficulty selection (Easy / Medium / Hard);
-- Active text simulation conversation workspace (`/app/simulations/[attemptId]`) with counterpart opening message, learner/AI message stream, pending AI response indicator, turn error recovery with retry trigger, composer with Enter-to-send and character count, and simulation finish action;
-- Comprehensive Results Page (`/app/results/[attemptId]`):
-  - Overall score banner (0–100) with score band and clear explanation of the deterministic 70/30 formula (70% universal skills average + 30% scenario objectives);
-  - Executive coaching summary;
-  - 5 Universal Communication Skills visual breakdown (Clarity, Assertiveness, Empathy, Structure, Conciseness) with proficiency score bars and qualitative band badges;
-  - Scenario Objectives outcomes with status badges (Achieved, Partially Achieved, Missed), explanations, and evidence turn references;
-  - Key Strengths and Areas for Growth sections with evidence references;
-  - Evidence-linked Coaching Moments matching stored learner turn text (`moment.turnId` to `turn.userText` from attempt transcript, strictly avoiding quote fabrication), coach feedback, and Stronger Alternative Phrasing (`betterResponse`);
-  - Recommended Next Focus area with targeted skill and actionable rationale;
-  - Full toggleable conversation transcript review highlighting turns cited in coaching evidence;
-  - Asynchronous evaluation state handling (animated evaluating indicator with automatic evaluation triggering), error recovery state for `EVALUATION_FAILED` with "Retry Evaluation" button, and abandoned state handling for 0-turn sessions;
-  - "Practice Again (Retry)" action creating a new attempt linked via `retryOfAttemptId`;
-- Unit tests covering scoring utilities, formatting, API client, and error handling.
+- Shared Comparison Contract (`packages/contracts`):
+  - `SkillDeltasSchema` & `type SkillDeltas` calculating exact point deltas for all 5 universal communication skills (Clarity, Assertiveness, Empathy, Structure, Conciseness);
+  - `ObjectiveDeltaStatusSchema` (`IMPROVED`, `REGRESSED`, `UNCHANGED`) & `ObjectiveDeltaSchema` comparing previous vs. current status for all scenario objectives;
+  - `WeakAreaComparisonSchema` tracking progress against the specific growth target identified in the previous attempt's `nextFocus.skill`;
+  - `AttemptComparisonSchema` with difficulty equivalence checking (`comparable: boolean`, `nonEquivalentReason: string | null`), deterministic overall score delta, universal skill deltas, objective status changes, and weak area focus progress;
+  - `AttemptComparisonResponseSchema` for dedicated endpoint queries (`GET /api/v1/attempts/:attemptId/comparison`);
+  - Extended `AttemptDetailResponseSchema` to optionally include `comparison`.
+- Pure Deterministic Comparison Logic (`apps/api`):
+  - `calculateAttemptComparison(current, previous)` computing score deltas, objective outcome changes, weak area progress, and cross-difficulty non-equivalence flags;
+  - Strictly enforces the cross-difficulty rule: attempts with differing difficulty levels (e.g. Medium to Hard) are marked `comparable: false` with explicit informational reason text, while preserving numerical transparency.
+- Backend Repository, Service, and Routes (`apps/api`):
+  - Prisma query inclusion of `retryOfAttempt` relation;
+  - Automatic calculation and embedding of `comparison` in attempt details;
+  - Added dedicated `GET /api/v1/attempts/:attemptId/comparison` endpoint with authentication, authorization, and 404 validation.
+- Web Results UI & Score Utilities (`apps/web`):
+  - `formatDelta` helper formatting positive (+X, emerald badge), negative (-X, rose badge), and neutral (0, slate badge) deltas;
+  - `formatObjectiveDeltaStatus` helper displaying visual outcome changes (↑ Improved, ↓ Regressed, – No Change);
+  - `fetchAttemptComparison` in typed `api-client.ts`;
+  - Dedicated **Attempt Comparison** section on the results page (`/app/results/[attemptId]`):
+    - Overall score change card with point delta pill;
+    - Targeted Weak Area progress card with previous vs. current score and goal outcome badge ("✓ Goal Improved" / "Needs Continued Focus");
+    - 5 Universal Skills delta breakdown table;
+    - Scenario Objectives outcome changes table;
+    - Prominent cross-difficulty warning notice when comparing across different difficulty settings.
+  - Interactive retry controls defaulting to the current attempt's difficulty while allowing explicit difficulty selection (Easy / Medium / Hard) for the retry attempt;
+  - Immutability preserved: every retry creates a new attempt referencing `retryOfAttemptId`; historical attempts are never overwritten or mutated.
+- Comprehensive Unit & Integration Tests:
+  - 126 tests across 26 test files passing cleanly.
 
 Verified on August 29, 2026 with:
 
@@ -269,8 +277,6 @@ corepack pnpm format:check
 corepack pnpm prisma:validate
 corepack pnpm prisma:generate
 ```
-
-The full suite contains 107 passing tests across 24 test files.
 
 ---
 
@@ -286,8 +292,9 @@ The full suite contains 107 passing tests across 24 test files.
 8. Text roleplay (Complete)
 9. Structured evaluation + Zod validation (Complete)
 10. Deterministic 70/30 scoring (Complete)
-11. Results experience (Milestone 7 - Complete)
-12. Retry and comparison (Milestone 8)
+11. Results experience (Complete)
+12. Retry and comparison (Milestone 8 - Complete)
+13. Session history and progress profile (Milestone 9)
 
 ---
 
@@ -309,4 +316,4 @@ Some of these documents may not exist yet. Do not invent missing requirements; u
 
 ## Current Next Task
 
-Milestone 7 is complete. The full text-only vertical slice (`Auth → Scenario → Start Attempt → Text Conversation → Finish → Evaluation → Persisted Results`) is working end-to-end. Proceed to **Milestone 8 — Retry & Attempt Comparison** when directed.
+Milestone 8 is complete. The retry loop and attempt comparison are fully verified across contracts, API, and web. Proceed to **Milestone 9 — History & Progress Profile** when directed. Do not start Milestone 9 without user approval.

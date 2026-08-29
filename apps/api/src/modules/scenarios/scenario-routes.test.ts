@@ -25,6 +25,9 @@ const unusedAttemptService = {
   getOwned: async () => {
     throw new Error("Attempt service should not run for scenario routes");
   },
+  getComparison: async () => {
+    throw new Error("Attempt service should not run for scenario routes");
+  },
   createTurn: async () => {
     throw new Error("Attempt service should not run for scenario routes");
   },

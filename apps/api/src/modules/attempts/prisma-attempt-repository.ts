@@ -1,5 +1,6 @@
 import { Prisma, type PrismaClient } from "../../generated/prisma/client.js";
 import { mapPrismaEvaluationToData } from "../evaluations/evaluation-repository.js";
+import { calculateAttemptComparison } from "./attempt-comparison.js";
 import { getFinishStatus, getTurnRejection } from "./attempt-rules.js";
 import type {
   AttemptRecord,
@@ -34,6 +35,13 @@ const attemptInclude = {
     select: turnSelection,
   },
   evaluation: true,
+  retryOfAttempt: {
+    select: {
+      id: true,
+      difficulty: true,
+      evaluation: true,
+    },
+  },
 } as const;
 
 type PrismaAttemptRecord = Prisma.SimulationAttemptGetPayload<{
@@ -49,6 +57,26 @@ function mapTurn(turn: PrismaTurnRecord): ConversationTurnRecord {
 }
 
 function mapAttempt(attempt: PrismaAttemptRecord): AttemptRecord {
+  const currentEval = mapPrismaEvaluationToData(attempt.evaluation);
+  const previousEval = attempt.retryOfAttempt
+    ? mapPrismaEvaluationToData(attempt.retryOfAttempt.evaluation)
+    : null;
+
+  const comparison = attempt.retryOfAttempt
+    ? calculateAttemptComparison(
+        {
+          id: attempt.id,
+          difficulty: attempt.difficulty,
+          evaluation: currentEval,
+        },
+        {
+          id: attempt.retryOfAttempt.id,
+          difficulty: attempt.retryOfAttempt.difficulty,
+          evaluation: previousEval,
+        },
+      )
+    : null;
+
   return {
     id: attempt.id,
     userId: attempt.userId,
@@ -61,7 +89,8 @@ function mapAttempt(attempt: PrismaAttemptRecord): AttemptRecord {
     evaluationStartedAt: attempt.evaluationStartedAt,
     scenario: attempt.scenario,
     turns: attempt.conversationTurns.map(mapTurn),
-    evaluation: mapPrismaEvaluationToData(attempt.evaluation),
+    evaluation: currentEval,
+    comparison,
   };
 }
 

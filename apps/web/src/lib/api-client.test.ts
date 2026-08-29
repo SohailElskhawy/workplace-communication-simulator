@@ -88,4 +88,76 @@ describe("api-client", () => {
       "Network connection failure",
     );
   });
+
+  it("fetches attempt comparison", async () => {
+    const mockData = {
+      data: {
+        previousAttemptId: "11111111-1111-4111-8111-111111111111",
+        previousDifficulty: "MEDIUM",
+        currentDifficulty: "MEDIUM",
+        comparable: true,
+        nonEquivalentReason: null,
+        previousOverallScore: 65,
+        currentOverallScore: 78,
+        overallDelta: 13,
+        previousSkills: {
+          clarity: 60,
+          assertiveness: 55,
+          empathy: 70,
+          structure: 65,
+          conciseness: 75,
+        },
+        currentSkills: {
+          clarity: 75,
+          assertiveness: 70,
+          empathy: 75,
+          structure: 70,
+          conciseness: 80,
+        },
+        skillDeltas: {
+          clarity: 15,
+          assertiveness: 15,
+          empathy: 5,
+          structure: 5,
+          conciseness: 5,
+        },
+        objectives: [
+          {
+            objectiveId: "CLEAR_REQUEST",
+            previousStatus: "PARTIALLY_ACHIEVED",
+            currentStatus: "ACHIEVED",
+            statusChanged: "IMPROVED",
+          },
+        ],
+        weakArea: {
+          skill: "ASSERTIVENESS",
+          previousScore: 55,
+          currentScore: 70,
+          delta: 15,
+          improved: true,
+        },
+      },
+    };
+
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => mockData,
+    } as Response);
+
+    const result = await client.fetchAttemptComparison(
+      token,
+      "123e4567-e89b-12d3-a456-426614174000",
+    );
+
+    expect(fetch).toHaveBeenCalledWith(
+      "https://api.test.kalemny.com/api/v1/attempts/123e4567-e89b-12d3-a456-426614174000/comparison",
+      expect.objectContaining({
+        headers: expect.any(Headers),
+        method: "GET",
+      }),
+    );
+    expect(result?.comparable).toBe(true);
+    expect(result?.overallDelta).toBe(13);
+  });
 });
