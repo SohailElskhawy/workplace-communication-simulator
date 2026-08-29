@@ -55,6 +55,12 @@ const unusedProgressService = {
   },
 };
 
+const unusedVoiceService = {
+  transcribe: async () => {
+    throw new Error("Voice service should not run");
+  },
+};
+
 describe("GET /api/v1/health", () => {
   it("returns the shared health response", async () => {
     const response = await request(
@@ -71,6 +77,7 @@ describe("GET /api/v1/health", () => {
             throw new Error("Provisioning should not run on health check");
           },
         },
+        voiceService: unusedVoiceService,
         webOrigin: "http://localhost:3000",
       }),
     ).get("/api/v1/health");
@@ -106,6 +113,7 @@ describe("GET /api/v1/me", () => {
             throw new Error("Provisioning must not run without authentication");
           },
         },
+        voiceService: unusedVoiceService,
         webOrigin: "http://localhost:3000",
       }),
     ).get("/api/v1/me");
@@ -136,6 +144,7 @@ describe("GET /api/v1/me", () => {
             return { id: localUserId };
           },
         },
+        voiceService: unusedVoiceService,
         webOrigin: "http://localhost:3000",
       }),
     ).get("/api/v1/me");

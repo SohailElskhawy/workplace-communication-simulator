@@ -9,6 +9,7 @@ import {
   ProgressResponseSchema,
   ScenarioDetailResponseSchema,
   ScenarioListResponseSchema,
+  TranscriptionResponseSchema,
   TurnResponseSchema,
   type AttemptComparison,
   type AttemptDetailResponse,
@@ -21,6 +22,7 @@ import {
   type ProgressData,
   type PublicScenarioDetail,
   type PublicScenarioSummary,
+  type TranscriptionData,
   type TurnResponse,
 } from "@kalemny/contracts";
 
@@ -365,6 +367,30 @@ export function createApiClient(baseUrl: string) {
         `/api/v1/attempts/${encodeURIComponent(attemptId)}`,
         token,
         { method: "DELETE" },
+      );
+    },
+
+    async transcribeAudio(
+      token: string,
+      attemptId: string,
+      audioBlob: Blob,
+      durationMs?: number,
+    ): Promise<TranscriptionData> {
+      const formData = new FormData();
+      formData.append("audio", audioBlob, "recording.webm");
+      if (durationMs != null) {
+        formData.append("durationMs", durationMs.toString());
+      }
+
+      return request(
+        baseUrl,
+        `/api/v1/attempts/${encodeURIComponent(attemptId)}/transcriptions`,
+        token,
+        {
+          method: "POST",
+          body: formData,
+        },
+        TranscriptionResponseSchema,
       );
     },
   };

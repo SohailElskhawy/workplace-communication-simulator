@@ -22,6 +22,7 @@ function createSuccessfulAiService(
   return {
     roleplayModel: "deepseek/deepseek-v4-flash-0731",
     evaluationModel: "openai/gpt-5.6-luna-pro",
+    transcriptionModel: "openai/whisper-large-v3-turbo",
     generateRoleplayReply: vi.fn().mockResolvedValue({
       text: "What evidence supports the adjustment you have in mind?",
       latencyMs: 125,
@@ -30,6 +31,7 @@ function createSuccessfulAiService(
       estimatedCost: 0.00012,
     }),
     evaluateSimulation: vi.fn(),
+    transcribeAudio: vi.fn(),
     ...overrides,
   };
 }

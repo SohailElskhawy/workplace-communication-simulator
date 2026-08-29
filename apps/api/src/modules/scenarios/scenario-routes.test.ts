@@ -79,6 +79,11 @@ function createScenarioApp() {
         throw new Error("Public scenario retrieval must not provision a user");
       },
     },
+    voiceService: {
+      transcribe: async () => {
+        throw new Error("Voice service should not run for scenario routes");
+      },
+    },
     webOrigin: "http://localhost:3000",
   });
 }

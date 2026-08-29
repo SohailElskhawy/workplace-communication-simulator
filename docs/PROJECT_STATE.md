@@ -233,41 +233,33 @@ Do not implement:
 
 ## Current Development Milestone
 
-**Milestone 9 — History & Progress Profile** is complete. Rehearsal history, dynamic rolling 5-session progress calculation, weakest skill identification, deterministic scenario recommendation, session deletion, and past result reopening are implemented and verified end-to-end across contracts, backend, and frontend.
+**Milestone 10 — Push-to-Talk STT** is complete. Browser MediaRecorder push-to-talk audio capture, microphone permission and error handling, memory-only audio parsing with zero audio persistence, OpenRouter Whisper transcription integration, editable composer insertion, and reliable text fallback are fully implemented and verified end-to-end.
 
-Completed History & Progress features:
+Completed Push-to-Talk STT features:
 
-- Shared History & Progress Contracts (`packages/contracts`):
-  - `HistoryItemSchema`, `HistoryPaginationMetaSchema`, `HistoryResponseSchema`, and `HistoryQuerySchema` for paginated rehearsal records;
-  - `RecommendedScenarioSchema`, `ProgressDataSchema`, and `ProgressResponseSchema` for universal skill averages, weakest skill spotlight, and scenario recommendations.
-- Pure Deterministic Progress Logic (`apps/api`):
-  - `calculateProgressProfile` computing integer averages (`Math.round`) for each of the 5 universal skills across the learner's latest up to 5 eligible sessions (`progressEligible: true`, >= 3 substantive user turns);
-  - Deterministic weakest skill determination with canonical tie-breaker (`CLARITY` → `ASSERTIVENESS` → `EMPATHY` → `STRUCTURE` → `CONCISENESS`);
-  - `getRecommendedScenario` providing deterministic scenario recommendations based on the learner's weakest skill without AI hallucinations or runtime LLM dependencies.
-- Backend Repository, Services, and Routes (`apps/api`):
-  - `DELETE /api/v1/attempts/:attemptId` with strict user ownership checks (returns 404 for non-owned attempts), cascading deletion of turns and evaluation, and foreign key `onDelete: SetNull` for retries;
-  - `GET /api/v1/history?cursor=...&limit=...` with cursor-based pagination and status mapping;
-  - `GET /api/v1/progress` querying latest <= 5 eligible completed evaluations and computing the active skill profile.
-- Web Client, Navigation, and Pages (`apps/web`):
-  - `fetchHistory`, `fetchProgress`, and `deleteAttempt` in typed `api-client.ts`;
-  - Global `AppHeader` updated with direct navigation links to `/app` (Scenarios), `/app/progress` (Progress), and `/app/history` (History);
-  - `/app/history` Page:
-    - Session list with difficulty, status badges, score pills, retry indicators, and formatted timestamps;
-    - Cursor pagination with "Load Older Sessions";
-    - "Resume" link for active sessions and "View Results" link for completed/evaluating sessions;
-    - Modal confirmation dialog for secure session deletion.
-  - `/app/progress` Page:
-    - 5-session rolling window overview banner;
-    - Weakest Skill spotlight card explaining primary growth opportunities;
-    - Recommended Practice Scenario CTA card linking directly to rehearsal;
-    - 5 Universal Skill breakdown grid with score bands and visual progress bars;
-    - Friendly 0-session empty state guiding users to their first simulation.
-  - `/app/results/[attemptId]` Page:
-    - Breadcrumbs linking back to History and Scenarios;
-    - Action bar button linking directly to the Progress Profile;
-    - In-page Session Deletion with confirmation modal and redirect to History.
+- Shared Transcription Contracts (`packages/contracts`):
+  - `TranscriptionDataSchema`, `TranscriptionResponseSchema`, `TranscriptionData`, and `TranscriptionResponse`.
+- Audio & Voice Validation Rules (`apps/api`):
+  - Supported audio MIME types (`audio/webm`, `audio/ogg`, `audio/mp4`, `audio/m4a`, `audio/wav`, `audio/mpeg`, `audio/flac`, `video/webm`, `video/mp4` with codec parameter handling);
+  - Strict 120-second recording duration ceiling (`MAX_RECORDING_DURATION_MS = 120_000`);
+  - 25MB payload ceiling and non-empty audio buffer enforcement.
+- OpenRouter Transcription Provider (`apps/api`):
+  - `transcribeAudio` calling OpenRouter `/api/v1/audio/transcriptions` with multipart `FormData` and candidate model `openai/whisper-large-v3-turbo`;
+  - Explicit abort timeout control (`AI_TIMEOUT`) and safe error mapping (`TRANSCRIPTION_FAILED`, 502);
+  - Invariant compliance: zero raw audio persistence to disk or database; telemetry recorded via `AiUsageEvent` with `AiOperation.TRANSCRIPTION`.
+- Voice Module & Endpoint (`apps/api`):
+  - `POST /api/v1/attempts/:attemptId/transcriptions` using `multer.memoryStorage()` for in-memory multipart parsing;
+  - Attempt ownership check (returns 404 for nonexistent/non-owned attempts) and `ACTIVE` state validation (returns 409 for finished/abandoned attempts);
+  - Transcription does NOT create a `ConversationTurn`; it returns `{ data: { transcript: "..." } }`.
+- Frontend Voice Recording & Composer Integration (`apps/web`):
+  - `useVoiceRecorder` custom hook managing lifecycle, streams, timers, and permissions (`idle`, `requesting_permission`, `recording`, `transcribing`, `error`);
+  - Automatic stream cleanup releasing microphone tracks immediately upon stop, cancel, or unmount;
+  - Live recording countdown/duration bar (`00:15 / 02:00`) with automatic stop and transcription at 120 seconds;
+  - Clear diagnostic permission error handling (`NotAllowedError`, `NotFoundError`, etc.) with non-intrusive dismissable notification;
+  - Editable Composer integration: transcript populates/appends to textarea, focuses the input, and tracks `inputMethod: "VOICE"` when submitted;
+  - Reliable text fallback: text input remains completely functional and unblocked at all times regardless of microphone availability or errors.
 - Comprehensive Unit & Integration Tests:
-  - 162 tests across 33 test files passing cleanly.
+  - 197 tests across 39 test files passing cleanly.
 
 Verified on August 29, 2026 with:
 
@@ -298,7 +290,8 @@ corepack pnpm prisma:generate
 11. Results experience (Complete)
 12. Retry and comparison (Milestone 8 - Complete)
 13. Session history and progress profile (Milestone 9 - Complete)
-14. Voice input / Push-to-talk transcription (Milestone 10)
+14. Voice input / Push-to-talk transcription (Milestone 10 - Complete)
+15. Text-to-Speech audio generation / Playback (Milestone 11)
 
 ---
 
@@ -320,4 +313,5 @@ Some of these documents may not exist yet. Do not invent missing requirements; u
 
 ## Current Next Task
 
-Milestone 9 is complete. Session history, rolling 5-session progress calculation, weakest skill determination, recommended scenarios, session deletion, and past result reopening are fully verified across contracts, API, and web. Proceed to **Milestone 10 — Voice Input / STT (Push-to-Talk)** when directed. Do not start Milestone 10 without user approval.
+Milestone 10 is complete. Push-to-talk recording, microphone permissions, memory-only transcription via OpenRouter Whisper, 120s limit, editable composer insertion, and reliable text fallback are fully verified across contracts, API, and web. Proceed to **Milestone 11 — Text-to-Speech (TTS)** when directed. Do not start Milestone 11 without user approval.
+

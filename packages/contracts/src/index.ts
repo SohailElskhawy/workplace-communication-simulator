@@ -96,3 +96,9 @@ export {
   type ScenarioDetailResponse,
   type ScenarioListResponse,
 } from "./scenario.js";
+export {
+  TranscriptionDataSchema,
+  TranscriptionResponseSchema,
+  type TranscriptionData,
+  type TranscriptionResponse,
+} from "./transcription.js";

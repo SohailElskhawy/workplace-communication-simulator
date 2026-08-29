@@ -109,6 +109,9 @@ function createEvaluationApp(
     resolveAuthProviderUserId: () => authProviderUserId,
     scenarioService,
     userProvisioner,
+    voiceService: {
+      transcribe: vi.fn(),
+    },
     webOrigin: "http://localhost:3000",
   });
 

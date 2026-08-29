@@ -22,6 +22,8 @@ import { createProgressService } from "./modules/progress/progress-service.js";
 import { createPrismaScenarioRepository } from "./modules/scenarios/prisma-scenario-repository.js";
 import { createScenarioService } from "./modules/scenarios/scenario-service.js";
 import { createLocalUserProvisioner } from "./modules/users/provision-local-user.js";
+import { createPrismaVoiceRepository } from "./modules/voice/prisma-voice-repository.js";
+import { createVoiceService } from "./modules/voice/voice-service.js";
 
 const rootEnvPath = resolve(process.cwd(), "../../.env");
 if (existsSync(rootEnvPath)) {
@@ -46,6 +48,8 @@ const aiService = createAiService({
   evaluationModel: apiEnv.EVALUATION_MODEL,
   evaluationPromptVersion: apiEnv.EVALUATION_PROMPT_VERSION,
   evaluationTimeoutMs: apiEnv.EVALUATION_TIMEOUT_MS,
+  transcriptionModel: apiEnv.TRANSCRIPTION_MODEL,
+  transcriptionTimeoutMs: apiEnv.TRANSCRIPTION_TIMEOUT_MS,
 });
 const attemptService = createAttemptService(
   createPrismaAttemptRepository(prisma),
@@ -61,6 +65,10 @@ const historyService = createHistoryService(
 const progressService = createProgressService(
   createPrismaProgressRepository(prisma),
 );
+const voiceService = createVoiceService(
+  createPrismaVoiceRepository(prisma),
+  aiService,
+);
 
 const app = createApp({
   attemptService,
@@ -74,6 +82,7 @@ const app = createApp({
   resolveAuthProviderUserId: resolveClerkUserId,
   scenarioService,
   userProvisioner,
+  voiceService,
   webOrigin: apiEnv.WEB_ORIGIN,
 });
 

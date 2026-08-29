@@ -23,6 +23,8 @@ import type { ProgressService } from "./modules/progress/progress-service.js";
 import { registerScenarioRoutes } from "./modules/scenarios/scenario-routes.js";
 import type { ScenarioService } from "./modules/scenarios/scenario-service.js";
 import type { LocalUserProvisioner } from "./modules/users/provision-local-user.js";
+import { registerVoiceRoutes } from "./modules/voice/voice-routes.js";
+import type { VoiceService } from "./modules/voice/voice-service.js";
 
 export interface AuthenticatedAppDependencies {
   attemptService: AttemptService;
@@ -33,6 +35,7 @@ export interface AuthenticatedAppDependencies {
   resolveAuthProviderUserId(request: Request): string | null;
   scenarioService: ScenarioService;
   userProvisioner: LocalUserProvisioner;
+  voiceService: VoiceService;
   webOrigin: string;
 }
 
@@ -100,6 +103,7 @@ export function createApp(dependencies: AuthenticatedAppDependencies): Express {
   registerEvaluationRoutes(app, dependencies);
   registerHistoryRoutes(app, dependencies);
   registerProgressRoutes(app, dependencies);
+  registerVoiceRoutes(app, dependencies);
 
   const errorHandler: ErrorRequestHandler = (
     error,

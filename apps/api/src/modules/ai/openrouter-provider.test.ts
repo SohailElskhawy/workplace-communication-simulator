@@ -217,4 +217,101 @@ describe("OpenRouterProvider", () => {
       provider: { zdr: true, data_collection: "deny" },
     });
   });
+
+  it("transcribes audio with OpenRouter audio transcription endpoint", async () => {
+    const fetchImplementation = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          text: "I am ready to discuss my compensation package.",
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+
+    const provider = createOpenRouterProvider({
+      apiKey: "secret-api-key",
+      fetchImplementation,
+      clock: vi.fn().mockReturnValueOnce(200).mockReturnValueOnce(320),
+    });
+
+    const audioBuffer = Buffer.from("fake-audio-bytes");
+    const result = await provider.transcribeAudio({
+      model: "openai/whisper-large-v3-turbo",
+      audioBuffer,
+      mimeType: "audio/webm",
+      fileName: "recording.webm",
+      timeoutMs: 20_000,
+    });
+
+    expect(result).toEqual({
+      text: "I am ready to discuss my compensation package.",
+      latencyMs: 120,
+      estimatedCost: null,
+    });
+
+    const [url, init] = fetchImplementation.mock.calls[0] ?? [];
+    expect(url).toBe("https://openrouter.ai/api/v1/audio/transcriptions");
+    expect(init?.method).toBe("POST");
+    expect(init?.headers).toEqual({
+      Authorization: "Bearer secret-api-key",
+    });
+    expect(init?.body).toBeInstanceOf(FormData);
+  });
+
+  it("handles transcription failure safely without exposing sensitive info", async () => {
+    const provider = createOpenRouterProvider({
+      apiKey: "secret-api-key",
+      fetchImplementation: vi.fn<typeof fetch>().mockResolvedValue(
+        new Response("upstream raw error", {
+          status: 502,
+        }),
+      ),
+    });
+
+    await expect(
+      provider.transcribeAudio({
+        model: "openai/whisper-large-v3-turbo",
+        audioBuffer: Buffer.from("audio"),
+        mimeType: "audio/webm",
+        timeoutMs: 20_000,
+      }),
+    ).rejects.toMatchObject({
+      code: "AI_PROVIDER_ERROR",
+      message: "AI provider request failed.",
+    });
+  });
+
+  it("aborts transcription on timeout", async () => {
+    vi.useFakeTimers();
+    const fetchImplementation = vi.fn(
+      (...args: Parameters<typeof fetch>) =>
+        new Promise<Response>((_resolve, reject) => {
+          const init = args[1];
+          init?.signal?.addEventListener("abort", () => {
+            reject(new DOMException("Transcription timeout", "AbortError"));
+          });
+        }),
+    ) as unknown as typeof fetch;
+
+    const provider = createOpenRouterProvider({
+      apiKey: "secret-api-key",
+      fetchImplementation,
+      clock: () => Date.now(),
+    });
+
+    const pending = provider.transcribeAudio({
+      model: "openai/whisper-large-v3-turbo",
+      audioBuffer: Buffer.from("audio"),
+      mimeType: "audio/webm",
+      timeoutMs: 50,
+    });
+
+    const assertion = expect(pending).rejects.toMatchObject({
+      code: "AI_TIMEOUT",
+      message: "AI request timed out.",
+    });
+
+    await vi.advanceTimersByTimeAsync(50);
+    await assertion;
+  });
 });

@@ -65,6 +65,9 @@ function createProgressApp(
       getActiveByKey: async () => null,
     },
     userProvisioner: { ensureUser },
+    voiceService: {
+      transcribe: vi.fn(),
+    },
     webOrigin: "http://localhost:3000",
   });
 

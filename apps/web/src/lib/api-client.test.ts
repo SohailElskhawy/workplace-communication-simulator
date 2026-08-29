@@ -257,4 +257,36 @@ describe("api-client", () => {
       }),
     );
   });
+
+  it("transcribes audio blob and returns transcript", async () => {
+    const mockData = {
+      data: {
+        transcript: "I would like to discuss compensation.",
+      },
+    };
+
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => mockData,
+    } as Response);
+
+    const blob = new Blob(["fake-audio-data"], { type: "audio/webm" });
+    const result = await client.transcribeAudio(
+      token,
+      "123e4567-e89b-12d3-a456-426614174000",
+      blob,
+      5000,
+    );
+
+    expect(fetch).toHaveBeenCalledWith(
+      "https://api.test.kalemny.com/api/v1/attempts/123e4567-e89b-12d3-a456-426614174000/transcriptions",
+      expect.objectContaining({
+        headers: expect.any(Headers),
+        method: "POST",
+        body: expect.any(FormData),
+      }),
+    );
+    expect(result.transcript).toBe("I would like to discuss compensation.");
+  });
 });

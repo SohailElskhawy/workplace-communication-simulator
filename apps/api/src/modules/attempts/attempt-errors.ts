@@ -5,6 +5,7 @@ export type AttemptErrorCode =
   | "TURN_ALREADY_PENDING"
   | "AI_TIMEOUT"
   | "AI_PROVIDER_ERROR"
+  | "TRANSCRIPTION_FAILED"
   | "EVALUATION_FAILED";
 
 const errorDetails: Record<
@@ -31,6 +32,10 @@ const errorDetails: Record<
   AI_PROVIDER_ERROR: {
     status: 502,
     message: "The roleplay response could not be generated. Retry this turn.",
+  },
+  TRANSCRIPTION_FAILED: {
+    status: 502,
+    message: "Transcription failed. You can continue with text.",
   },
   EVALUATION_FAILED: {
     status: 500,

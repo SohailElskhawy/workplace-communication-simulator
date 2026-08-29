@@ -155,8 +155,10 @@ describe("EvaluationService", () => {
     const aiService: AiService = {
       roleplayModel: "deepseek/deepseek-v4-flash-0731",
       evaluationModel: "openai/gpt-5.6-luna-pro",
+      transcriptionModel: "openai/whisper-large-v3-turbo",
       generateRoleplayReply: vi.fn(),
       evaluateSimulation: vi.fn(),
+      transcribeAudio: vi.fn(),
     };
 
     const service = createEvaluationService(repository, aiService);
@@ -203,6 +205,7 @@ describe("EvaluationService", () => {
     const aiService: AiService = {
       roleplayModel: "deepseek/deepseek-v4-flash-0731",
       evaluationModel: "openai/gpt-5.6-luna-pro",
+      transcriptionModel: "openai/whisper-large-v3-turbo",
       generateRoleplayReply: vi.fn(),
       evaluateSimulation: vi.fn().mockResolvedValue({
         evaluation: validRawEvaluation,
@@ -211,6 +214,7 @@ describe("EvaluationService", () => {
         outputTokens: 100,
         estimatedCost: 0.002,
       }),
+      transcribeAudio: vi.fn(),
     };
 
     const service = createEvaluationService(repository, aiService);
@@ -268,6 +272,7 @@ describe("EvaluationService", () => {
     const aiService: AiService = {
       roleplayModel: "deepseek/deepseek-v4-flash-0731",
       evaluationModel: "openai/gpt-5.6-luna-pro",
+      transcriptionModel: "openai/whisper-large-v3-turbo",
       generateRoleplayReply: vi.fn(),
       evaluateSimulation: vi
         .fn()
@@ -279,6 +284,7 @@ describe("EvaluationService", () => {
           outputTokens: 100,
           estimatedCost: 0.002,
         }),
+      transcribeAudio: vi.fn(),
     };
 
     const service = createEvaluationService(repository, aiService);
@@ -299,10 +305,12 @@ describe("EvaluationService", () => {
     const aiService: AiService = {
       roleplayModel: "deepseek/deepseek-v4-flash-0731",
       evaluationModel: "openai/gpt-5.6-luna-pro",
+      transcriptionModel: "openai/whisper-large-v3-turbo",
       generateRoleplayReply: vi.fn(),
       evaluateSimulation: vi
         .fn()
         .mockRejectedValue(new AiProviderError("AI_TIMEOUT", 30_000)),
+      transcribeAudio: vi.fn(),
     };
 
     const service = createEvaluationService(repository, aiService);
@@ -337,8 +345,10 @@ describe("EvaluationService", () => {
     const aiService: AiService = {
       roleplayModel: "deepseek/deepseek-v4-flash-0731",
       evaluationModel: "openai/gpt-5.6-luna-pro",
+      transcriptionModel: "openai/whisper-large-v3-turbo",
       generateRoleplayReply: vi.fn(),
       evaluateSimulation: vi.fn(),
+      transcribeAudio: vi.fn(),
     };
 
     const service = createEvaluationService(repository, aiService);

@@ -30,15 +30,25 @@ export interface EvaluateSimulationInput {
   turns: EvaluationTranscriptTurn[];
 }
 
+export interface TranscribeAudioInput {
+  audioBuffer: Buffer;
+  mimeType: string;
+  fileName?: string | undefined;
+}
+
 export interface AiService {
   readonly roleplayModel: string;
   readonly evaluationModel: string;
+  readonly transcriptionModel: string;
   generateRoleplayReply(
     input: GenerateRoleplayReplyInput,
   ): Promise<OpenRouterRoleplayResult>;
   evaluateSimulation(
     input: EvaluateSimulationInput,
   ): Promise<OpenRouterEvaluationResult>;
+  transcribeAudio(
+    input: TranscribeAudioInput,
+  ): Promise<{ text: string; latencyMs: number; estimatedCost: number | null }>;
 }
 
 export interface AiServiceOptions {
@@ -49,12 +59,15 @@ export interface AiServiceOptions {
   evaluationModel: string;
   evaluationPromptVersion: typeof EVALUATION_PROMPT_VERSION;
   evaluationTimeoutMs: number;
+  transcriptionModel: string;
+  transcriptionTimeoutMs: number;
 }
 
 export function createAiService(options: AiServiceOptions): AiService {
   return {
     roleplayModel: options.roleplayModel,
     evaluationModel: options.evaluationModel,
+    transcriptionModel: options.transcriptionModel,
     generateRoleplayReply(input) {
       if (options.roleplayPromptVersion !== ROLEPLAY_PROMPT_VERSION) {
         throw new Error("Unsupported roleplay prompt version.");
@@ -75,6 +88,15 @@ export function createAiService(options: AiServiceOptions): AiService {
         model: options.evaluationModel,
         messages: buildEvaluationMessages(input),
         timeoutMs: options.evaluationTimeoutMs,
+      });
+    },
+    transcribeAudio(input) {
+      return options.provider.transcribeAudio({
+        model: options.transcriptionModel,
+        audioBuffer: input.audioBuffer,
+        mimeType: input.mimeType,
+        fileName: input.fileName,
+        timeoutMs: options.transcriptionTimeoutMs,
       });
     },
   };

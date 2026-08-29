@@ -70,6 +70,24 @@ export interface OpenRouterEvaluationResult {
   estimatedCost: number | null;
 }
 
+export interface OpenRouterTranscriptionRequest {
+  model: string;
+  audioBuffer: Buffer;
+  mimeType: string;
+  fileName?: string | undefined;
+  timeoutMs: number;
+}
+
+export interface OpenRouterTranscriptionResult {
+  text: string;
+  latencyMs: number;
+  estimatedCost: number | null;
+}
+
+const OpenRouterTranscriptionResponseSchema = z.object({
+  text: z.string(),
+});
+
 export interface OpenRouterProvider {
   generateRoleplayReply(
     request: OpenRouterRoleplayRequest,
@@ -77,6 +95,9 @@ export interface OpenRouterProvider {
   evaluateSimulation(
     request: OpenRouterEvaluationRequest,
   ): Promise<OpenRouterEvaluationResult>;
+  transcribeAudio(
+    request: OpenRouterTranscriptionRequest,
+  ): Promise<OpenRouterTranscriptionResult>;
 }
 
 interface OpenRouterProviderOptions {
@@ -208,6 +229,64 @@ export function createOpenRouterProvider(
         outputTokens: result.outputTokens,
         estimatedCost: result.estimatedCost,
       };
+    },
+
+    async transcribeAudio(request) {
+      const startedAt = clock();
+      const controller = new AbortController();
+      let timedOut = false;
+      const timeout = setTimeout(() => {
+        timedOut = true;
+        controller.abort();
+      }, request.timeoutMs);
+
+      try {
+        const formData = new FormData();
+        const blob = new Blob([new Uint8Array(request.audioBuffer)], {
+          type: request.mimeType,
+        });
+        formData.append("file", blob, request.fileName ?? "audio.webm");
+
+        formData.append("model", request.model);
+
+        const response = await fetchImplementation(
+          "https://openrouter.ai/api/v1/audio/transcriptions",
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${options.apiKey}`,
+            },
+            body: formData,
+            signal: controller.signal,
+          },
+        );
+        const latencyMs = Math.max(0, clock() - startedAt);
+
+        if (!response.ok) {
+          throw new AiProviderError("AI_PROVIDER_ERROR", latencyMs);
+        }
+
+        const rawResponse = await response.json();
+        const parsed =
+          OpenRouterTranscriptionResponseSchema.safeParse(rawResponse);
+        if (!parsed.success) {
+          throw new AiProviderError("AI_PROVIDER_ERROR", latencyMs);
+        }
+
+        return {
+          text: parsed.data.text.trim(),
+          latencyMs,
+          estimatedCost: null,
+        };
+      } catch (error) {
+        if (error instanceof AiProviderError) throw error;
+        throw new AiProviderError(
+          timedOut ? "AI_TIMEOUT" : "AI_PROVIDER_ERROR",
+          Math.max(0, clock() - startedAt),
+        );
+      } finally {
+        clearTimeout(timeout);
+      }
     },
   };
 }
