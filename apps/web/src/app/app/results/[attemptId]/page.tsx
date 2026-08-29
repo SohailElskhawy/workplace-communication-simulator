@@ -17,6 +17,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AccessibleDialog } from "../../../../components/accessible-dialog";
 import { ApiClientError, createApiClient } from "../../../../lib/api-client";
 import { SpeechButton } from "../../../../components/speech-button";
+import { cn } from "@/lib/cn";
 import {
   formatCoachingMomentType,
   formatDelta,
@@ -26,6 +27,406 @@ import {
   getSkillMetadata,
   UNIVERSAL_SKILLS_META,
 } from "../../../../lib/score-utils";
+
+function CheckIcon({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
+
+function RefreshIcon({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <polyline points="23 4 23 10 17 10" />
+      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+    </svg>
+  );
+}
+
+function ShieldCheckIcon({ className = "w-5 h-5" }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      <polyline points="9 12 11 14 15 10" />
+    </svg>
+  );
+}
+
+function AlertTriangleIcon({ className = "w-5 h-5" }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+      <line x1="12" y1="9" x2="12" y2="13" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
+    </svg>
+  );
+}
+
+function ArrowLeftIcon({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <line x1="19" y1="12" x2="5" y2="12" />
+      <polyline points="12 19 5 12 12 5" />
+    </svg>
+  );
+}
+
+interface EvaluationProcessingViewProps {
+  scenarioTitle: string;
+  difficulty: string;
+  latestUserTurnText?: string | undefined;
+}
+
+function EvaluationProcessingView({
+  scenarioTitle,
+  difficulty,
+  latestUserTurnText,
+}: EvaluationProcessingViewProps) {
+  const [cardStep, setCardStep] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCardStep((prev) => (prev + 1) % 4);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const stackCards = [
+    {
+      id: "transcript",
+      header: "TRANSCRIPT EXCERPT",
+      title: "Recent Conversation Moment",
+      content:
+        latestUserTurnText ||
+        "Based on the scope of the role and the experience I'm bringing, I'd like to explore whether there's flexibility in the compensation.",
+      isQuote: true,
+    },
+    {
+      id: "skills",
+      header: "UNIVERSAL SKILLS",
+      title: "Analyzing Communication Structure",
+      content:
+        "Evaluating clarity, assertiveness, empathy, structured reasoning, and conciseness across exchanged turns.",
+      isQuote: false,
+    },
+    {
+      id: "objectives",
+      header: "SCENARIO OBJECTIVES",
+      title: "Reviewing Conversation Evidence",
+      content:
+        "Verifying whether workplace objectives were achieved and assessing responses to counterpart objections.",
+      isQuote: false,
+    },
+    {
+      id: "coaching",
+      header: "EVIDENCE-BASED COACHING",
+      title: "Synthesizing High-Impact Moments",
+      content:
+        "Highlighting conversation strengths, moments for improvement, and tailored phrasing for future practice.",
+      isQuote: false,
+    },
+  ];
+
+  const layerClasses: Record<number, string> = {
+    1: "translate-y-0 scale-100 z-40 opacity-100 bg-white border-2 border-border shadow-[4px_4px_0px_0px_#1a1a1a]",
+    2: "translate-y-4 scale-95 z-30 opacity-85 bg-surface-raised/90 border border-border shadow-xs",
+    3: "translate-y-8 scale-90 z-20 opacity-65 bg-surface-raised/80 border border-border/80",
+    4: "translate-y-12 scale-85 z-10 opacity-40 bg-surface-raised/60 border border-border/60",
+  };
+
+  return (
+    <div className="w-full pb-16">
+      {/* Top Status Header */}
+      <div className="flex items-center justify-between border-b border-border bg-surface/90 backdrop-blur-md px-4 sm:px-6 py-3 rounded-t-card shadow-xs mb-8">
+        <div className="flex items-center gap-3">
+          <span className="font-display font-bold text-sm uppercase tracking-tight text-foreground">
+            SimuLab AI
+          </span>
+          <span className="text-border/40 font-meta text-xs">·</span>
+          <span className="font-meta text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+            {scenarioTitle} · {difficulty}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="font-meta text-xs uppercase tracking-widest text-primary font-bold bg-primary/10 px-2.5 py-0.5 rounded-full border border-primary/20">
+            Evaluating
+          </span>
+        </div>
+      </div>
+
+      {/* Main Grid: Left Status + Right 3D Card Stack */}
+      <div className="w-full max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center px-4 sm:px-6">
+        {/* Left Column: Copy & Milestones */}
+        <div className="flex flex-col gap-6 relative">
+          {/* Memphis Decorative Shapes */}
+          <div
+            aria-hidden="true"
+            className="w-12 h-12 rounded-full bg-primary absolute -top-4 -left-4 -z-10 opacity-70"
+          />
+          <div
+            aria-hidden="true"
+            className="w-8 h-8 rounded-control bg-[#d4ff00] border border-border rotate-45 absolute top-0 right-8 -z-10 shadow-[2px_2px_0px_0px_#1a1a1a]"
+          />
+          <div
+            aria-hidden="true"
+            className="w-10 h-10 rounded-full border-2 border-[#b8373b] absolute -bottom-3 right-2 -z-10 opacity-30"
+          />
+
+          <div className="flex flex-col gap-3">
+            <span className="font-meta text-xs text-muted-foreground uppercase tracking-widest font-bold">
+              Simulation Complete
+            </span>
+            <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold uppercase tracking-tight text-foreground leading-[1.15] relative z-10">
+              Let&apos;s look at how that went.
+            </h1>
+            <p className="font-sans text-base sm:text-lg text-muted-foreground max-w-md leading-relaxed">
+              We&apos;re reviewing your conversation and preparing
+              evidence-based coaching from the moments that mattered.
+            </p>
+          </div>
+
+          {/* Semantic Deterministic Milestone List */}
+          <div className="flex flex-col gap-3.5 mt-2 select-none">
+            <div className="flex items-center gap-3.5">
+              <div className="w-5 h-5 rounded-full bg-[#d4ff00] border border-border flex items-center justify-center text-[#171e00] shrink-0 shadow-[1px_1px_0px_0px_#1a1a1a]">
+                <CheckIcon className="w-3 h-3 stroke-3" />
+              </div>
+              <span className="font-sans text-sm font-medium text-foreground">
+                Conversation complete
+              </span>
+            </div>
+
+            <div className="flex items-center gap-3.5">
+              <div className="w-5 h-5 rounded-full bg-primary border border-primary flex items-center justify-center shrink-0 shadow-[0_0_0_4px_rgba(0,82,255,0.2)]">
+                <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+              </div>
+              <span className="font-sans text-sm font-bold text-foreground">
+                Reviewing communication
+              </span>
+            </div>
+
+            <div className="flex items-center gap-3.5">
+              <div className="w-5 h-5 rounded-full border-2 border-border/30 bg-surface-subtle shrink-0" />
+              <span className="font-sans text-sm font-medium text-muted-foreground">
+                Connecting feedback to key moments
+              </span>
+            </div>
+
+            <div className="flex items-center gap-3.5">
+              <div className="w-5 h-5 rounded-full border-2 border-border/30 bg-surface-subtle shrink-0" />
+              <span className="font-sans text-sm font-medium text-muted-foreground">
+                Preparing your coaching
+              </span>
+            </div>
+          </div>
+
+          {/* Skills Preview */}
+          <div className="mt-2 pt-4 border-t border-dashed border-border/30">
+            <span className="font-meta text-xs uppercase tracking-wider text-muted-foreground block mb-2.5 font-semibold">
+              Analyzing Skills
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {[
+                "Clarity",
+                "Assertiveness",
+                "Empathy",
+                "Structure",
+                "Conciseness",
+              ].map((skill) => (
+                <span
+                  key={skill}
+                  className="px-3 py-1 bg-surface-subtle rounded-full border border-border/30 font-meta text-xs font-medium text-foreground uppercase tracking-wider shadow-2xs"
+                >
+                  {skill}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Layered 3D Card Stack */}
+        <div className="relative h-[360px] sm:h-[400px] w-full flex justify-center items-center perspective-[1000px] select-none">
+          <div className="relative w-[300px] sm:w-[340px] h-[220px]">
+            {stackCards.map((card, i) => {
+              const layer = ((i - cardStep + 4) % 4) + 1;
+              const isFront = layer === 1;
+
+              return (
+                <div
+                  key={card.id}
+                  className={cn(
+                    "absolute inset-0 rounded-card p-5 sm:p-6 flex flex-col justify-between transition-all duration-500 ease-in-out",
+                    layerClasses[layer] ?? layerClasses[4],
+                  )}
+                >
+                  <div>
+                    <div className="flex items-center justify-between border-b border-dashed border-border/20 pb-2 mb-3">
+                      <span className="font-meta text-[10px] font-bold uppercase tracking-widest text-primary">
+                        {card.header}
+                      </span>
+                      {isFront && (
+                        <span className="inline-block w-2 h-2 rounded-full bg-primary animate-pulse" />
+                      )}
+                    </div>
+                    <h4 className="font-display text-sm sm:text-base font-bold uppercase tracking-tight text-foreground mb-1.5 line-clamp-1">
+                      {card.title}
+                    </h4>
+                    <p
+                      className={cn(
+                        "font-sans text-xs sm:text-sm text-foreground/80 leading-relaxed line-clamp-4",
+                        card.isQuote && "italic text-foreground font-medium",
+                      )}
+                    >
+                      {card.isQuote ? `"${card.content}"` : card.content}
+                    </p>
+                  </div>
+
+                  <div className="pt-2 border-t border-border/10 flex items-center justify-between font-meta text-[10px] text-muted-foreground">
+                    <span>SimuLab AI Evaluator</span>
+                    <span>Step {((cardStep + i) % 4) + 1}/4</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Reassurance Card */}
+      <div className="w-full max-w-4xl mt-12 sm:mt-16 mx-auto px-4">
+        <div className="glass-surface p-5 sm:p-6 rounded-card border border-border flex items-start gap-4 mx-auto max-w-md shadow-xs">
+          <ShieldCheckIcon className="w-6 h-6 text-primary shrink-0 mt-0.5" />
+          <div>
+            <h4 className="font-display text-sm font-bold uppercase tracking-tight text-foreground">
+              Your conversation is saved.
+            </h4>
+            <p className="font-sans text-xs sm:text-sm text-muted-foreground mt-0.5 leading-relaxed">
+              You can safely leave this page and return to your results later from
+              your session history.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface EvaluationFailureViewProps {
+  error: string | null;
+  attemptId: string;
+  onRetry: () => void;
+  retrying: boolean;
+}
+
+function EvaluationFailureView({
+  error,
+  attemptId,
+  onRetry,
+  retrying,
+}: EvaluationFailureViewProps) {
+  return (
+    <div className="w-full py-12 max-w-2xl mx-auto px-4">
+      <div
+        role="alert"
+        className="glass-surface rounded-card p-6 sm:p-10 text-center border-2 border-alert bg-alert/5 shadow-[6px_6px_0px_0px_#1a1a1a] flex flex-col items-center"
+      >
+        <div className="w-12 h-12 rounded-full bg-alert/20 text-alert border border-border flex items-center justify-center mb-4 shadow-2xs">
+          <AlertTriangleIcon className="w-6 h-6 text-alert" />
+        </div>
+        <h2 className="font-display text-2xl font-bold uppercase tracking-tight text-foreground mb-2">
+          Evaluation Incomplete
+        </h2>
+        <p className="font-sans text-sm sm:text-base text-muted-foreground mb-3 max-w-md leading-relaxed">
+          {error ??
+            "The automated evaluation encountered an unexpected issue while analyzing the simulation."}
+        </p>
+        <p className="font-sans text-xs text-muted-foreground/80 mb-6 max-w-md leading-relaxed">
+          Your conversation transcript is safely preserved on the server. You can
+          retry generating your evaluation without losing any practice data.
+        </p>
+
+        <div className="flex flex-wrap items-center justify-center gap-3 w-full sm:w-auto">
+          {/* 1. Retry Evaluation */}
+          <button
+            type="button"
+            onClick={onRetry}
+            disabled={retrying}
+            className="inline-flex items-center justify-center gap-2 rounded-control bg-primary px-5 py-2.5 font-display text-xs sm:text-sm font-bold uppercase tracking-wide text-primary-foreground border border-border brutalist-interactive cursor-pointer disabled:opacity-50"
+          >
+            <RefreshIcon
+              className={cn("w-3.5 h-3.5", retrying && "animate-spin")}
+            />
+            <span>{retrying ? "Evaluating..." : "Retry Evaluation"}</span>
+          </button>
+
+          {/* 2. View Conversation */}
+          <Link
+            href={`/app/simulations/${encodeURIComponent(attemptId)}`}
+            className="inline-flex items-center justify-center gap-2 rounded-control bg-surface-solid px-5 py-2.5 font-display text-xs sm:text-sm font-bold uppercase tracking-wide text-foreground border border-border brutalist-interactive"
+          >
+            <ArrowLeftIcon className="w-3.5 h-3.5" />
+            <span>View Conversation</span>
+          </Link>
+
+          {/* 3. Return Home */}
+          <Link
+            href="/app"
+            className="inline-flex items-center justify-center gap-2 rounded-control bg-surface-subtle px-4 py-2.5 font-display text-xs sm:text-sm font-bold uppercase tracking-wide text-muted-foreground hover:text-foreground border border-border/40"
+          >
+            <span>Return Home</span>
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function ResultsPage() {
   const params = useParams();
@@ -224,123 +625,84 @@ export default function ResultsPage() {
   // 1. Initial Loading State
   if (loading && !attempt) {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-20 text-center">
-        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-r-transparent" />
-        <p className="mt-3 text-sm text-slate-500">
-          Loading attempt results...
-        </p>
-      </div>
-    );
-  }
-
-  // 2. Evaluating in Progress State
-  if (evaluating) {
-    return (
-      <div className="mx-auto max-w-2xl px-4 py-16">
-        <div className="overflow-hidden rounded-2xl border border-indigo-100 bg-white p-8 text-center shadow-md">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
-            <span className="inline-block h-7 w-7 animate-spin rounded-full border-3 border-indigo-600 border-r-transparent" />
-          </div>
-          <h2 className="mt-5 text-xl font-bold tracking-tight text-slate-900">
-            Evaluating Simulation Performance
+      <div className="w-full py-16 flex flex-col items-center justify-center max-w-2xl mx-auto px-4">
+        <div
+          role="status"
+          aria-busy="true"
+          className="glass-surface rounded-card p-10 text-center border border-border shadow-[6px_6px_0px_0px_#1a1a1a] flex flex-col items-center gap-4"
+        >
+          <span
+            className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-primary border-r-transparent"
+            aria-hidden="true"
+          />
+          <h2 className="font-display text-xl font-bold uppercase tracking-tight text-foreground">
+            Loading Evaluation Workspace
           </h2>
-          <p className="mt-2 text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
-            Our AI coach is analyzing your conversation across the 5 universal
-            communication skills, assessing scenario objectives, and identifying
-            evidence-linked moments.
+          <p className="font-sans text-sm text-muted-foreground max-w-sm">
+            Retrieving simulation attempt and coaching records...
           </p>
-
-          <div className="mt-8 space-y-2 text-left max-w-sm mx-auto">
-            <div className="flex items-center gap-2.5 text-xs text-indigo-900 bg-indigo-50/60 rounded-lg p-2.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-indigo-600" />
-              <span>
-                Analyzing Clarity, Assertiveness, Empathy, Structure &
-                Conciseness
-              </span>
-            </div>
-            <div className="flex items-center gap-2.5 text-xs text-indigo-900 bg-indigo-50/60 rounded-lg p-2.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-indigo-600" />
-              <span>
-                Checking objective completion and negotiation milestones
-              </span>
-            </div>
-            <div className="flex items-center gap-2.5 text-xs text-indigo-900 bg-indigo-50/60 rounded-lg p-2.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-indigo-600" />
-              <span>Extracting high-impact moments and stronger phrasing</span>
-            </div>
-          </div>
         </div>
       </div>
     );
   }
 
-  // 3. Evaluation Failed State / Recovery
+  // 2. Evaluating in Progress State (Stitch Branded Loading UI)
+  if (
+    evaluating ||
+    (attempt?.status === "EVALUATING" && !attempt?.evaluation)
+  ) {
+    const lastUserTurn = attempt?.turns
+      ? [...attempt.turns].reverse().find((t) => t.userText)?.userText
+      : undefined;
+
+    return (
+      <EvaluationProcessingView
+        scenarioTitle={attempt?.scenario.title ?? "Simulation"}
+        difficulty={attempt?.difficulty ?? "MEDIUM"}
+        latestUserTurnText={lastUserTurn}
+      />
+    );
+  }
+
+  // 3. Evaluation Failed State / Recoverable Failure UI
   if (
     attempt?.status === "EVALUATION_FAILED" ||
     (error && !attempt?.evaluation)
   ) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-12">
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 shadow-xs text-rose-900">
-          <div className="flex items-start gap-3">
-            <span className="text-xl">⚠️</span>
-            <div className="flex-1">
-              <h2 className="text-base font-bold">Evaluation Incomplete</h2>
-              <p className="mt-1 text-sm text-rose-800">
-                {error ??
-                  "The automated evaluation encountered an unexpected issue while analyzing the simulation."}
-              </p>
-              <p className="mt-2 text-xs text-rose-700">
-                Your conversation transcript is safely preserved. You can retry
-                generating the evaluation without losing any data.
-              </p>
-              <div className="mt-5 flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={handleRetryEvaluation}
-                  disabled={evaluating}
-                  className="inline-flex items-center justify-center rounded-xl bg-rose-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-rose-500 disabled:opacity-50"
-                >
-                  {evaluating ? "Evaluating..." : "Retry Evaluation"}
-                </button>
-                <Link
-                  href="/app"
-                  className="inline-flex items-center justify-center rounded-xl border border-rose-300 bg-white px-4 py-2 text-xs font-semibold text-rose-800 hover:bg-rose-50"
-                >
-                  Return to Scenarios
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <EvaluationFailureView
+        error={error}
+        attemptId={attemptId}
+        onRetry={handleRetryEvaluation}
+        retrying={evaluating}
+      />
     );
   }
 
   // 4. Abandoned State (0 turns)
   if (attempt?.status === "ABANDONED") {
     return (
-      <div className="mx-auto max-w-xl px-4 py-12 text-center">
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-xs">
-          <span className="text-3xl">⏹️</span>
-          <h2 className="mt-3 text-lg font-bold text-slate-900">
+      <div className="w-full py-12 max-w-xl mx-auto px-4 text-center">
+        <div className="glass-surface rounded-card p-8 border border-border shadow-[6px_6px_0px_0px_#1a1a1a]">
+          <span className="text-3xl block mb-2">⏹️</span>
+          <h2 className="font-display text-xl font-bold uppercase tracking-tight text-foreground mb-2">
             Simulation Ended Early
           </h2>
-          <p className="mt-2 text-sm text-slate-600">
+          <p className="font-sans text-sm text-muted-foreground mb-6 leading-relaxed">
             This simulation was ended before substantive conversation messages
             were exchanged, so an evaluation was not generated.
           </p>
-          <div className="mt-6 flex justify-center gap-3">
+          <div className="flex flex-wrap justify-center gap-3">
             <button
               type="button"
               onClick={() => handlePracticeAgain()}
-              className="inline-flex items-center rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-500"
+              className="inline-flex items-center rounded-control bg-primary px-5 py-2.5 font-display text-xs sm:text-sm font-bold uppercase tracking-wider text-primary-foreground border border-border brutalist-interactive cursor-pointer"
             >
               Start New Simulation
             </button>
             <Link
               href="/app"
-              className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+              className="inline-flex items-center rounded-control border border-border bg-surface-solid px-5 py-2.5 font-display text-xs sm:text-sm font-bold uppercase tracking-wider text-foreground brutalist-interactive"
             >
               All Scenarios
             </Link>
