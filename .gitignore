@@ -12,3 +12,4 @@ coverage/
 !.env.example
 pnpm-debug.log*
 .agents
+/stitch
