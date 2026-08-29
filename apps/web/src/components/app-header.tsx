@@ -19,7 +19,7 @@ export function AppHeader() {
           </Link>
           <nav
             aria-label="Primary navigation"
-            className="order-3 flex w-full items-center justify-around gap-1 font-meta text-xs text-muted-foreground sm:order-none sm:w-auto sm:justify-start sm:gap-2"
+            className="order-3 flex w-full items-center justify-around gap-1 font-meta text-xs text-muted-foreground sm:order-0 sm:w-auto sm:justify-start sm:gap-2"
           >
             <Link
               href="/app"
