@@ -607,7 +607,7 @@ export default function SimulationPage() {
               <h1 className="font-display text-sm sm:text-base font-bold uppercase tracking-tight text-foreground line-clamp-1">
                 {attempt.scenario.title}
               </h1>
-              <span className="bg-[#caf300] text-[#171e00] font-meta text-[10px] font-bold px-2 py-0.5 rounded-full border border-border uppercase">
+              <span className="bg-success text-success-foreground font-meta text-[10px] font-bold px-2 py-0.5 rounded-full border border-border uppercase">
                 {attempt.difficulty}
               </span>
             </div>

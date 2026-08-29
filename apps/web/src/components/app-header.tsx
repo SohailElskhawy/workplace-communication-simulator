@@ -25,6 +25,12 @@ export function AppHeader() {
               href="/app"
               className="inline-flex min-h-11 items-center rounded-control px-2.5 py-1.5 transition hover:bg-surface-subtle hover:text-foreground"
             >
+              Dashboard
+            </Link>
+            <Link
+              href="/app/scenarios"
+              className="inline-flex min-h-11 items-center rounded-control px-2.5 py-1.5 transition hover:bg-surface-subtle hover:text-foreground"
+            >
               Scenarios
             </Link>
             <Link

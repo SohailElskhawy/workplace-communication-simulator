@@ -559,7 +559,7 @@ export default function ScenarioDetailPage() {
           {/* Hero Header */}
           <div className="flex flex-col gap-3 sm:gap-4">
             <div className="inline-flex items-center">
-              <span className="bg-[#caf300] text-[#171e00] font-meta text-xs font-bold px-3 py-1 rounded-full border border-border tracking-wider uppercase">
+              <span className="bg-success text-success-foreground font-meta text-xs font-bold px-3 py-1 rounded-full border border-border tracking-wider uppercase">
                 {scenario.category.replace(/_/g, " ")}
               </span>
             </div>
