@@ -234,12 +234,14 @@ Do not implement:
 
 **Milestone 13 — P0 Hardening** implementation is complete. The API now has centralized safe fallback errors, request IDs, structured privacy-safe logging, Helmet security headers, configurable process-local general and expensive-AI rate limits, bounded operation-specific timeout configuration, and optional Sentry exception monitoring with mandatory sensitive-event scrubbing. Existing `AiUsageEvent` persistence was audited across roleplay, evaluation, transcription, and TTS; an internal aggregation utility proves that provider-reported costs can be totaled per operation and attempt without billing infrastructure.
 
+The August 29 audit follow-up hardened the remaining AI boundaries without starting UI work: evaluation requests now take an atomic database claim before invoking the provider, canonical evaluation results are idempotent, and failed claims are released for retry. Evaluation validation rejects duplicate objective results, keeping deterministic objective weighting intact. Voice duration is parsed from the in-memory media buffer using `music-metadata` and enforced at 120 seconds independently of browser metadata; raw audio remains unpersisted. OpenRouter transcription now carries the same ZDR/data-collection routing policy as other AI operations. Roleplay/evaluation input and output budgets are bounded, evaluator output schemas cap persisted content, and the evaluator treats transcript text as untrusted evidence rather than instructions. A migration adds `evaluationClaimedAt` to `SimulationAttempt`.
+
 The web application now has optional scrubbed Sentry integration, global and authenticated-segment error/loading/not-found coverage, shared accessible route states, visible keyboard focus, reduced-motion behavior, responsive navigation and simulation layouts, semantic live error/progress announcements, and keyboard/focus-safe destructive confirmation dialogs. Voice continues to retain a complete text fallback.
 
 Verified on August 29, 2026 with:
 
 ```text
-259 tests across 48 test files passing
+268 tests across 49 test files passing
 API, web, and contracts strict TypeScript checks
 API and web ESLint checks
 repository Prettier and diff checks

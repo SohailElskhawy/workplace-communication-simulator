@@ -54,30 +54,24 @@ export function createEvaluationService(
 ): EvaluationService {
   return {
     async evaluate(userId: string, attemptId: string): Promise<EvaluationData> {
-      const attempt = await repository.findAttemptForEvaluation(
+      const claimed = await repository.claimEvaluation(
         attemptId,
         userId,
+        clock(),
       );
-      if (!attempt) {
+      if (claimed.kind === "not_found") {
         throw new AttemptError("NOT_FOUND");
       }
-
-      if (attempt.status === "COMPLETED") {
-        if (attempt.evaluation) {
-          return attempt.evaluation;
-        }
-        const existing = await repository.findExistingEvaluation(attemptId);
-        if (existing) {
-          return mapEvaluationRecordToData(existing);
-        }
+      if (claimed.kind === "existing") {
+        return mapEvaluationRecordToData(claimed.evaluation);
       }
-
-      if (
-        attempt.status !== "EVALUATING" &&
-        attempt.status !== "EVALUATION_FAILED"
-      ) {
+      if (claimed.kind === "in_progress") {
+        throw new AttemptError("EVALUATION_IN_PROGRESS");
+      }
+      if (claimed.kind === "rejected") {
         throw new AttemptError("INVALID_ATTEMPT_STATE");
       }
+      const attempt = claimed.attempt;
 
       const scenario = ScenarioDefinitionSchema.parse(
         attempt.scenario.definition,

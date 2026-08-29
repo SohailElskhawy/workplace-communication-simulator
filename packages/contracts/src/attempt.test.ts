@@ -57,7 +57,7 @@ describe("attempt contracts", () => {
     ).toThrow();
   });
 
-  it("bounds learner text within the 64 KB request envelope", () => {
+  it("bounds learner text to the roleplay context budget", () => {
     expect(() =>
       CreateTurnRequestSchema.parse({
         clientRequestId: "request-1",

@@ -47,6 +47,7 @@ describe("OpenRouterProvider", () => {
     expect(body).toMatchObject({
       model: request.model,
       stream: false,
+      max_tokens: 300,
       provider: { zdr: true, data_collection: "deny" },
     });
     expect(body).not.toHaveProperty("models");
@@ -71,6 +72,26 @@ describe("OpenRouterProvider", () => {
       {
         code: "AI_PROVIDER_ERROR",
         message: "AI provider request failed.",
+      },
+    );
+  });
+
+  it("rejects a roleplay response that exceeds the persisted context budget", async () => {
+    const provider = createOpenRouterProvider({
+      apiKey: "secret-api-key",
+      fetchImplementation: vi.fn<typeof fetch>().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            choices: [{ message: { content: "x".repeat(1_601) } }],
+          }),
+          { status: 200 },
+        ),
+      ),
+    });
+
+    await expect(provider.generateRoleplayReply(request)).rejects.toMatchObject(
+      {
+        code: "AI_PROVIDER_ERROR",
       },
     );
   });
@@ -214,6 +235,7 @@ describe("OpenRouterProvider", () => {
     expect(body).toMatchObject({
       model: "openai/gpt-5.6-luna-pro",
       response_format: { type: "json_object" },
+      max_tokens: 2000,
       provider: { zdr: true, data_collection: "deny" },
     });
   });
@@ -256,6 +278,9 @@ describe("OpenRouterProvider", () => {
       Authorization: "Bearer secret-api-key",
     });
     expect(init?.body).toBeInstanceOf(FormData);
+    expect((init?.body as FormData).get("provider")).toBe(
+      JSON.stringify({ zdr: true, data_collection: "deny" }),
+    );
   });
 
   it("handles transcription failure safely without exposing sensitive info", async () => {

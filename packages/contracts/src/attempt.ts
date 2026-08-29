@@ -4,7 +4,7 @@ import { AttemptComparisonSchema } from "./comparison.js";
 import { EvaluationDataSchema } from "./evaluation.js";
 import { DifficultySchema } from "./scenario.js";
 
-export const MAX_TURN_TEXT_LENGTH = 60_000;
+export const MAX_TURN_TEXT_LENGTH = 1_000;
 
 export const AttemptStatusSchema = z.enum([
   "ACTIVE",

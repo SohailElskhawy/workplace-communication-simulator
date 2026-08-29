@@ -173,6 +173,20 @@ describe("evaluation-rules", () => {
       expect(result.reason).toContain("EVIDENCE_BASED_CASE");
     });
 
+    it("rejects duplicate results for the same scenario objective", () => {
+      const raw = {
+        ...baseRaw,
+        objectives: [...baseRaw.objectives, { ...baseRaw.objectives[0]! }],
+      };
+      const result = validateEvaluationReferences(
+        raw,
+        validTurnIds,
+        scenarioObjectiveIds,
+      );
+      expect(result.valid).toBe(false);
+      expect(result.reason).toContain("more than once");
+    });
+
     it("rejects when a moment references an invalid turn ID", () => {
       const raw = {
         ...baseRaw,

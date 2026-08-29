@@ -104,6 +104,17 @@ export interface MarkEvaluationFailedInput {
 }
 
 export interface EvaluationRepository {
+  claimEvaluation(
+    attemptId: string,
+    userId: string,
+    claimedAt: Date,
+  ): Promise<
+    | { kind: "claimed"; attempt: AttemptForEvaluationRecord }
+    | { kind: "existing"; evaluation: EvaluationRecord }
+    | { kind: "in_progress" }
+    | { kind: "not_found" }
+    | { kind: "rejected" }
+  >;
   findAttemptForEvaluation(
     attemptId: string,
     userId: string,

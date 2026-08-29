@@ -142,6 +142,31 @@ describe("EvaluationService", () => {
     };
 
     const repository: EvaluationRepository = {
+      claimEvaluation: vi.fn().mockResolvedValue({
+        kind: "existing",
+        evaluation: {
+          id: "eval-existing",
+          attemptId,
+          clarity: 85,
+          assertiveness: 75,
+          empathy: 70,
+          structure: 90,
+          conciseness: 80,
+          universalScore: 80,
+          scenarioScore: 100,
+          overallScore: 86,
+          objectiveResults: [],
+          strengths: [],
+          improvements: [],
+          moments: [],
+          nextFocusSkill: "EMPATHY",
+          nextFocusReason: "Practice empathy",
+          summary: "Existing summary",
+          model: "openai/gpt-5.6-luna-pro",
+          promptVersion: "evaluation-v1",
+          createdAt: new Date("2026-08-29T12:15:00.000Z"),
+        },
+      }),
       findAttemptForEvaluation: vi.fn().mockResolvedValue({
         ...baseAttempt,
         status: "COMPLETED",
@@ -198,6 +223,10 @@ describe("EvaluationService", () => {
     };
 
     const repository: EvaluationRepository = {
+      claimEvaluation: vi.fn().mockResolvedValue({
+        kind: "claimed",
+        attempt: baseAttempt,
+      }),
       findAttemptForEvaluation: vi.fn().mockResolvedValue(baseAttempt),
       findExistingEvaluation: vi.fn().mockResolvedValue(null),
       saveEvaluation: vi.fn().mockResolvedValue(savedRecord),
@@ -267,6 +296,10 @@ describe("EvaluationService", () => {
     };
 
     const repository: EvaluationRepository = {
+      claimEvaluation: vi.fn().mockResolvedValue({
+        kind: "claimed",
+        attempt: baseAttempt,
+      }),
       findAttemptForEvaluation: vi.fn().mockResolvedValue(baseAttempt),
       findExistingEvaluation: vi.fn().mockResolvedValue(null),
       saveEvaluation: vi.fn().mockResolvedValue(savedRecord),
@@ -302,6 +335,10 @@ describe("EvaluationService", () => {
 
   it("marks attempt EVALUATION_FAILED when both initial call and retry fail", async () => {
     const repository: EvaluationRepository = {
+      claimEvaluation: vi.fn().mockResolvedValue({
+        kind: "claimed",
+        attempt: baseAttempt,
+      }),
       findAttemptForEvaluation: vi.fn().mockResolvedValue(baseAttempt),
       findExistingEvaluation: vi.fn().mockResolvedValue(null),
       saveEvaluation: vi.fn(),
@@ -341,6 +378,7 @@ describe("EvaluationService", () => {
 
   it("rejects evaluation when attempt is in ACTIVE state", async () => {
     const repository: EvaluationRepository = {
+      claimEvaluation: vi.fn().mockResolvedValue({ kind: "rejected" }),
       findAttemptForEvaluation: vi.fn().mockResolvedValue({
         ...baseAttempt,
         status: "ACTIVE",
@@ -365,5 +403,33 @@ describe("EvaluationService", () => {
     await expect(service.evaluate(userId, attemptId)).rejects.toMatchObject({
       code: "INVALID_ATTEMPT_STATE",
     });
+  });
+
+  it("does not call AI when another request has already claimed evaluation", async () => {
+    const repository: EvaluationRepository = {
+      claimEvaluation: vi.fn().mockResolvedValue({ kind: "in_progress" }),
+      findAttemptForEvaluation: vi.fn(),
+      findExistingEvaluation: vi.fn(),
+      saveEvaluation: vi.fn(),
+      markEvaluationFailed: vi.fn(),
+    };
+    const aiService: AiService = {
+      roleplayModel: "deepseek/deepseek-v4-flash-0731",
+      evaluationModel: "openai/gpt-5.6-luna-pro",
+      transcriptionModel: "openai/whisper-large-v3-turbo",
+      ttsModel: "hexgrad/kokoro-82m",
+      generateSpeech: vi.fn(),
+      generateRoleplayReply: vi.fn(),
+      evaluateSimulation: vi.fn(),
+      transcribeAudio: vi.fn(),
+    };
+
+    await expect(
+      createEvaluationService(repository, aiService).evaluate(
+        userId,
+        attemptId,
+      ),
+    ).rejects.toMatchObject({ code: "EVALUATION_IN_PROGRESS" });
+    expect(aiService.evaluateSimulation).not.toHaveBeenCalled();
   });
 });

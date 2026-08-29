@@ -2,6 +2,8 @@ import type { AiService } from "../ai/ai-service.js";
 import { AiProviderError } from "../ai/openrouter-provider.js";
 import { AttemptError } from "../attempts/attempt-errors.js";
 import type { VoiceRepository } from "./voice-repository.js";
+import type { AudioDurationParser } from "./audio-duration.js";
+import { createAudioDurationParser } from "./audio-duration.js";
 import { validateAudioInput } from "./voice-rules.js";
 
 export class VoiceValidationError extends Error {
@@ -34,6 +36,7 @@ export function createVoiceService(
   repository: VoiceRepository,
   aiService: AiService,
   clock: () => Date = () => new Date(),
+  durationParser: AudioDurationParser = createAudioDurationParser(),
 ): VoiceService {
   return {
     async transcribe(params) {
@@ -54,11 +57,21 @@ export function createVoiceService(
         throw new AttemptError("SESSION_LIMIT_REACHED");
       }
 
+      let durationMs: number;
+      try {
+        durationMs = await durationParser.parseDurationMs(
+          params.audio.buffer,
+          params.audio.mimeType,
+        );
+      } catch {
+        throw new VoiceValidationError("Audio duration could not be verified.");
+      }
+
       const validation = validateAudioInput({
         buffer: params.audio.buffer,
         mimeType: params.audio.mimeType,
         size: params.audio.size,
-        durationMs: params.audio.durationMs,
+        durationMs,
       });
 
       if (!validation.valid) {
@@ -81,7 +94,7 @@ export function createVoiceService(
           model: aiService.transcriptionModel,
           status: "SUCCESS",
           latencyMs: result.latencyMs,
-          audioDurationMs: params.audio.durationMs ?? null,
+          audioDurationMs: durationMs,
           estimatedCost: result.estimatedCost,
           errorCode: null,
         });
@@ -102,7 +115,7 @@ export function createVoiceService(
           model: aiService.transcriptionModel,
           status: "FAILED",
           latencyMs,
-          audioDurationMs: params.audio.durationMs ?? null,
+          audioDurationMs: durationMs,
           estimatedCost: null,
           errorCode,
         });

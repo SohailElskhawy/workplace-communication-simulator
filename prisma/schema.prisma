@@ -91,6 +91,7 @@ model SimulationAttempt {
   expiresAt           DateTime      @db.Timestamptz(3)
   progressEligible    Boolean       @default(false)
   evaluationStartedAt DateTime?     @db.Timestamptz(3)
+  evaluationClaimedAt DateTime?     @db.Timestamptz(3)
   createdAt           DateTime      @default(now()) @db.Timestamptz(3)
   updatedAt           DateTime      @updatedAt @db.Timestamptz(3)
 

@@ -47,6 +47,86 @@ export function createPrismaEvaluationRepository(
   prisma: PrismaClient,
 ): EvaluationRepository {
   return {
+    async claimEvaluation(attemptId, userId, claimedAt) {
+      return prisma.$transaction(async (tx) => {
+        const attempt = await tx.simulationAttempt.findFirst({
+          where: { id: attemptId, userId },
+          include: {
+            scenario: {
+              select: {
+                id: true,
+                key: true,
+                version: true,
+                title: true,
+                definition: true,
+              },
+            },
+            conversationTurns: {
+              orderBy: { sequence: "asc" },
+              select: {
+                id: true,
+                sequence: true,
+                userText: true,
+                assistantText: true,
+                status: true,
+              },
+            },
+            evaluation: true,
+          },
+        });
+        if (!attempt) return { kind: "not_found" } as const;
+        if (attempt.evaluation) {
+          return {
+            kind: "existing",
+            evaluation: mapEvaluation(attempt.evaluation),
+          } as const;
+        }
+        if (attempt.status === "COMPLETED") {
+          const existing = await tx.evaluation.findUnique({
+            where: { attemptId },
+          });
+          return existing
+            ? ({
+                kind: "existing",
+                evaluation: mapEvaluation(existing),
+              } as const)
+            : ({ kind: "rejected" } as const);
+        }
+        if (attempt.status === "EVALUATING" && attempt.evaluationClaimedAt) {
+          return { kind: "in_progress" } as const;
+        }
+        if (
+          attempt.status !== "EVALUATING" &&
+          attempt.status !== "EVALUATION_FAILED"
+        ) {
+          return { kind: "rejected" } as const;
+        }
+        const claimed = await tx.simulationAttempt.updateMany({
+          where: {
+            id: attemptId,
+            userId,
+            ...(attempt.status === "EVALUATING"
+              ? { status: "EVALUATING", evaluationClaimedAt: null }
+              : { status: "EVALUATION_FAILED" }),
+          },
+          data: { status: "EVALUATING", evaluationClaimedAt: claimedAt },
+        });
+        if (claimed.count !== 1) return { kind: "in_progress" } as const;
+        return {
+          kind: "claimed",
+          attempt: {
+            id: attempt.id,
+            userId: attempt.userId,
+            status: "EVALUATING",
+            difficulty: attempt.difficulty,
+            endedAt: attempt.endedAt,
+            scenario: attempt.scenario,
+            turns: attempt.conversationTurns,
+            evaluation: null,
+          },
+        } as const;
+      });
+    },
     async findAttemptForEvaluation(attemptId, userId) {
       const attempt = await prisma.simulationAttempt.findFirst({
         where: { id: attemptId, userId },
@@ -136,6 +216,7 @@ export function createPrismaEvaluationRepository(
               status: "COMPLETED",
               progressEligible: input.progressEligible,
               endedAt: input.endedAt,
+              evaluationClaimedAt: null,
             },
           });
 
@@ -177,7 +258,7 @@ export function createPrismaEvaluationRepository(
       await prisma.$transaction(async (tx) => {
         await tx.simulationAttempt.update({
           where: { id: input.attemptId },
-          data: { status: "EVALUATION_FAILED" },
+          data: { status: "EVALUATION_FAILED", evaluationClaimedAt: null },
         });
 
         await tx.aiUsageEvent.create({

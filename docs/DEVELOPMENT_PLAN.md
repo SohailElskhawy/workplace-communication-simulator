@@ -387,14 +387,3 @@ Before accepting a milestone verify:
 - no AI secrets in frontend.
 
 ---
-
-# Current Task
-
-Remain on:
-
-## Milestone 4 — Attempt Lifecycle
-
-Milestone 4 implementation exists and must remain the only active milestone
-while provider documentation and environment configuration are aligned for
-OpenRouter. Do not start Milestone 5 AI implementation until explicitly
-authorized after Milestone 4 verification.

@@ -99,6 +99,7 @@ describe("PrismaEvaluationRepository", () => {
         status: "COMPLETED",
         progressEligible: true,
         endedAt: expect.any(Date),
+        evaluationClaimedAt: null,
       },
     });
     expect(transaction.aiUsageEvent.create).toHaveBeenCalledWith({
@@ -149,7 +150,7 @@ describe("PrismaEvaluationRepository", () => {
 
     expect(transaction.simulationAttempt.update).toHaveBeenCalledWith({
       where: { id: attemptId },
-      data: { status: "EVALUATION_FAILED" },
+      data: { status: "EVALUATION_FAILED", evaluationClaimedAt: null },
     });
     expect(transaction.aiUsageEvent.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
@@ -157,6 +158,53 @@ describe("PrismaEvaluationRepository", () => {
         status: "FAILED",
         errorCode: "AI_TIMEOUT",
       }),
+    });
+  });
+
+  it("claims an unclaimed evaluation with a conditional update before AI work", async () => {
+    const claimedAt = new Date("2026-08-29T12:00:00.000Z");
+    const transaction = {
+      simulationAttempt: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: attemptId,
+          userId,
+          status: "EVALUATING",
+          difficulty: "MEDIUM",
+          endedAt: claimedAt,
+          evaluationClaimedAt: null,
+          scenario: {
+            id: "scenario-1",
+            key: "salary-negotiation",
+            version: 1,
+            title: "Salary Negotiation",
+            definition: {},
+          },
+          conversationTurns: [],
+          evaluation: null,
+        }),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      },
+    };
+    const prisma = {
+      $transaction: vi.fn(
+        async (callback: (client: typeof transaction) => Promise<unknown>) =>
+          callback(transaction),
+      ),
+    } as unknown as PrismaClient;
+
+    const result = await createPrismaEvaluationRepository(
+      prisma,
+    ).claimEvaluation(attemptId, userId, claimedAt);
+
+    expect(result.kind).toBe("claimed");
+    expect(transaction.simulationAttempt.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: attemptId,
+        userId,
+        status: "EVALUATING",
+        evaluationClaimedAt: null,
+      },
+      data: { status: "EVALUATING", evaluationClaimedAt: claimedAt },
     });
   });
 });

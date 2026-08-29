@@ -131,7 +131,6 @@ describe("POST /api/v1/attempts/:attemptId/transcriptions", () => {
         audio: expect.objectContaining({
           mimeType: "audio/webm",
           fileName: "recording.webm",
-          durationMs: 5500,
         }),
       }),
     );

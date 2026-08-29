@@ -96,21 +96,6 @@ export function registerVoiceRoutes(
           return;
         }
 
-        let durationMs: number | null = null;
-        if (request.body && typeof request.body === "object") {
-          const rawDuration =
-            request.body.durationMs ??
-            (request.body.durationSeconds != null
-              ? Number(request.body.durationSeconds) * 1000
-              : null);
-          if (rawDuration != null) {
-            const num = Number(rawDuration);
-            if (!Number.isNaN(num) && num >= 0) {
-              durationMs = num;
-            }
-          }
-        }
-
         const result = await dependencies.voiceService.transcribe({
           userId,
           attemptId: parsedParams.data.attemptId,
@@ -119,7 +104,6 @@ export function registerVoiceRoutes(
             mimeType: uploadedFile.mimetype,
             size: uploadedFile.size,
             fileName: uploadedFile.originalname,
-            durationMs,
           },
         });
 

@@ -24,6 +24,11 @@ const OpenRouterResponseSchema = z.object({
     .optional(),
 });
 
+const ROLEPLAY_MAX_OUTPUT_TOKENS = 300;
+const EVALUATION_MAX_OUTPUT_TOKENS = 2_000;
+const ROLEPLAY_MAX_RESPONSE_CHARS = 1_600;
+const EVALUATION_MAX_RESPONSE_CHARS = 60_000;
+
 export type AiErrorCode = "AI_TIMEOUT" | "AI_PROVIDER_ERROR";
 
 export class AiProviderError extends Error {
@@ -131,6 +136,7 @@ export function createOpenRouterProvider(
   async function sendChatCompletion(
     bodyPayload: Record<string, unknown>,
     timeoutMs: number,
+    maxResponseChars: number,
   ) {
     const startedAt = clock();
     const controller = new AbortController();
@@ -165,7 +171,7 @@ export function createOpenRouterProvider(
         ? parsed.data.choices[0]?.message.content.trim()
         : "";
 
-      if (!parsed.success || !content) {
+      if (!parsed.success || !content || content.length > maxResponseChars) {
         throw new AiProviderError("AI_PROVIDER_ERROR", latencyMs);
       }
 
@@ -194,12 +200,14 @@ export function createOpenRouterProvider(
           model: request.model,
           messages: request.messages,
           stream: false,
+          max_tokens: ROLEPLAY_MAX_OUTPUT_TOKENS,
           provider: {
             zdr: true,
             data_collection: "deny",
           },
         },
         request.timeoutMs,
+        ROLEPLAY_MAX_RESPONSE_CHARS,
       );
 
       return {
@@ -217,6 +225,7 @@ export function createOpenRouterProvider(
           model: request.model,
           messages: request.messages,
           stream: false,
+          max_tokens: EVALUATION_MAX_OUTPUT_TOKENS,
           response_format: { type: "json_object" },
           provider: {
             zdr: true,
@@ -224,6 +233,7 @@ export function createOpenRouterProvider(
           },
         },
         request.timeoutMs,
+        EVALUATION_MAX_RESPONSE_CHARS,
       );
 
       let jsonPayload: unknown;
@@ -264,6 +274,10 @@ export function createOpenRouterProvider(
         formData.append("file", blob, request.fileName ?? "audio.webm");
 
         formData.append("model", request.model);
+        formData.append(
+          "provider",
+          JSON.stringify({ zdr: true, data_collection: "deny" }),
+        );
 
         const response = await fetchImplementation(
           "https://openrouter.ai/api/v1/audio/transcriptions",

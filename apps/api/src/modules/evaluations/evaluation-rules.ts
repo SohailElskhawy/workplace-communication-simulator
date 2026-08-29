@@ -66,6 +66,12 @@ export function validateEvaluationReferences(
         reason: `Evaluated objective ID '${obj.objectiveId}' is not defined in the scenario.`,
       };
     }
+    if (evaluatedObjectiveIds.has(obj.objectiveId)) {
+      return {
+        valid: false,
+        reason: `Scenario objective '${obj.objectiveId}' was evaluated more than once.`,
+      };
+    }
     evaluatedObjectiveIds.add(obj.objectiveId);
 
     for (const turnId of obj.evidenceTurnIds) {

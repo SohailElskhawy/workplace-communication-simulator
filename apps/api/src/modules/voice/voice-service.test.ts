@@ -4,6 +4,7 @@ import type { AiService } from "../ai/ai-service.js";
 import { AiProviderError } from "../ai/openrouter-provider.js";
 import { AttemptError } from "../attempts/attempt-errors.js";
 import type { VoiceRepository } from "./voice-repository.js";
+import type { AudioDurationParser } from "./audio-duration.js";
 import { createVoiceService, VoiceValidationError } from "./voice-service.js";
 
 function createMockRepository(
@@ -38,11 +39,20 @@ function createMockAiService(overrides?: Partial<AiService>): AiService {
   };
 }
 
+function createDurationParser(durationMs = 5_000): AudioDurationParser {
+  return { parseDurationMs: vi.fn().mockResolvedValue(durationMs) };
+}
+
 describe("VoiceService", () => {
   it("transcribes audio successfully and records AI usage event", async () => {
     const repository = createMockRepository();
     const aiService = createMockAiService();
-    const service = createVoiceService(repository, aiService);
+    const service = createVoiceService(
+      repository,
+      aiService,
+      undefined,
+      createDurationParser(),
+    );
 
     const result = await service.transcribe({
       userId: "user-1",
@@ -52,7 +62,6 @@ describe("VoiceService", () => {
         mimeType: "audio/webm",
         size: 10,
         fileName: "audio.webm",
-        durationMs: 5000,
       },
     });
 
@@ -84,7 +93,12 @@ describe("VoiceService", () => {
       findAttemptForTranscription: vi.fn().mockResolvedValue(null),
     });
     const aiService = createMockAiService();
-    const service = createVoiceService(repository, aiService);
+    const service = createVoiceService(
+      repository,
+      aiService,
+      undefined,
+      createDurationParser(),
+    );
 
     await expect(
       service.transcribe({
@@ -108,7 +122,12 @@ describe("VoiceService", () => {
       }),
     });
     const aiService = createMockAiService();
-    const service = createVoiceService(repository, aiService);
+    const service = createVoiceService(
+      repository,
+      aiService,
+      undefined,
+      createDurationParser(),
+    );
 
     await expect(
       service.transcribe({
@@ -138,6 +157,7 @@ describe("VoiceService", () => {
       repository,
       aiService,
       () => new Date(2000),
+      createDurationParser(),
     );
 
     await expect(
@@ -158,7 +178,12 @@ describe("VoiceService", () => {
   it("throws VoiceValidationError when audio is invalid", async () => {
     const repository = createMockRepository();
     const aiService = createMockAiService();
-    const service = createVoiceService(repository, aiService);
+    const service = createVoiceService(
+      repository,
+      aiService,
+      undefined,
+      createDurationParser(),
+    );
 
     await expect(
       service.transcribe({
@@ -180,7 +205,12 @@ describe("VoiceService", () => {
         .fn()
         .mockRejectedValue(new AiProviderError("AI_TIMEOUT", 20_000)),
     });
-    const service = createVoiceService(repository, aiService);
+    const service = createVoiceService(
+      repository,
+      aiService,
+      undefined,
+      createDurationParser(),
+    );
 
     await expect(
       service.transcribe({
@@ -190,7 +220,6 @@ describe("VoiceService", () => {
           buffer: Buffer.from("audio"),
           mimeType: "audio/webm",
           size: 10,
-          durationMs: 3000,
         },
       }),
     ).rejects.toMatchObject({
@@ -204,9 +233,33 @@ describe("VoiceService", () => {
       model: "openai/whisper-large-v3-turbo",
       status: "FAILED",
       latencyMs: 20_000,
-      audioDurationMs: 3000,
+      audioDurationMs: 5000,
       estimatedCost: null,
       errorCode: "AI_TIMEOUT",
     });
+  });
+
+  it("rejects an uploaded recording whose parsed duration exceeds 120 seconds", async () => {
+    const repository = createMockRepository();
+    const aiService = createMockAiService();
+    const service = createVoiceService(
+      repository,
+      aiService,
+      undefined,
+      createDurationParser(120_001),
+    );
+
+    await expect(
+      service.transcribe({
+        userId: "user-1",
+        attemptId: "attempt-1",
+        audio: {
+          buffer: Buffer.from("audio"),
+          mimeType: "audio/webm",
+          size: 5,
+        },
+      }),
+    ).rejects.toThrow("exceeds the maximum limit of 120 seconds");
+    expect(aiService.transcribeAudio).not.toHaveBeenCalled();
   });
 });

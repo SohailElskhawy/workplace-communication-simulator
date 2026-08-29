@@ -7,7 +7,8 @@ export type AttemptErrorCode =
   | "AI_PROVIDER_ERROR"
   | "TRANSCRIPTION_FAILED"
   | "TTS_FAILED"
-  | "EVALUATION_FAILED";
+  | "EVALUATION_FAILED"
+  | "EVALUATION_IN_PROGRESS";
 
 const errorDetails: Record<
   AttemptErrorCode,
@@ -45,6 +46,10 @@ const errorDetails: Record<
   EVALUATION_FAILED: {
     status: 500,
     message: "The evaluation could not be completed.",
+  },
+  EVALUATION_IN_PROGRESS: {
+    status: 409,
+    message: "An evaluation is already in progress. Please try again shortly.",
   },
 };
 
