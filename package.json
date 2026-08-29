@@ -19,7 +19,8 @@
     "test": "corepack pnpm prisma:generate && vitest run",
     "prisma:generate": "prisma generate",
     "prisma:validate": "prisma validate",
-    "prisma:migrate:deploy": "prisma migrate deploy"
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:seed": "prisma db seed"
   },
   "devDependencies": {
     "@eslint/js": "9.39.3",

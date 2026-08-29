@@ -221,22 +221,21 @@ Do not implement:
 
 ## Current Development Milestone
 
-Milestone 2 — Authentication + Database is implemented and locally verified.
+Milestone 3 — Scenario System is implemented and locally verified.
 
-Completed authentication/database foundation:
+Completed scenario foundation:
 
-- Clerk provider, proxy, sign-in/sign-up routes, and protected `/app` route in Next.js;
-- bearer-token forwarding from Next.js to the Express API;
-- Clerk session-token verification in Express;
-- lazy, concurrency-safe local `User` provisioning by unique Clerk user ID;
-- `GET /api/v1/me` with frontend-safe Zod contract;
-- stable `UNAUTHENTICATED` response for unauthenticated requests;
-- Prisma 7 PostgreSQL/Neon configuration using pooled `DATABASE_URL` at runtime and `DIRECT_URL` for migrations;
-- initial migration containing only the `User` model required by this milestone;
-- required Clerk, database, origin, and API URL environment validation;
-- focused authentication, provisioning, contract, and environment tests.
+- versioned `Scenario` Prisma model with JSONB definition storage, active-version index, unique key/version constraint, and a migration-level `version >= 1` check;
+- backend-only Zod contract for complete scenario definitions;
+- Salary Negotiation v1 with reviewed public context, hidden persona and AI configuration, stable evaluation objectives, and Easy/Medium/Hard behavior profiles;
+- transactional, idempotent scenario synchronization that refuses in-place changes to an existing immutable version;
+- Prisma 7 seed configuration and scenario sync entry point;
+- frontend-safe shared Zod DTO contracts containing only approved public fields;
+- `GET /api/v1/scenarios` and `GET /api/v1/scenarios/:scenarioKey`;
+- explicit API mapping that prevents persona, AI objectives, motivations, constraints, rubric/objectives, prompt guidance, roleplay rules, and opening-message data from reaching clients;
+- focused definition-validation, persistence/synchronization, DTO-safety, and endpoint tests.
 
-Verified on August 28, 2026 with:
+Verified on August 29, 2026 with:
 
 ```text
 corepack pnpm typecheck
@@ -248,9 +247,9 @@ corepack pnpm prisma:validate
 Prisma migration diff from an empty PostgreSQL schema
 ```
 
-Credentialed Clerk sign-in and Neon migration deployment remain environment
-smoke checks because this workspace has no Clerk or Neon credentials. Do not
-start Milestone 3 until those two checks pass in the target environment.
+Applying the new migration and running `corepack pnpm prisma:seed` against the
+configured Neon target remain deployment smoke checks; local verification does
+not use production or staging credentials.
 
 The active development target remains the first end-to-end **text-only vertical slice** using:
 
@@ -298,12 +297,12 @@ Some of these documents may not exist yet. Do not invent missing requirements; u
 
 ## Current Next Task
 
-Complete Milestone 2 environment smoke checks:
+Begin Milestone 4 — Attempt Lifecycle for Salary Negotiation / Medium only:
 
-1. configure the Clerk and Neon values documented in `.env.example`;
-2. run `corepack pnpm prisma:migrate:deploy` against Neon;
-3. sign in through Next.js and confirm `/app` receives one stable local user ID from `GET /api/v1/me`;
-4. confirm a direct unauthenticated request to `GET /api/v1/me` returns `401 UNAUTHENTICATED`.
+1. add `SimulationAttempt` and `ConversationTurn` persistence;
+2. implement ownership-safe attempt creation and retrieval;
+3. enforce lifecycle, expiry, turn-limit, and idempotency rules;
+4. preserve accepted learner text independently of future AI generation.
 
-After those checks pass, begin Milestone 3 — Scenario System. Do not start AI,
-voice, attempts, turns, or evaluation work as part of the environment smoke.
+Do not start OpenAI, evaluation, voice, retry comparison, history, progress, or
+additional scenarios as part of Milestone 4.

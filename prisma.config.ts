@@ -11,6 +11,7 @@ export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
     path: "prisma/migrations",
+    seed: "corepack pnpm --filter @kalemny/api exec tsx ../../prisma/seed.ts",
   },
   datasource: {
     url: migrationDatabaseUrl,

@@ -12,11 +12,14 @@ import express, {
 } from "express";
 import { randomUUID } from "node:crypto";
 
+import { registerScenarioRoutes } from "./modules/scenarios/scenario-routes.js";
+import type { ScenarioService } from "./modules/scenarios/scenario-service.js";
 import type { LocalUserProvisioner } from "./modules/users/provision-local-user.js";
 
 export interface AuthenticatedAppDependencies {
   authenticationMiddleware: RequestHandler;
   resolveAuthProviderUserId(request: Request): string | null;
+  scenarioService: ScenarioService;
   userProvisioner: LocalUserProvisioner;
   webOrigin: string;
 }
@@ -77,6 +80,8 @@ export function createApp(dependencies: AuthenticatedAppDependencies): Express {
 
     response.status(200).json(body);
   });
+
+  registerScenarioRoutes(app, dependencies.scenarioService);
 
   const errorHandler: ErrorRequestHandler = (
     error,

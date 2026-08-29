@@ -8,12 +8,18 @@ import { describe, expect, it } from "vitest";
 
 import { createApp } from "./app.js";
 
+const unusedScenarioService = {
+  listActive: async () => [],
+  getActiveByKey: async () => null,
+};
+
 describe("GET /api/v1/health", () => {
   it("returns the shared health response", async () => {
     const response = await request(
       createApp({
         authenticationMiddleware: (_req, _res, next) => next(),
         resolveAuthProviderUserId: () => null,
+        scenarioService: unusedScenarioService,
         userProvisioner: {
           ensureUser: () => {
             throw new Error("Provisioning should not run on health check");
@@ -44,6 +50,7 @@ describe("GET /api/v1/me", () => {
       createApp({
         authenticationMiddleware,
         resolveAuthProviderUserId: () => null,
+        scenarioService: unusedScenarioService,
         userProvisioner: {
           ensureUser: () => {
             throw new Error("Provisioning must not run without authentication");
@@ -65,6 +72,7 @@ describe("GET /api/v1/me", () => {
       createApp({
         authenticationMiddleware,
         resolveAuthProviderUserId: () => "user_clerk_123",
+        scenarioService: unusedScenarioService,
         userProvisioner: {
           ensureUser: async (authProviderUserId) => {
             if (authProviderUserId !== "user_clerk_123") {
