@@ -1,5 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
+import type { AiService } from "../ai/ai-service.js";
+import { AiProviderError } from "../ai/openrouter-provider.js";
 import { salaryNegotiationV1 } from "../scenarios/definitions/salary-negotiation.js";
 import { getFinishStatus, getTurnRejection } from "./attempt-rules.js";
 import {
@@ -12,6 +14,22 @@ import {
 const now = new Date("2026-08-29T10:00:00.000Z");
 const ownerId = "11111111-1111-4111-8111-111111111111";
 const otherUserId = "22222222-2222-4222-8222-222222222222";
+
+function createSuccessfulAiService(
+  overrides: Partial<AiService> = {},
+): AiService {
+  return {
+    roleplayModel: "deepseek/deepseek-v4-flash-0731",
+    generateRoleplayReply: vi.fn().mockResolvedValue({
+      text: "What evidence supports the adjustment you have in mind?",
+      latencyMs: 125,
+      inputTokens: 120,
+      outputTokens: 18,
+      estimatedCost: 0.00012,
+    }),
+    ...overrides,
+  };
+}
 
 function createTurn(
   sequence: number,
@@ -33,6 +51,9 @@ function createTurn(
 
 function createMemoryRepository() {
   const attempts = new Map<string, AttemptRecord>();
+  const usageEvents: Array<
+    Parameters<AttemptRepository["finalizeRoleplayTurn"]>[0]
+  > = [];
   let nextAttempt = 1;
 
   const repository: AttemptRepository = {
@@ -123,10 +144,52 @@ function createMemoryRepository() {
       return { kind: "created", turn };
     },
 
+    async prepareFailedTurnRetry(attemptId, userId, turnId) {
+      const attempt = attempts.get(attemptId);
+      if (!attempt || attempt.userId !== userId) return { kind: "not_found" };
+      const turn = attempt.turns.find((candidate) => candidate.id === turnId);
+      if (!turn) return { kind: "not_found" };
+      if (attempt.status !== "ACTIVE") {
+        return { kind: "rejected", code: "INVALID_ATTEMPT_STATE" };
+      }
+      if (
+        turn.status === "PENDING" ||
+        attempt.turns.some((candidate) => candidate.status === "PENDING")
+      ) {
+        return { kind: "rejected", code: "TURN_ALREADY_PENDING" };
+      }
+      if (turn.status !== "FAILED") {
+        return { kind: "rejected", code: "INVALID_ATTEMPT_STATE" };
+      }
+      turn.status = "PENDING";
+      turn.assistantText = null;
+      turn.completedAt = null;
+      return { kind: "ready", turn };
+    },
+
+    async finalizeRoleplayTurn(input) {
+      const attempt = attempts.get(input.attemptId);
+      const turn = attempt?.turns.find(
+        (candidate) => candidate.id === input.turnId,
+      );
+      if (!attempt || attempt.userId !== input.userId || !turn) {
+        return { kind: "not_found" };
+      }
+      turn.assistantText = input.assistantText;
+      turn.status = input.turnStatus;
+      turn.completedAt = input.completedAt;
+      usageEvents.push(input);
+      return { kind: "updated", turn };
+    },
+
     async finishAttempt(attemptId, userId, currentTime) {
       const attempt = attempts.get(attemptId);
       if (!attempt || attempt.userId !== userId) {
         return { kind: "not_found" };
+      }
+
+      if (attempt.turns.some((turn) => turn.status === "PENDING")) {
+        return { kind: "rejected", code: "TURN_ALREADY_PENDING" };
       }
 
       const nextStatus = getFinishStatus(attempt.status, attempt.turns.length);
@@ -140,7 +203,7 @@ function createMemoryRepository() {
     },
   };
 
-  return { attempts, repository };
+  return { attempts, repository, usageEvents };
 }
 
 async function startAttempt(
@@ -157,7 +220,11 @@ async function startAttempt(
 describe("attempt service", () => {
   it("creates an active attempt with a 15-minute expiry and opening message", async () => {
     const { repository } = createMemoryRepository();
-    const service = createAttemptService(repository, () => now);
+    const service = createAttemptService(
+      repository,
+      createSuccessfulAiService(),
+      () => now,
+    );
 
     const attempt = await startAttempt(service);
 
@@ -173,7 +240,11 @@ describe("attempt service", () => {
 
   it("hides non-owned and scenario-mismatched retry sources", async () => {
     const { attempts, repository } = createMemoryRepository();
-    const service = createAttemptService(repository, () => now);
+    const service = createAttemptService(
+      repository,
+      createSuccessfulAiService(),
+      () => now,
+    );
     const source = await startAttempt(service);
 
     await expect(
@@ -201,7 +272,8 @@ describe("attempt service", () => {
 
   it("returns one logical turn for a duplicate client request before state checks", async () => {
     const { attempts, repository } = createMemoryRepository();
-    const service = createAttemptService(repository, () => now);
+    const aiService = createSuccessfulAiService();
+    const service = createAttemptService(repository, aiService, () => now);
     const attempt = await startAttempt(service);
     const request = {
       clientRequestId: "request-stable",
@@ -220,11 +292,175 @@ describe("attempt service", () => {
     expect(duplicate.created).toBe(false);
     expect(duplicate.data.id).toBe(first.data.id);
     expect(stored.turns).toHaveLength(1);
+    expect(aiService.generateRoleplayReply).toHaveBeenCalledTimes(1);
+  });
+
+  it("completes roleplay with chronological authoritative context and usage", async () => {
+    const { attempts, repository, usageEvents } = createMemoryRepository();
+    const aiService = createSuccessfulAiService();
+    const service = createAttemptService(repository, aiService, () => now);
+    const attempt = await startAttempt(service);
+    const stored = attempts.get(attempt.id);
+    if (!stored) throw new Error("Expected stored attempt");
+    stored.turns.push(
+      createTurn(2, {
+        userText: "Second learner message",
+        assistantText: "Second assistant response",
+      }),
+      createTurn(1, {
+        userText: "First learner message",
+        assistantText: "First assistant response",
+      }),
+    );
+
+    const result = await service.createTurn(ownerId, attempt.id, {
+      clientRequestId: "request-current",
+      text: "My current persisted request",
+      inputMethod: "TEXT",
+    });
+
+    expect(result.data).toMatchObject({
+      status: "COMPLETED",
+      assistantText: "What evidence supports the adjustment you have in mind?",
+    });
+    expect(aiService.generateRoleplayReply).toHaveBeenCalledWith(
+      expect.objectContaining({
+        difficulty: "MEDIUM",
+        previousTurns: [
+          expect.objectContaining({
+            sequence: 1,
+            userText: "First learner message",
+          }),
+          expect.objectContaining({
+            sequence: 2,
+            userText: "Second learner message",
+          }),
+        ],
+        latestLearnerMessage: "My current persisted request",
+      }),
+    );
+    expect(usageEvents).toHaveLength(1);
+    expect(usageEvents[0]?.usage).toEqual({
+      provider: "openrouter",
+      model: "deepseek/deepseek-v4-flash-0731",
+      status: "SUCCESS",
+      latencyMs: 125,
+      inputTokens: 120,
+      outputTokens: 18,
+      estimatedCost: 0.00012,
+      errorCode: null,
+    });
+  });
+
+  it("preserves learner text and records safe usage when roleplay fails", async () => {
+    const { attempts, repository, usageEvents } = createMemoryRepository();
+    const aiService = createSuccessfulAiService({
+      generateRoleplayReply: vi
+        .fn<AiService["generateRoleplayReply"]>()
+        .mockRejectedValue(new AiProviderError("AI_PROVIDER_ERROR", 75)),
+    });
+    const service = createAttemptService(repository, aiService, () => now);
+    const attempt = await startAttempt(service);
+
+    await expect(
+      service.createTurn(ownerId, attempt.id, {
+        clientRequestId: "request-fails",
+        text: "Please preserve this learner message.",
+        inputMethod: "TEXT",
+      }),
+    ).rejects.toMatchObject({ code: "AI_PROVIDER_ERROR", status: 502 });
+
+    const stored = attempts.get(attempt.id)?.turns[0];
+    expect(stored).toMatchObject({
+      userText: "Please preserve this learner message.",
+      assistantText: null,
+      status: "FAILED",
+    });
+    expect(usageEvents[0]?.usage).toMatchObject({
+      status: "FAILED",
+      errorCode: "AI_PROVIDER_ERROR",
+      inputTokens: null,
+      outputTokens: null,
+      estimatedCost: null,
+    });
+  });
+
+  it("retries a failed response on the same conversation turn", async () => {
+    const { attempts, repository } = createMemoryRepository();
+    const generateRoleplayReply = vi
+      .fn<AiService["generateRoleplayReply"]>()
+      .mockRejectedValueOnce(new AiProviderError("AI_TIMEOUT", 15_000))
+      .mockResolvedValueOnce({
+        text: "I can take that request back for approval.",
+        latencyMs: 110,
+        inputTokens: 100,
+        outputTokens: 12,
+        estimatedCost: null,
+      });
+    const service = createAttemptService(
+      repository,
+      createSuccessfulAiService({ generateRoleplayReply }),
+      () => now,
+    );
+    const attempt = await startAttempt(service);
+
+    await expect(
+      service.createTurn(ownerId, attempt.id, {
+        clientRequestId: "request-retry",
+        text: "Could you seek approval for 90,000?",
+        inputMethod: "TEXT",
+      }),
+    ).rejects.toMatchObject({ code: "AI_TIMEOUT", status: 504 });
+    const failedTurn = attempts.get(attempt.id)?.turns[0];
+    if (!failedTurn) throw new Error("Expected failed turn");
+    expect(failedTurn).toMatchObject({
+      userText: "Could you seek approval for 90,000?",
+      assistantText: null,
+      status: "FAILED",
+    });
+
+    const retried = await service.retryTurn(ownerId, attempt.id, failedTurn.id);
+
+    expect(retried).toMatchObject({
+      id: failedTurn.id,
+      userText: "Could you seek approval for 90,000?",
+      status: "COMPLETED",
+      assistantText: "I can take that request back for approval.",
+    });
+    expect(attempts.get(attempt.id)?.turns).toHaveLength(1);
+    expect(generateRoleplayReply).toHaveBeenCalledTimes(2);
+  });
+
+  it("hides non-owned retry turns and rejects retry after the attempt is frozen", async () => {
+    const { attempts, repository } = createMemoryRepository();
+    const service = createAttemptService(
+      repository,
+      createSuccessfulAiService(),
+      () => now,
+    );
+    const attempt = await startAttempt(service);
+    const stored = attempts.get(attempt.id);
+    if (!stored) throw new Error("Expected stored attempt");
+    const failedTurn = createTurn(1, { status: "FAILED", completedAt: null });
+    stored.turns.push(failedTurn);
+
+    await expect(
+      service.retryTurn(otherUserId, attempt.id, failedTurn.id),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+    stored.status = "EVALUATING";
+    await expect(
+      service.retryTurn(ownerId, attempt.id, failedTurn.id),
+    ).rejects.toMatchObject({ code: "INVALID_ATTEMPT_STATE" });
   });
 
   it("enforces pending, expiry, turn-count, and lifecycle limits", async () => {
     const { attempts, repository } = createMemoryRepository();
-    const service = createAttemptService(repository, () => now);
+    const service = createAttemptService(
+      repository,
+      createSuccessfulAiService(),
+      () => now,
+    );
     const attempt = await startAttempt(service);
     const stored = attempts.get(attempt.id);
     if (!stored) throw new Error("Expected stored attempt");
@@ -273,7 +509,11 @@ describe("attempt service", () => {
 
   it("finishes zero-turn and eligible attempts idempotently", async () => {
     const { repository } = createMemoryRepository();
-    const service = createAttemptService(repository, () => now);
+    const service = createAttemptService(
+      repository,
+      createSuccessfulAiService(),
+      () => now,
+    );
     const empty = await startAttempt(service);
 
     await expect(service.finish(ownerId, empty.id)).resolves.toEqual({

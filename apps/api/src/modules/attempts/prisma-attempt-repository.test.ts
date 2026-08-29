@@ -57,4 +57,59 @@ describe("Prisma attempt repository race recovery", () => {
       code: "TURN_ALREADY_PENDING",
     });
   });
+
+  it("atomically finalizes a roleplay turn and stores safe usage metadata", async () => {
+    const completedTurn = {
+      ...existingTurn,
+      assistantText: "Assistant response",
+      status: "COMPLETED" as const,
+      completedAt: input.currentTime,
+    };
+    const transaction = {
+      $queryRaw: vi.fn().mockResolvedValue([{ id: input.attemptId }]),
+      conversationTurn: {
+        findFirst: vi.fn().mockResolvedValue({ id: existingTurn.id }),
+        update: vi.fn().mockResolvedValue(completedTurn),
+      },
+      aiUsageEvent: {
+        create: vi.fn().mockResolvedValue({ id: "usage-event-id" }),
+      },
+    };
+    const prisma = {
+      $transaction: vi.fn(
+        async (callback: (client: typeof transaction) => Promise<unknown>) =>
+          callback(transaction),
+      ),
+    } as unknown as PrismaClient;
+    const repository = createPrismaAttemptRepository(prisma);
+
+    await expect(
+      repository.finalizeRoleplayTurn({
+        attemptId: input.attemptId,
+        userId: input.userId,
+        turnId: existingTurn.id,
+        assistantText: completedTurn.assistantText,
+        turnStatus: "COMPLETED",
+        completedAt: input.currentTime,
+        usage: {
+          provider: "openrouter",
+          model: "deepseek/deepseek-v4-flash-0731",
+          status: "SUCCESS",
+          latencyMs: 100,
+          inputTokens: 40,
+          outputTokens: 8,
+          estimatedCost: null,
+          errorCode: null,
+        },
+      }),
+    ).resolves.toEqual({ kind: "updated", turn: completedTurn });
+    expect(transaction.aiUsageEvent.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        operation: "ROLEPLAY",
+        provider: "openrouter",
+        status: "SUCCESS",
+        errorCode: null,
+      }),
+    });
+  });
 });

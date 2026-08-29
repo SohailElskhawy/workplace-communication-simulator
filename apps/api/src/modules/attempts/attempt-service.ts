@@ -11,6 +11,8 @@ import type {
   TurnStatus,
 } from "@kalemny/contracts";
 
+import type { AiService } from "../ai/ai-service.js";
+import { AiProviderError } from "../ai/openrouter-provider.js";
 import { ScenarioDefinitionSchema } from "../scenarios/scenario-definition.js";
 import { AttemptError, type AttemptErrorCode } from "./attempt-errors.js";
 import { ATTEMPT_DURATION_MS } from "./attempt-rules.js";
@@ -75,9 +77,39 @@ export type CreateTurnRepositoryResult =
   | { kind: "not_found" }
   | { kind: "rejected"; code: AttemptErrorCode };
 
+export interface AiUsageRecordInput {
+  provider: "openrouter";
+  model: string;
+  status: "SUCCESS" | "FAILED";
+  latencyMs: number;
+  inputTokens: number | null;
+  outputTokens: number | null;
+  estimatedCost: number | null;
+  errorCode: "AI_TIMEOUT" | "AI_PROVIDER_ERROR" | null;
+}
+
+export interface FinalizeRoleplayTurnInput {
+  attemptId: string;
+  userId: string;
+  turnId: string;
+  assistantText: string | null;
+  turnStatus: "COMPLETED" | "FAILED";
+  completedAt: Date | null;
+  usage: AiUsageRecordInput;
+}
+
+export type FinalizeRoleplayTurnRepositoryResult =
+  { kind: "updated"; turn: ConversationTurnRecord } | { kind: "not_found" };
+
+export type RetryTurnRepositoryResult =
+  | { kind: "ready"; turn: ConversationTurnRecord }
+  | { kind: "not_found" }
+  | { kind: "rejected"; code: AttemptErrorCode };
+
 export type FinishAttemptRepositoryResult =
   | { kind: "finished"; id: string; status: AttemptStatus }
-  | { kind: "not_found" };
+  | { kind: "not_found" }
+  | { kind: "rejected"; code: AttemptErrorCode };
 
 export interface AttemptRepository {
   createAttempt(
@@ -90,6 +122,14 @@ export interface AttemptRepository {
   createTurn(
     input: CreateTurnRepositoryInput,
   ): Promise<CreateTurnRepositoryResult>;
+  prepareFailedTurnRetry(
+    attemptId: string,
+    userId: string,
+    turnId: string,
+  ): Promise<RetryTurnRepositoryResult>;
+  finalizeRoleplayTurn(
+    input: FinalizeRoleplayTurnInput,
+  ): Promise<FinalizeRoleplayTurnRepositoryResult>;
   finishAttempt(
     attemptId: string,
     userId: string,
@@ -116,6 +156,11 @@ export interface AttemptService {
     attemptId: string,
     request: CreateTurnRequest,
   ): Promise<CreatedTurnResult>;
+  retryTurn(
+    userId: string,
+    attemptId: string,
+    turnId: string,
+  ): Promise<ConversationTurn>;
   finish(
     userId: string,
     attemptId: string,
@@ -160,8 +205,89 @@ function mapAttempt(attempt: AttemptRecord): AttemptDetailResponse["data"] {
 
 export function createAttemptService(
   repository: AttemptRepository,
+  aiService: AiService,
   clock: () => Date = () => new Date(),
 ): AttemptService {
+  async function generateRoleplayReply(
+    userId: string,
+    attemptId: string,
+    turn: ConversationTurnRecord,
+  ): Promise<ConversationTurn> {
+    const attempt = await repository.findOwnedAttempt(attemptId, userId);
+    if (!attempt) throw new AttemptError("NOT_FOUND");
+
+    const scenario = ScenarioDefinitionSchema.parse(
+      attempt.scenario.definition,
+    );
+    const previousTurns = attempt.turns
+      .filter(
+        (previousTurn) =>
+          previousTurn.sequence < turn.sequence &&
+          previousTurn.status === "COMPLETED" &&
+          previousTurn.assistantText !== null,
+      )
+      .sort((left, right) => left.sequence - right.sequence)
+      .map((previousTurn) => ({
+        sequence: previousTurn.sequence,
+        userText: previousTurn.userText,
+        assistantText: previousTurn.assistantText as string,
+      }));
+
+    try {
+      const reply = await aiService.generateRoleplayReply({
+        scenario,
+        difficulty: attempt.difficulty,
+        previousTurns,
+        latestLearnerMessage: turn.userText,
+      });
+      const finalized = await repository.finalizeRoleplayTurn({
+        attemptId,
+        userId,
+        turnId: turn.id,
+        assistantText: reply.text,
+        turnStatus: "COMPLETED",
+        completedAt: clock(),
+        usage: {
+          provider: "openrouter",
+          model: aiService.roleplayModel,
+          status: "SUCCESS",
+          latencyMs: reply.latencyMs,
+          inputTokens: reply.inputTokens,
+          outputTokens: reply.outputTokens,
+          estimatedCost: reply.estimatedCost,
+          errorCode: null,
+        },
+      });
+
+      if (finalized.kind === "not_found") throw new AttemptError("NOT_FOUND");
+      return mapTurn(finalized.turn);
+    } catch (error) {
+      if (!(error instanceof AiProviderError)) throw error;
+
+      const finalized = await repository.finalizeRoleplayTurn({
+        attemptId,
+        userId,
+        turnId: turn.id,
+        assistantText: null,
+        turnStatus: "FAILED",
+        completedAt: null,
+        usage: {
+          provider: "openrouter",
+          model: aiService.roleplayModel,
+          status: "FAILED",
+          latencyMs: error.latencyMs,
+          inputTokens: null,
+          outputTokens: null,
+          estimatedCost: null,
+          errorCode: error.code,
+        },
+      });
+
+      if (finalized.kind === "not_found") throw new AttemptError("NOT_FOUND");
+      throw new AttemptError(error.code);
+    }
+  }
+
   return {
     async create(userId, request) {
       const startedAt = clock();
@@ -222,10 +348,26 @@ export function createAttemptService(
         throw new AttemptError(result.code);
       }
 
+      if (result.kind === "existing") {
+        return { data: mapTurn(result.turn), created: false };
+      }
+
       return {
-        data: mapTurn(result.turn),
-        created: result.kind === "created",
+        data: await generateRoleplayReply(userId, attemptId, result.turn),
+        created: true,
       };
+    },
+
+    async retryTurn(userId, attemptId, turnId) {
+      const result = await repository.prepareFailedTurnRetry(
+        attemptId,
+        userId,
+        turnId,
+      );
+
+      if (result.kind === "not_found") throw new AttemptError("NOT_FOUND");
+      if (result.kind === "rejected") throw new AttemptError(result.code);
+      return generateRoleplayReply(userId, attemptId, result.turn);
     },
 
     async finish(userId, attemptId) {
@@ -233,6 +375,10 @@ export function createAttemptService(
 
       if (result.kind === "not_found") {
         throw new AttemptError("NOT_FOUND");
+      }
+
+      if (result.kind === "rejected") {
+        throw new AttemptError(result.code);
       }
 
       return { id: result.id, status: result.status };

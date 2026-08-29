@@ -23,6 +23,9 @@ const unusedAttemptService = {
   createTurn: async () => {
     throw new Error("Attempt service should not run");
   },
+  retryTurn: async () => {
+    throw new Error("Attempt service should not run");
+  },
   finish: async () => {
     throw new Error("Attempt service should not run");
   },

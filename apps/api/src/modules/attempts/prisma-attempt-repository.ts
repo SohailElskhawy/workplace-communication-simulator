@@ -267,6 +267,101 @@ export function createPrismaAttemptRepository(
       }
     },
 
+    prepareFailedTurnRetry(attemptId, userId, turnId) {
+      return prisma.$transaction(async (transaction) => {
+        const owned = await lockOwnedAttempt(transaction, attemptId, userId);
+        if (!owned) return { kind: "not_found" } as const;
+
+        const [attempt, turn, pendingTurn] = await Promise.all([
+          transaction.simulationAttempt.findUniqueOrThrow({
+            where: { id: attemptId },
+            select: { status: true },
+          }),
+          transaction.conversationTurn.findFirst({
+            where: { id: turnId, attemptId },
+            select: turnSelection,
+          }),
+          transaction.conversationTurn.findFirst({
+            where: { attemptId, status: "PENDING" },
+            select: { id: true },
+          }),
+        ]);
+
+        if (!turn) return { kind: "not_found" } as const;
+        if (attempt.status !== "ACTIVE") {
+          return { kind: "rejected", code: "INVALID_ATTEMPT_STATE" } as const;
+        }
+        if (turn.status === "PENDING" || pendingTurn) {
+          return { kind: "rejected", code: "TURN_ALREADY_PENDING" } as const;
+        }
+        if (turn.status !== "FAILED") {
+          return { kind: "rejected", code: "INVALID_ATTEMPT_STATE" } as const;
+        }
+
+        const updated = await transaction.conversationTurn.update({
+          where: { id: turn.id },
+          data: {
+            assistantText: null,
+            status: "PENDING",
+            completedAt: null,
+          },
+          select: turnSelection,
+        });
+
+        return { kind: "ready", turn: mapTurn(updated) } as const;
+      });
+    },
+
+    finalizeRoleplayTurn(input) {
+      return prisma.$transaction(async (transaction) => {
+        const owned = await lockOwnedAttempt(
+          transaction,
+          input.attemptId,
+          input.userId,
+        );
+        if (!owned) return { kind: "not_found" } as const;
+
+        const turn = await transaction.conversationTurn.findFirst({
+          where: {
+            id: input.turnId,
+            attemptId: input.attemptId,
+            status: "PENDING",
+          },
+          select: { id: true },
+        });
+        if (!turn) return { kind: "not_found" } as const;
+
+        const [updated] = await Promise.all([
+          transaction.conversationTurn.update({
+            where: { id: turn.id },
+            data: {
+              assistantText: input.assistantText,
+              status: input.turnStatus,
+              completedAt: input.completedAt,
+            },
+            select: turnSelection,
+          }),
+          transaction.aiUsageEvent.create({
+            data: {
+              userId: input.userId,
+              attemptId: input.attemptId,
+              operation: "ROLEPLAY",
+              provider: input.usage.provider,
+              model: input.usage.model,
+              status: input.usage.status,
+              latencyMs: input.usage.latencyMs,
+              inputTokens: input.usage.inputTokens,
+              outputTokens: input.usage.outputTokens,
+              estimatedCost: input.usage.estimatedCost,
+              errorCode: input.usage.errorCode,
+            },
+          }),
+        ]);
+
+        return { kind: "updated", turn: mapTurn(updated) } as const;
+      });
+    },
+
     finishAttempt(attemptId, userId, currentTime) {
       return prisma.$transaction(async (transaction) => {
         const owned = await lockOwnedAttempt(transaction, attemptId, userId);
@@ -275,14 +370,23 @@ export function createPrismaAttemptRepository(
           return { kind: "not_found" } as const;
         }
 
-        const attempt = await transaction.simulationAttempt.findUniqueOrThrow({
-          where: { id: attemptId },
-          select: {
-            id: true,
-            status: true,
-            _count: { select: { conversationTurns: true } },
-          },
-        });
+        const [attempt, pendingTurn] = await Promise.all([
+          transaction.simulationAttempt.findUniqueOrThrow({
+            where: { id: attemptId },
+            select: {
+              id: true,
+              status: true,
+              _count: { select: { conversationTurns: true } },
+            },
+          }),
+          transaction.conversationTurn.findFirst({
+            where: { attemptId, status: "PENDING" },
+            select: { id: true },
+          }),
+        ]);
+        if (pendingTurn) {
+          return { kind: "rejected", code: "TURN_ALREADY_PENDING" } as const;
+        }
         const status = getFinishStatus(
           attempt.status,
           attempt._count.conversationTurns,

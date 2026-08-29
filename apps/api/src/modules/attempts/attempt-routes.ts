@@ -15,6 +15,10 @@ import { AttemptError } from "./attempt-errors.js";
 import type { AttemptService } from "./attempt-service.js";
 
 const AttemptParamsSchema = z.strictObject({ attemptId: z.uuid() });
+const TurnParamsSchema = z.strictObject({
+  attemptId: z.uuid(),
+  turnId: z.uuid(),
+});
 
 export interface AttemptRouteDependencies {
   attemptService: AttemptService;
@@ -141,6 +145,37 @@ export function registerAttemptRoutes(
         );
         const body: TurnResponse = { data: result.data };
         response.status(result.created ? 201 : 200).json(body);
+      } catch (error) {
+        if (!handleAttemptError(response, error)) next(error);
+      }
+    },
+  );
+
+  app.post(
+    "/api/v1/attempts/:attemptId/turns/:turnId/retry",
+    async (request, response, next) => {
+      try {
+        const userId = await resolveLocalUserId(
+          request,
+          response,
+          dependencies,
+        );
+        if (!userId) return;
+
+        const parsed = TurnParamsSchema.safeParse(request.params);
+        if (!parsed.success) {
+          sendError(response, 400, "VALIDATION_FAILED", "Turn ID is invalid.");
+          return;
+        }
+
+        const body: TurnResponse = {
+          data: await dependencies.attemptService.retryTurn(
+            userId,
+            parsed.data.attemptId,
+            parsed.data.turnId,
+          ),
+        };
+        response.status(200).json(body);
       } catch (error) {
         if (!handleAttemptError(response, error)) next(error);
       }

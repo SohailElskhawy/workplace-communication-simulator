@@ -2,7 +2,9 @@ export type AttemptErrorCode =
   | "NOT_FOUND"
   | "INVALID_ATTEMPT_STATE"
   | "SESSION_LIMIT_REACHED"
-  | "TURN_ALREADY_PENDING";
+  | "TURN_ALREADY_PENDING"
+  | "AI_TIMEOUT"
+  | "AI_PROVIDER_ERROR";
 
 const errorDetails: Record<
   AttemptErrorCode,
@@ -20,6 +22,14 @@ const errorDetails: Record<
   TURN_ALREADY_PENDING: {
     status: 409,
     message: "Another turn is already pending.",
+  },
+  AI_TIMEOUT: {
+    status: 504,
+    message: "The roleplay response timed out. Retry this turn.",
+  },
+  AI_PROVIDER_ERROR: {
+    status: 502,
+    message: "The roleplay response could not be generated. Retry this turn.",
   },
 };
 

@@ -14,6 +14,7 @@ model User {
   updatedAt          DateTime @updatedAt @db.Timestamptz(3)
 
   simulationAttempts SimulationAttempt[]
+  aiUsageEvents       AiUsageEvent[]
 }
 
 model Scenario {
@@ -58,6 +59,18 @@ enum TurnStatus {
   FAILED
 }
 
+enum AiOperation {
+  ROLEPLAY
+  EVALUATION
+  TRANSCRIPTION
+  TTS
+}
+
+enum AiUsageStatus {
+  SUCCESS
+  FAILED
+}
+
 model SimulationAttempt {
   id                  String        @id @default(uuid()) @db.Uuid
   userId              String        @db.Uuid
@@ -78,6 +91,7 @@ model SimulationAttempt {
   retryOfAttempt    SimulationAttempt?  @relation("AttemptRetries", fields: [retryOfAttemptId], references: [id], onDelete: SetNull)
   retryAttempts     SimulationAttempt[] @relation("AttemptRetries")
   conversationTurns ConversationTurn[]
+  aiUsageEvents     AiUsageEvent[]
 
   @@index([userId, createdAt])
   @@index([userId, status])
@@ -92,12 +106,36 @@ model ConversationTurn {
   inputMethod     InputMethod
   userText        String      @db.Text
   assistantText   String?     @db.Text
-  status          TurnStatus  @default(PENDING)
-  createdAt       DateTime    @default(now()) @db.Timestamptz(3)
-  completedAt     DateTime?   @db.Timestamptz(3)
+  status              TurnStatus @default(PENDING)
+  generationStartedAt DateTime   @default(now()) @db.Timestamptz(3)
+  createdAt           DateTime   @default(now()) @db.Timestamptz(3)
+  completedAt         DateTime?  @db.Timestamptz(3)
 
   attempt SimulationAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
 
   @@unique([attemptId, sequence])
   @@unique([attemptId, clientRequestId])
+}
+
+model AiUsageEvent {
+  id              String        @id @default(uuid()) @db.Uuid
+  userId          String        @db.Uuid
+  attemptId       String?       @db.Uuid
+  operation       AiOperation
+  provider        String
+  model           String
+  status          AiUsageStatus
+  latencyMs       Int
+  inputTokens     Int?
+  outputTokens    Int?
+  audioDurationMs Int?
+  estimatedCost   Decimal?      @db.Decimal(18, 12)
+  errorCode       String?
+  createdAt       DateTime      @default(now()) @db.Timestamptz(3)
+
+  user    User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attempt SimulationAttempt? @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  @@index([attemptId, createdAt])
+  @@index([operation, createdAt])
 }

@@ -44,28 +44,35 @@ function createAttemptApp(
   overrides: Partial<AttemptService> = {},
   authProviderUserId: string | null = "user_clerk_123",
 ) {
-  const attemptService: AttemptService = {
-    create: vi.fn<AttemptService["create"]>().mockResolvedValue(createdAttempt),
-    getOwned: vi.fn<AttemptService["getOwned"]>().mockResolvedValue({
-      id: attemptId,
-      status: "ACTIVE",
-      difficulty: "MEDIUM",
-      scenario: createdAttempt.scenario,
-      retryOfAttemptId: null,
-      turns: [],
-      evaluation: null,
-      startedAt: createdAttempt.startedAt,
-      endedAt: null,
-      expiresAt: createdAttempt.expiresAt,
-    }),
-    createTurn: vi
-      .fn<AttemptService["createTurn"]>()
-      .mockResolvedValue({ data: pendingTurn, created: true }),
-    finish: vi
-      .fn<AttemptService["finish"]>()
-      .mockResolvedValue({ id: attemptId, status: "EVALUATING" }),
-    ...overrides,
-  };
+  const attemptService: AttemptService = Object.assign(
+    {
+      create: vi
+        .fn<AttemptService["create"]>()
+        .mockResolvedValue(createdAttempt),
+      getOwned: vi.fn<AttemptService["getOwned"]>().mockResolvedValue({
+        id: attemptId,
+        status: "ACTIVE",
+        difficulty: "MEDIUM",
+        scenario: createdAttempt.scenario,
+        retryOfAttemptId: null,
+        turns: [],
+        evaluation: null,
+        startedAt: createdAttempt.startedAt,
+        endedAt: null,
+        expiresAt: createdAttempt.expiresAt,
+      }),
+      createTurn: vi
+        .fn<AttemptService["createTurn"]>()
+        .mockResolvedValue({ data: pendingTurn, created: true }),
+      retryTurn: vi
+        .fn<AttemptService["retryTurn"]>()
+        .mockResolvedValue(pendingTurn),
+      finish: vi
+        .fn<AttemptService["finish"]>()
+        .mockResolvedValue({ id: attemptId, status: "EVALUATING" }),
+    } satisfies AttemptService,
+    overrides,
+  );
   const ensureUser = vi.fn(async () => ({ id: ownerId }));
   const app = createApp({
     attemptService,
@@ -173,6 +180,53 @@ describe("attempt endpoints", () => {
     expect(duplicate.status).toBe(200);
     expect(TurnResponseSchema.parse(first.body)).toEqual(
       TurnResponseSchema.parse(duplicate.body),
+    );
+  });
+
+  it("retries the same failed turn through the owner-scoped endpoint", async () => {
+    const completedTurn = {
+      ...pendingTurn,
+      assistantText: "A generated response",
+      status: "COMPLETED" as const,
+      completedAt: "2026-08-29T10:01:01.000Z",
+    };
+    const retryTurn = vi
+      .fn<AttemptService["retryTurn"]>()
+      .mockResolvedValue(completedTurn);
+    const { app } = createAttemptApp({ retryTurn });
+
+    const response = await request(app).post(
+      `/api/v1/attempts/${attemptId}/turns/${pendingTurn.id}/retry`,
+    );
+
+    expect(response.status).toBe(200);
+    expect(TurnResponseSchema.parse(response.body).data.id).toBe(
+      pendingTurn.id,
+    );
+    expect(retryTurn).toHaveBeenCalledWith(ownerId, attemptId, pendingTurn.id);
+  });
+
+  it("returns sanitized roleplay errors without exposing provider details", async () => {
+    const createTurn = vi
+      .fn<AttemptService["createTurn"]>()
+      .mockRejectedValue(new AttemptError("AI_PROVIDER_ERROR"));
+    const { app } = createAttemptApp({ createTurn });
+
+    const response = await request(app)
+      .post(`/api/v1/attempts/${attemptId}/turns`)
+      .send({
+        clientRequestId: "request-provider-error",
+        text: "Sensitive learner text",
+        inputMethod: "TEXT",
+      });
+
+    expect(response.status).toBe(502);
+    expect(ApiErrorResponseSchema.parse(response.body).error).toMatchObject({
+      code: "AI_PROVIDER_ERROR",
+      message: "The roleplay response could not be generated. Retry this turn.",
+    });
+    expect(JSON.stringify(response.body)).not.toContain(
+      "Sensitive learner text",
     );
   });
 

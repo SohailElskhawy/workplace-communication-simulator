@@ -28,6 +28,9 @@ const unusedAttemptService = {
   createTurn: async () => {
     throw new Error("Attempt service should not run for scenario routes");
   },
+  retryTurn: async () => {
+    throw new Error("Attempt service should not run for scenario routes");
+  },
   finish: async () => {
     throw new Error("Attempt service should not run for scenario routes");
   },

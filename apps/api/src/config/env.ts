@@ -24,6 +24,7 @@ const ApiEnvSchema = z.object({
   CLERK_SECRET_KEY: z.string().min(1),
   OPENROUTER_API_KEY: z.string().min(1),
   ROLEPLAY_MODEL: ExplicitOpenRouterModelSchema,
+  ROLEPLAY_PROMPT_VERSION: z.literal("roleplay-v1"),
   EVALUATION_MODEL: ExplicitOpenRouterModelSchema,
   TRANSCRIPTION_MODEL: ExplicitOpenRouterModelSchema,
   TTS_MODEL: OptionalExplicitOpenRouterModelSchema,

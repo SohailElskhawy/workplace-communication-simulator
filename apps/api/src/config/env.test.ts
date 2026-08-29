@@ -10,6 +10,7 @@ describe("parseApiEnv", () => {
     CLERK_SECRET_KEY: "sk_test_example",
     OPENROUTER_API_KEY: "sk-or-v1-example",
     ROLEPLAY_MODEL: "provider/roleplay-model",
+    ROLEPLAY_PROMPT_VERSION: "roleplay-v1",
     EVALUATION_MODEL: "provider/evaluation-model",
     TRANSCRIPTION_MODEL: "provider/transcription-model",
   };
@@ -61,6 +62,15 @@ describe("parseApiEnv", () => {
         ROLEPLAY_MODEL: "openrouter/auto",
       }),
     ).toThrow("OpenRouter automatic model routing is not allowed");
+  });
+
+  it("rejects an unsupported roleplay prompt version", () => {
+    expect(() =>
+      parseApiEnv({
+        ...requiredEnvironment,
+        ROLEPLAY_PROMPT_VERSION: "roleplay-v2",
+      }),
+    ).toThrow();
   });
 
   it("keeps TTS unconfigured until its milestone", () => {

@@ -1,6 +1,8 @@
 import { createApp } from "./app.js";
 import { parseApiEnv } from "./config/env.js";
 import { createPrismaClient } from "./infrastructure/database/prisma.js";
+import { createAiService } from "./modules/ai/ai-service.js";
+import { createOpenRouterProvider } from "./modules/ai/openrouter-provider.js";
 import {
   createClerkAuthenticationMiddleware,
   resolveClerkUserId,
@@ -19,8 +21,15 @@ const userProvisioner = createLocalUserProvisioner({
 const scenarioService = createScenarioService(
   createPrismaScenarioRepository(prisma),
 );
+const aiService = createAiService({
+  provider: createOpenRouterProvider({ apiKey: apiEnv.OPENROUTER_API_KEY }),
+  roleplayModel: apiEnv.ROLEPLAY_MODEL,
+  roleplayPromptVersion: apiEnv.ROLEPLAY_PROMPT_VERSION,
+  roleplayTimeoutMs: apiEnv.ROLEPLAY_TIMEOUT_MS,
+});
 const attemptService = createAttemptService(
   createPrismaAttemptRepository(prisma),
+  aiService,
 );
 
 const app = createApp({
