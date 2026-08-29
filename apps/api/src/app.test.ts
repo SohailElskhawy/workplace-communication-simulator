@@ -13,10 +13,26 @@ const unusedScenarioService = {
   getActiveByKey: async () => null,
 };
 
+const unusedAttemptService = {
+  create: async () => {
+    throw new Error("Attempt service should not run");
+  },
+  getOwned: async () => {
+    throw new Error("Attempt service should not run");
+  },
+  createTurn: async () => {
+    throw new Error("Attempt service should not run");
+  },
+  finish: async () => {
+    throw new Error("Attempt service should not run");
+  },
+};
+
 describe("GET /api/v1/health", () => {
   it("returns the shared health response", async () => {
     const response = await request(
       createApp({
+        attemptService: unusedAttemptService,
         authenticationMiddleware: (_req, _res, next) => next(),
         resolveAuthProviderUserId: () => null,
         scenarioService: unusedScenarioService,
@@ -48,6 +64,7 @@ describe("GET /api/v1/me", () => {
   it("rejects an unauthenticated request", async () => {
     const response = await request(
       createApp({
+        attemptService: unusedAttemptService,
         authenticationMiddleware,
         resolveAuthProviderUserId: () => null,
         scenarioService: unusedScenarioService,
@@ -70,6 +87,7 @@ describe("GET /api/v1/me", () => {
     const localUserId = "ef4d8dd1-d525-45d7-91f6-3a180db74eac";
     const response = await request(
       createApp({
+        attemptService: unusedAttemptService,
         authenticationMiddleware,
         resolveAuthProviderUserId: () => "user_clerk_123",
         scenarioService: unusedScenarioService,

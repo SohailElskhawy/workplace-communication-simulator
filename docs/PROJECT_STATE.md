@@ -221,19 +221,21 @@ Do not implement:
 
 ## Current Development Milestone
 
-Milestone 3 — Scenario System is implemented and locally verified.
+Milestone 4 — Attempt Lifecycle is implemented and locally verified.
 
-Completed scenario foundation:
+Completed attempt lifecycle:
 
-- versioned `Scenario` Prisma model with JSONB definition storage, active-version index, unique key/version constraint, and a migration-level `version >= 1` check;
-- backend-only Zod contract for complete scenario definitions;
-- Salary Negotiation v1 with reviewed public context, hidden persona and AI configuration, stable evaluation objectives, and Easy/Medium/Hard behavior profiles;
-- transactional, idempotent scenario synchronization that refuses in-place changes to an existing immutable version;
-- Prisma 7 seed configuration and scenario sync entry point;
-- frontend-safe shared Zod DTO contracts containing only approved public fields;
-- `GET /api/v1/scenarios` and `GET /api/v1/scenarios/:scenarioKey`;
-- explicit API mapping that prevents persona, AI objectives, motivations, constraints, rubric/objectives, prompt guidance, roleplay rules, and opening-message data from reaching clients;
-- focused definition-validation, persistence/synchronization, DTO-safety, and endpoint tests.
+- `SimulationAttempt` and `ConversationTurn` Prisma models with approved enums, ownership/version relations, retry linkage, lifecycle timestamps, and cascade/restrict behavior;
+- migration-level `sequence >= 1` enforcement plus unique sequence and client-request idempotency constraints;
+- PostgreSQL partial unique index enforcing at most one `PENDING` turn per attempt;
+- frontend-safe shared Zod contracts for attempt creation, retrieval, turn acceptance, and finishing;
+- `POST /api/v1/attempts` and `GET /api/v1/attempts/:attemptId` with authenticated local-user ownership and non-owned-resource hiding;
+- `POST /api/v1/attempts/:attemptId/turns` with learner-text persistence, `(attemptId, clientRequestId)` idempotency, a 20-turn ceiling, 15-minute expiry, and pending-turn exclusion;
+- `POST /api/v1/attempts/:attemptId/finish` with idempotent `ACTIVE → ABANDONED` and `ACTIVE → EVALUATING` transitions;
+- row-locked Prisma transactions serializing turn acceptance and finish operations per attempt;
+- stable recovery from unique-constraint races through idempotent replay or pending-turn conflict;
+- safe lifecycle errors and 64 KB JSON request limit without logging learner content;
+- focused ownership, retry validation, lifecycle, expiry, turn-limit, pending-turn, idempotency, contract, and endpoint tests.
 
 Verified on August 29, 2026 with:
 
@@ -244,12 +246,14 @@ corepack pnpm test
 corepack pnpm build
 corepack pnpm format:check
 corepack pnpm prisma:validate
+corepack pnpm prisma:generate
 Prisma migration diff from an empty PostgreSQL schema
 ```
 
-Applying the new migration and running `corepack pnpm prisma:seed` against the
-configured Neon target remain deployment smoke checks; local verification does
-not use production or staging credentials.
+The full suite contains 44 passing tests across 14 files. Applying migrations
+and running `corepack pnpm prisma:seed` against the configured Neon target remain
+deployment smoke checks; local verification does not use production or staging
+credentials.
 
 The active development target remains the first end-to-end **text-only vertical slice** using:
 
@@ -297,12 +301,9 @@ Some of these documents may not exist yet. Do not invent missing requirements; u
 
 ## Current Next Task
 
-Begin Milestone 4 — Attempt Lifecycle for Salary Negotiation / Medium only:
+Begin Milestone 5 — Text Roleplay for Salary Negotiation / Medium only.
 
-1. add `SimulationAttempt` and `ConversationTurn` persistence;
-2. implement ownership-safe attempt creation and retrieval;
-3. enforce lifecycle, expiry, turn-limit, and idempotency rules;
-4. preserve accepted learner text independently of future AI generation.
-
-Do not start OpenAI, evaluation, voice, retry comparison, history, progress, or
-additional scenarios as part of Milestone 4.
+Build on the persisted `PENDING` learner turn: generate the roleplay response
+behind the internal `AiService`, update the same turn to `COMPLETED` or `FAILED`,
+and preserve accepted learner text through provider failure. Do not start
+evaluation, voice, retry comparison, history, progress, or additional scenarios.

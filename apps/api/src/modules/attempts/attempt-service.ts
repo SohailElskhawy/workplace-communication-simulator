@@ -1,0 +1,241 @@
+import type {
+  AttemptDetailResponse,
+  AttemptStatus,
+  ConversationTurn,
+  CreateAttemptRequest,
+  CreateAttemptResponse,
+  CreateTurnRequest,
+  Difficulty,
+  FinishAttemptResponse,
+  InputMethod,
+  TurnStatus,
+} from "@kalemny/contracts";
+
+import { ScenarioDefinitionSchema } from "../scenarios/scenario-definition.js";
+import { AttemptError, type AttemptErrorCode } from "./attempt-errors.js";
+import { ATTEMPT_DURATION_MS } from "./attempt-rules.js";
+
+export interface AttemptScenarioRecord {
+  id: string;
+  key: string;
+  version: number;
+  title: string;
+  definition: unknown;
+}
+
+export interface ConversationTurnRecord {
+  id: string;
+  sequence: number;
+  clientRequestId: string;
+  inputMethod: InputMethod;
+  userText: string;
+  assistantText: string | null;
+  status: TurnStatus;
+  createdAt: Date;
+  completedAt: Date | null;
+}
+
+export interface AttemptRecord {
+  id: string;
+  userId: string;
+  difficulty: Difficulty;
+  status: AttemptStatus;
+  retryOfAttemptId: string | null;
+  startedAt: Date;
+  endedAt: Date | null;
+  expiresAt: Date;
+  evaluationStartedAt: Date | null;
+  scenario: AttemptScenarioRecord;
+  turns: ConversationTurnRecord[];
+}
+
+export interface CreateAttemptRepositoryInput {
+  userId: string;
+  scenarioKey: string;
+  difficulty: Difficulty;
+  retryOfAttemptId: string | null;
+  startedAt: Date;
+  expiresAt: Date;
+}
+
+export type CreateAttemptRepositoryResult =
+  { kind: "created"; attempt: AttemptRecord } | { kind: "not_found" };
+
+export interface CreateTurnRepositoryInput {
+  attemptId: string;
+  userId: string;
+  clientRequestId: string;
+  text: string;
+  inputMethod: InputMethod;
+  currentTime: Date;
+}
+
+export type CreateTurnRepositoryResult =
+  | { kind: "created" | "existing"; turn: ConversationTurnRecord }
+  | { kind: "not_found" }
+  | { kind: "rejected"; code: AttemptErrorCode };
+
+export type FinishAttemptRepositoryResult =
+  | { kind: "finished"; id: string; status: AttemptStatus }
+  | { kind: "not_found" };
+
+export interface AttemptRepository {
+  createAttempt(
+    input: CreateAttemptRepositoryInput,
+  ): Promise<CreateAttemptRepositoryResult>;
+  findOwnedAttempt(
+    attemptId: string,
+    userId: string,
+  ): Promise<AttemptRecord | null>;
+  createTurn(
+    input: CreateTurnRepositoryInput,
+  ): Promise<CreateTurnRepositoryResult>;
+  finishAttempt(
+    attemptId: string,
+    userId: string,
+    currentTime: Date,
+  ): Promise<FinishAttemptRepositoryResult>;
+}
+
+export interface CreatedTurnResult {
+  data: ConversationTurn;
+  created: boolean;
+}
+
+export interface AttemptService {
+  create(
+    userId: string,
+    request: CreateAttemptRequest,
+  ): Promise<CreateAttemptResponse["data"]>;
+  getOwned(
+    userId: string,
+    attemptId: string,
+  ): Promise<AttemptDetailResponse["data"]>;
+  createTurn(
+    userId: string,
+    attemptId: string,
+    request: CreateTurnRequest,
+  ): Promise<CreatedTurnResult>;
+  finish(
+    userId: string,
+    attemptId: string,
+  ): Promise<FinishAttemptResponse["data"]>;
+}
+
+function mapScenario(scenario: AttemptScenarioRecord) {
+  return {
+    key: scenario.key,
+    version: scenario.version,
+    title: scenario.title,
+  };
+}
+
+function mapTurn(turn: ConversationTurnRecord): ConversationTurn {
+  return {
+    id: turn.id,
+    sequence: turn.sequence,
+    inputMethod: turn.inputMethod,
+    userText: turn.userText,
+    assistantText: turn.assistantText,
+    status: turn.status,
+    createdAt: turn.createdAt.toISOString(),
+    completedAt: turn.completedAt?.toISOString() ?? null,
+  };
+}
+
+function mapAttempt(attempt: AttemptRecord): AttemptDetailResponse["data"] {
+  return {
+    id: attempt.id,
+    status: attempt.status,
+    difficulty: attempt.difficulty,
+    scenario: mapScenario(attempt.scenario),
+    retryOfAttemptId: attempt.retryOfAttemptId,
+    turns: attempt.turns.map(mapTurn),
+    evaluation: null,
+    startedAt: attempt.startedAt.toISOString(),
+    endedAt: attempt.endedAt?.toISOString() ?? null,
+    expiresAt: attempt.expiresAt.toISOString(),
+  };
+}
+
+export function createAttemptService(
+  repository: AttemptRepository,
+  clock: () => Date = () => new Date(),
+): AttemptService {
+  return {
+    async create(userId, request) {
+      const startedAt = clock();
+      const result = await repository.createAttempt({
+        userId,
+        scenarioKey: request.scenarioKey,
+        difficulty: request.difficulty,
+        retryOfAttemptId: request.retryOfAttemptId,
+        startedAt,
+        expiresAt: new Date(startedAt.getTime() + ATTEMPT_DURATION_MS),
+      });
+
+      if (result.kind === "not_found") {
+        throw new AttemptError("NOT_FOUND");
+      }
+
+      const attempt = result.attempt;
+      const definition = ScenarioDefinitionSchema.parse(
+        attempt.scenario.definition,
+      );
+
+      return {
+        id: attempt.id,
+        status: "ACTIVE",
+        difficulty: attempt.difficulty,
+        scenario: mapScenario(attempt.scenario),
+        openingMessage: definition.openingMessage,
+        startedAt: attempt.startedAt.toISOString(),
+        expiresAt: attempt.expiresAt.toISOString(),
+      };
+    },
+
+    async getOwned(userId, attemptId) {
+      const attempt = await repository.findOwnedAttempt(attemptId, userId);
+
+      if (!attempt) {
+        throw new AttemptError("NOT_FOUND");
+      }
+
+      return mapAttempt(attempt);
+    },
+
+    async createTurn(userId, attemptId, request) {
+      const result = await repository.createTurn({
+        attemptId,
+        userId,
+        clientRequestId: request.clientRequestId.trim(),
+        text: request.text.trim(),
+        inputMethod: request.inputMethod,
+        currentTime: clock(),
+      });
+
+      if (result.kind === "not_found") {
+        throw new AttemptError("NOT_FOUND");
+      }
+
+      if (result.kind === "rejected") {
+        throw new AttemptError(result.code);
+      }
+
+      return {
+        data: mapTurn(result.turn),
+        created: result.kind === "created",
+      };
+    },
+
+    async finish(userId, attemptId) {
+      const result = await repository.finishAttempt(attemptId, userId, clock());
+
+      if (result.kind === "not_found") {
+        throw new AttemptError("NOT_FOUND");
+      }
+
+      return { id: result.id, status: result.status };
+    },
+  };
+}

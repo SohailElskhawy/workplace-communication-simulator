@@ -1,4 +1,28 @@
 export { ApiErrorResponseSchema, type ApiErrorResponse } from "./error.js";
+export {
+  AttemptDetailResponseSchema,
+  AttemptScenarioSchema,
+  AttemptStatusSchema,
+  ConversationTurnSchema,
+  CreateAttemptRequestSchema,
+  CreateAttemptResponseSchema,
+  CreateTurnRequestSchema,
+  FinishAttemptResponseSchema,
+  InputMethodSchema,
+  MAX_TURN_TEXT_LENGTH,
+  TurnResponseSchema,
+  TurnStatusSchema,
+  type AttemptDetailResponse,
+  type AttemptStatus,
+  type ConversationTurn,
+  type CreateAttemptRequest,
+  type CreateAttemptResponse,
+  type CreateTurnRequest,
+  type FinishAttemptResponse,
+  type InputMethod,
+  type TurnResponse,
+  type TurnStatus,
+} from "./attempt.js";
 export { HealthResponseSchema, type HealthResponse } from "./health.js";
 export { MeResponseSchema, type MeResponse } from "./me.js";
 export {

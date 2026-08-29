@@ -12,6 +12,8 @@ model User {
   authProviderUserId String   @unique
   createdAt          DateTime @default(now()) @db.Timestamptz(3)
   updatedAt          DateTime @updatedAt @db.Timestamptz(3)
+
+  simulationAttempts SimulationAttempt[]
 }
 
 model Scenario {
@@ -25,6 +27,77 @@ model Scenario {
   isActive   Boolean  @default(false)
   createdAt  DateTime @default(now()) @db.Timestamptz(3)
 
+  simulationAttempts SimulationAttempt[]
+
   @@unique([key, version])
   @@index([key, isActive])
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum AttemptStatus {
+  ACTIVE
+  EVALUATING
+  COMPLETED
+  EVALUATION_FAILED
+  ABANDONED
+}
+
+enum InputMethod {
+  TEXT
+  VOICE
+}
+
+enum TurnStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+model SimulationAttempt {
+  id                  String        @id @default(uuid()) @db.Uuid
+  userId              String        @db.Uuid
+  scenarioId          String        @db.Uuid
+  retryOfAttemptId    String?       @db.Uuid
+  difficulty          Difficulty
+  status              AttemptStatus @default(ACTIVE)
+  startedAt           DateTime      @default(now()) @db.Timestamptz(3)
+  endedAt             DateTime?     @db.Timestamptz(3)
+  expiresAt           DateTime      @db.Timestamptz(3)
+  progressEligible    Boolean       @default(false)
+  evaluationStartedAt DateTime?     @db.Timestamptz(3)
+  createdAt           DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime      @updatedAt @db.Timestamptz(3)
+
+  user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scenario          Scenario            @relation(fields: [scenarioId], references: [id], onDelete: Restrict)
+  retryOfAttempt    SimulationAttempt?  @relation("AttemptRetries", fields: [retryOfAttemptId], references: [id], onDelete: SetNull)
+  retryAttempts     SimulationAttempt[] @relation("AttemptRetries")
+  conversationTurns ConversationTurn[]
+
+  @@index([userId, createdAt])
+  @@index([userId, status])
+  @@index([retryOfAttemptId])
+}
+
+model ConversationTurn {
+  id              String      @id @default(uuid()) @db.Uuid
+  attemptId       String      @db.Uuid
+  sequence        Int
+  clientRequestId String      @db.VarChar(128)
+  inputMethod     InputMethod
+  userText        String      @db.Text
+  assistantText   String?     @db.Text
+  status          TurnStatus  @default(PENDING)
+  createdAt       DateTime    @default(now()) @db.Timestamptz(3)
+  completedAt     DateTime?   @db.Timestamptz(3)
+
+  attempt SimulationAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  @@unique([attemptId, sequence])
+  @@unique([attemptId, clientRequestId])
 }

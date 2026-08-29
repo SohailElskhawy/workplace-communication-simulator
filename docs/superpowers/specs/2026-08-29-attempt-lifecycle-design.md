@@ -10,7 +10,7 @@ The implementation follows `PRODUCT_REQUIREMENTS.md`, `ARCHITECTURE.md`, `DATABA
 
 Prisma will define `SimulationAttempt` and `ConversationTurn` plus the approved `Difficulty`, `AttemptStatus`, `InputMethod`, and `TurnStatus` enums.
 
-`SimulationAttempt` belongs to one `User` and one immutable `Scenario` version. Its optional self-reference records a retry source. Deleting a user or scenario cascades to owned attempts; deleting a retry source sets descendants' `retryOfAttemptId` to null. Attempts store lifecycle timestamps, a 15-minute expiry, progress eligibility, and evaluation-start metadata needed by later milestones.
+`SimulationAttempt` belongs to one `User` and one immutable `Scenario` version. Its optional self-reference records a retry source. Deleting a user cascades to owned attempts, deleting a referenced scenario version is restricted, and deleting a retry source sets descendants' `retryOfAttemptId` to null. Attempts store lifecycle timestamps, a 15-minute expiry, progress eligibility, and evaluation-start metadata needed by later milestones.
 
 `ConversationTurn` belongs to one attempt and stores one accepted learner input. Database constraints enforce unique sequence numbers, unique `(attemptId, clientRequestId)` idempotency keys, `sequence >= 1`, and at most one `PENDING` turn per attempt through a PostgreSQL partial unique index. Deleting an attempt cascades to its turns.
 
@@ -33,7 +33,7 @@ Routes derive the Clerk user ID from authenticated request state, lazily provisi
 
 ## Create and Read Behavior
 
-Creating an attempt requires an active scenario. If `retryOfAttemptId` is supplied, the source must belong to the current user and reference the same scenario version. A new attempt starts as `ACTIVE`, with `startedAt` set from the server clock and `expiresAt` exactly 15 minutes later. The response includes the configured opening message but does not persist it as a learner `ConversationTurn`.
+Creating an attempt requires an active scenario. If `retryOfAttemptId` is supplied, the source must belong to the current user and have the same scenario key; the new attempt still references the currently active immutable version. A new attempt starts as `ACTIVE`, with `startedAt` set from the server clock and `expiresAt` exactly 15 minutes later. The response includes the configured opening message but does not persist it as a learner `ConversationTurn`.
 
 Attempt reads are ownership-scoped in the database query. They return ordered turns, public scenario identity, lifecycle metadata, and `evaluation: null` until evaluation persistence exists.
 

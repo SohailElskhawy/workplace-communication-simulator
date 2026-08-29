@@ -5,6 +5,8 @@ import {
   createClerkAuthenticationMiddleware,
   resolveClerkUserId,
 } from "./modules/auth/clerk-auth.js";
+import { createAttemptService } from "./modules/attempts/attempt-service.js";
+import { createPrismaAttemptRepository } from "./modules/attempts/prisma-attempt-repository.js";
 import { createPrismaScenarioRepository } from "./modules/scenarios/prisma-scenario-repository.js";
 import { createScenarioService } from "./modules/scenarios/scenario-service.js";
 import { createLocalUserProvisioner } from "./modules/users/provision-local-user.js";
@@ -17,8 +19,12 @@ const userProvisioner = createLocalUserProvisioner({
 const scenarioService = createScenarioService(
   createPrismaScenarioRepository(prisma),
 );
+const attemptService = createAttemptService(
+  createPrismaAttemptRepository(prisma),
+);
 
 const app = createApp({
+  attemptService,
   authenticationMiddleware: createClerkAuthenticationMiddleware({
     publishableKey: apiEnv.CLERK_PUBLISHABLE_KEY,
     secretKey: apiEnv.CLERK_SECRET_KEY,

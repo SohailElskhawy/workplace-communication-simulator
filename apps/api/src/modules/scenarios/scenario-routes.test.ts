@@ -18,8 +18,24 @@ const summary = {
   summary: salaryNegotiationV1.summary,
 };
 
+const unusedAttemptService = {
+  create: async () => {
+    throw new Error("Attempt service should not run for scenario routes");
+  },
+  getOwned: async () => {
+    throw new Error("Attempt service should not run for scenario routes");
+  },
+  createTurn: async () => {
+    throw new Error("Attempt service should not run for scenario routes");
+  },
+  finish: async () => {
+    throw new Error("Attempt service should not run for scenario routes");
+  },
+};
+
 function createScenarioApp() {
   return createApp({
+    attemptService: unusedAttemptService,
     authenticationMiddleware: (_request, _response, next) => next(),
     resolveAuthProviderUserId: () => null,
     scenarioService: createScenarioService({

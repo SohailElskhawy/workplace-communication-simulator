@@ -12,11 +12,14 @@ import express, {
 } from "express";
 import { randomUUID } from "node:crypto";
 
+import { registerAttemptRoutes } from "./modules/attempts/attempt-routes.js";
+import type { AttemptService } from "./modules/attempts/attempt-service.js";
 import { registerScenarioRoutes } from "./modules/scenarios/scenario-routes.js";
 import type { ScenarioService } from "./modules/scenarios/scenario-service.js";
 import type { LocalUserProvisioner } from "./modules/users/provision-local-user.js";
 
 export interface AuthenticatedAppDependencies {
+  attemptService: AttemptService;
   authenticationMiddleware: RequestHandler;
   resolveAuthProviderUserId(request: Request): string | null;
   scenarioService: ScenarioService;
@@ -52,6 +55,8 @@ export function createApp(dependencies: AuthenticatedAppDependencies): Express {
     }),
   );
 
+  app.use(express.json({ limit: "64kb" }));
+
   app.use(dependencies.authenticationMiddleware);
 
   app.get("/api/v1/health", (_request, response) => {
@@ -82,6 +87,7 @@ export function createApp(dependencies: AuthenticatedAppDependencies): Express {
   });
 
   registerScenarioRoutes(app, dependencies.scenarioService);
+  registerAttemptRoutes(app, dependencies);
 
   const errorHandler: ErrorRequestHandler = (
     error,
@@ -94,7 +100,33 @@ export function createApp(dependencies: AuthenticatedAppDependencies): Express {
     const requestId =
       (response.locals.requestId as string | undefined) ?? randomUUID();
 
-    console.error(`[${requestId}] Unhandled API error:`, error);
+    const syntaxError =
+      error instanceof SyntaxError &&
+      typeof error === "object" &&
+      error !== null &&
+      "status" in error &&
+      error.status === 400;
+    const payloadTooLarge =
+      typeof error === "object" &&
+      error !== null &&
+      "status" in error &&
+      error.status === 413;
+
+    if (syntaxError || payloadTooLarge) {
+      const body: ApiErrorResponse = {
+        error: {
+          code: "VALIDATION_FAILED",
+          message: payloadTooLarge
+            ? "Request body is too large."
+            : "Request body is invalid.",
+          requestId,
+        },
+      };
+      response.status(payloadTooLarge ? 413 : 400).json(body);
+      return;
+    }
+
+    console.error(`[${requestId}] Unhandled API error.`);
 
     const body: ApiErrorResponse = {
       error: {
