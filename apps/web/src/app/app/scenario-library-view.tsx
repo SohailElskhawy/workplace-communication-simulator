@@ -133,7 +133,7 @@ export const FILTER_CATEGORIES = [
   { key: "BOUNDARIES", label: "Boundaries" },
 ] as const;
 
-function normalizeCategory(category: string): string {
+export function normalizeCategory(category: string): string {
   const upper = category.toUpperCase().trim();
   if (upper === "NEGOTIATION") return "NEGOTIATION";
   if (upper === "CAREER_MANAGEMENT" || upper === "CAREER MANAGEMENT")
@@ -150,7 +150,7 @@ function normalizeCategory(category: string): string {
   return upper;
 }
 
-function getScenarioMeta(scenario: PublicScenarioSummary): ScenarioVisualMeta {
+export function getScenarioMeta(scenario: PublicScenarioSummary): ScenarioVisualMeta {
   const byKey = SCENARIO_VISUAL_MAP[scenario.key];
   if (byKey) return byKey;
 

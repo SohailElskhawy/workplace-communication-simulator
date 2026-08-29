@@ -6,11 +6,84 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 import { createApiClient } from "../../../lib/api-client";
+import { cn } from "@/lib/cn";
 import {
   getScoreBand,
   getSkillMetadata,
   UNIVERSAL_SKILLS_META,
 } from "../../../lib/score-utils";
+
+function RefreshIcon({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <polyline points="23 4 23 10 17 10" />
+      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+    </svg>
+  );
+}
+
+function ArrowRightIcon({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <line x1="5" y1="12" x2="19" y2="12" />
+      <polyline points="12 5 19 12 12 19" />
+    </svg>
+  );
+}
+
+function TargetIcon({ className = "w-5 h-5" }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <circle cx="12" cy="12" r="6" />
+      <circle cx="12" cy="12" r="2" />
+    </svg>
+  );
+}
+
+function StarIcon({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+    </svg>
+  );
+}
 
 export default function ProgressPage() {
   const { getToken, isLoaded, isSignedIn } = useAuth();
@@ -76,65 +149,76 @@ export default function ProgressPage() {
   }, [apiUrl, getToken, isLoaded, isSignedIn]);
 
   return (
-    <div className="mx-auto max-w-5xl px-4 sm:px-6 pb-16 space-y-8">
-      {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
-        <div>
-          <span className="inline-block text-xs font-semibold uppercase tracking-wider text-indigo-600">
-            Skills Profile & Growth
+    <div className="w-full max-w-container-max mx-auto px-4 sm:px-6 md:px-8 py-8 space-y-10 font-sans pb-24">
+      {/* 1. Page Hero */}
+      <header className="relative space-y-4 max-w-4xl">
+        <div className="inline-block px-3 py-1 border border-primary/20 rounded-full bg-primary/10">
+          <span className="font-meta text-xs uppercase tracking-widest text-primary font-bold">
+            Your Progress
           </span>
-          <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-slate-950 sm:text-3xl">
-            Communication Progress
-          </h1>
-          <p className="mt-1.5 text-sm text-slate-600 max-w-2xl">
-            Deterministic competency profile calculated from your latest up to 5
-            eligible practice simulations (sessions with 3+ substantive dialogue
-            turns).
-          </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <Link
-            href="/app"
-            className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-indigo-500"
-          >
-            Start Practice
-          </Link>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold uppercase tracking-tight text-foreground leading-[1.15]">
+              See how your communication is changing.
+            </h1>
+            <p className="font-sans text-base sm:text-lg text-muted-foreground mt-2 leading-relaxed max-w-2xl">
+              Your skill profile reflects your recent completed practice sessions
+              and helps you decide what to work on next.
+            </p>
+          </div>
+
+          <div className="shrink-0 self-start sm:self-center">
+            <Link
+              href="/app"
+              className="inline-flex items-center gap-2 rounded-control bg-primary px-5 py-2.5 font-display text-xs sm:text-sm font-bold uppercase tracking-wider text-primary-foreground border border-border shadow-[4px_4px_0px_0px_#1a1a1a] brutalist-interactive"
+            >
+              <span>Practice Now</span>
+              <ArrowRightIcon className="w-3.5 h-3.5" />
+            </Link>
+          </div>
         </div>
-      </div>
+      </header>
 
       {/* Error Alert */}
       {error && (
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-rose-900 shadow-xs">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h2 className="text-sm font-bold">Unable to load progress</h2>
-              <p className="mt-1 text-xs text-rose-800">{error}</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => reloadProgress()}
-              className="rounded-xl bg-rose-600 px-3.5 py-2 text-xs font-semibold text-white shadow-2xs hover:bg-rose-500"
-            >
-              Try Again
-            </button>
+        <div
+          role="alert"
+          className="rounded-card border-2 border-alert bg-alert/10 p-6 shadow-xs flex items-start justify-between gap-4"
+        >
+          <div>
+            <h2 className="font-display text-base font-bold uppercase tracking-wide text-alert">
+              Unable to load progress profile
+            </h2>
+            <p className="font-sans text-xs sm:text-sm text-foreground/80 mt-1">
+              {error}
+            </p>
           </div>
+          <button
+            type="button"
+            onClick={() => reloadProgress()}
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-control bg-alert px-4 py-2 font-display text-xs font-bold uppercase tracking-wider text-white shadow-2xs hover:opacity-90 cursor-pointer"
+          >
+            <RefreshIcon className="w-3.5 h-3.5" />
+            <span>Try Again</span>
+          </button>
         </div>
       )}
 
       {/* Loading Skeleton */}
       {loading && !progress && (
         <div className="space-y-6">
-          <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-xs animate-pulse space-y-4">
-            <div className="h-4 w-1/4 bg-slate-200 rounded" />
-            <div className="h-8 w-1/2 bg-slate-200 rounded" />
-            <div className="h-4 w-3/4 bg-slate-100 rounded" />
+          <div className="glass-surface rounded-card border border-border p-8 shadow-xs animate-pulse space-y-4">
+            <div className="h-4 w-1/4 bg-border/40 rounded" />
+            <div className="h-8 w-1/2 bg-border/40 rounded" />
+            <div className="h-4 w-3/4 bg-border/20 rounded" />
           </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {[1, 2, 3, 4, 5].map((n) => (
               <div
                 key={n}
-                className="h-36 rounded-2xl border border-slate-200 bg-white p-5 shadow-xs animate-pulse"
+                className="h-40 glass-surface rounded-card border border-border p-5 shadow-xs animate-pulse"
               />
             ))}
           </div>
@@ -146,146 +230,58 @@ export default function ProgressPage() {
         !error &&
         progress &&
         progress.eligibleSessionCount === 0 && (
-          <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center shadow-xs">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 text-2xl">
+          <div className="glass-surface rounded-card border border-border p-12 text-center shadow-[6px_6px_0px_0px_#1a1a1a] max-w-3xl mx-auto">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary text-2xl mb-4">
               📊
             </div>
-            <h2 className="mt-4 text-base font-bold text-slate-900">
+            <h2 className="font-display text-xl sm:text-2xl font-bold uppercase tracking-tight text-foreground">
               No Progress Profile Available Yet
             </h2>
-            <p className="mt-2 text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
-              Your progress profile is calculated dynamically from your latest
-              up to 5 eligible completed sessions. A practice session
-              contributes to your progress profile once you exchange at least 3
-              substantive conversation turns.
+            <p className="font-sans text-xs sm:text-sm text-muted-foreground max-w-md mx-auto mt-2 leading-relaxed">
+              Your progress profile is calculated dynamically from your latest up
+              to 5 eligible completed sessions. A practice session contributes
+              once you exchange at least 3 substantive dialogue turns.
             </p>
-            <div className="mt-6 flex justify-center gap-3">
+            <div className="mt-6">
               <Link
                 href="/app"
-                className="inline-flex items-center rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-indigo-500"
+                className="inline-flex items-center gap-2 rounded-control bg-primary px-5 py-2.5 font-display text-xs sm:text-sm font-bold uppercase tracking-wider text-primary-foreground border border-border shadow-[4px_4px_0px_0px_#1a1a1a] brutalist-interactive"
               >
-                Choose a Scenario to Practice
+                <span>Choose a Scenario to Practice</span>
+                <ArrowRightIcon className="w-3.5 h-3.5" />
               </Link>
             </div>
           </div>
         )}
 
-      {/* Populated Progress View */}
+      {/* Populated Progress Profile */}
       {!loading && progress && progress.skills && progress.weakestSkill && (
-        <div className="space-y-8">
-          {/* Summary Banner */}
-          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                  Profile Window
-                </span>
-                <h2 className="text-lg font-bold text-slate-900">
-                  Rolling 5-Session Evaluation Basis
-                </h2>
-                <p className="text-xs text-slate-500 max-w-xl">
-                  Calculated from your latest {progress.eligibleSessionCount}{" "}
-                  {progress.eligibleSessionCount === 1
-                    ? "eligible session"
-                    : "eligible sessions"}{" "}
-                  (3+ substantive turns). Skill ratings adapt purely from
-                  objective completed performance.
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2 self-start sm:self-center">
-                <span className="inline-flex items-center rounded-full bg-indigo-50 border border-indigo-200 px-3 py-1 text-xs font-bold text-indigo-700">
-                  {progress.eligibleSessionCount} / 5 Sessions Active
-                </span>
-              </div>
-            </div>
-          </section>
-
-          {/* Weakest Skill Spotlight & Recommended Scenario Cards */}
-          <div className="grid gap-6 md:grid-cols-2">
-            {/* Weakest Skill Spotlight Card */}
-            <div className="flex flex-col justify-between rounded-2xl border border-amber-200 bg-amber-50/50 p-6 shadow-xs">
+        <div className="space-y-10">
+          {/* 2. Communication Profile Section (5 Universal Skills Bento Grid) */}
+          <section className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 border-b border-border/20 pb-4">
               <div>
-                <div className="flex items-center gap-2">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-600 text-white text-xs font-bold">
-                    🎯
-                  </span>
-                  <span className="text-xs font-bold uppercase tracking-wider text-amber-900">
-                    Primary Growth Opportunity
-                  </span>
-                </div>
-                <h3 className="mt-3 text-xl font-bold text-amber-950">
-                  {getSkillMetadata(progress.weakestSkill).name}
-                </h3>
-                <p className="mt-2 text-xs text-amber-900/90 leading-relaxed">
-                  {getSkillMetadata(progress.weakestSkill).name} currently has
-                  your lowest average rating (
-                  <strong className="font-bold">
-                    {
-                      progress.skills[
-                        progress.weakestSkill.toLowerCase() as keyof typeof progress.skills
-                      ]
-                    }{" "}
-                    / 100
-                  </strong>
-                  ). Focusing practice on this area delivers the largest
-                  leverage on overall workplace effectiveness.
+                <h2 className="font-display text-xl sm:text-2xl font-bold uppercase tracking-tight text-foreground">
+                  Your communication profile
+                </h2>
+                <p className="font-sans text-xs sm:text-sm text-muted-foreground mt-0.5">
+                  {progress.eligibleSessionCount >= 5
+                    ? "Calculated from your latest 5 completed rehearsal sessions (3+ turns)."
+                    : `Calculated from your latest ${progress.eligibleSessionCount} completed ${
+                        progress.eligibleSessionCount === 1
+                          ? "session"
+                          : "sessions"
+                      } (3+ turns).`}
                 </p>
               </div>
 
-              <div className="mt-6 pt-4 border-t border-amber-200/60 text-[11px] text-amber-800 font-medium">
-                Tip: Review coaching moments in past results for stronger
-                alternative responses in this skill.
-              </div>
+              <span className="font-meta text-xs font-bold uppercase tracking-wider text-primary bg-primary/10 border border-primary/20 px-3 py-1 rounded-full shrink-0">
+                {progress.eligibleSessionCount} / 5 Sessions Active
+              </span>
             </div>
 
-            {/* Recommended Scenario Card */}
-            {progress.recommendedScenario && (
-              <div className="flex flex-col justify-between rounded-2xl border border-indigo-200 bg-indigo-50/50 p-6 shadow-xs">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600 text-white text-xs font-bold">
-                      ★
-                    </span>
-                    <span className="text-xs font-bold uppercase tracking-wider text-indigo-900">
-                      Recommended Practice Scenario
-                    </span>
-                  </div>
-                  <h3 className="mt-3 text-xl font-bold text-indigo-950">
-                    {progress.recommendedScenario.title}
-                  </h3>
-                  <p className="mt-2 text-xs text-indigo-900/90 leading-relaxed">
-                    Designed to target and cultivate your{" "}
-                    {getSkillMetadata(progress.weakestSkill).name.toLowerCase()}{" "}
-                    in realistic workplace scenarios.
-                  </p>
-                </div>
-
-                <div className="mt-6 pt-4 border-t border-indigo-200/60">
-                  <Link
-                    href={`/app/scenarios/${encodeURIComponent(progress.recommendedScenario.key)}`}
-                    className="inline-flex w-full items-center justify-center rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-indigo-500"
-                  >
-                    Rehearse This Scenario
-                  </Link>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* 5 Universal Skills Grid */}
-          <section className="space-y-4">
-            <div>
-              <h2 className="text-lg font-bold tracking-tight text-slate-900">
-                Universal Skill Breakdown
-              </h2>
-              <p className="text-xs text-slate-500">
-                Competency ratings averaged across your active evaluation
-                window.
-              </p>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {/* Bento Grid for 5 Skills */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-5">
               {(
                 [
                   "clarity",
@@ -305,50 +301,121 @@ export default function ProgressPage() {
                 return (
                   <div
                     key={skillKey}
-                    className={`flex flex-col justify-between rounded-2xl border bg-white p-5 shadow-xs transition ${
+                    className={cn(
+                      "glass-surface rounded-card p-5 sm:p-6 flex flex-col justify-between transition-all relative overflow-hidden",
                       isWeakest
-                        ? "border-amber-300 ring-2 ring-amber-200/50"
-                        : "border-slate-200"
-                    }`}
+                        ? "bg-primary/10 border-2 border-primary shadow-[4px_4px_0px_0px_#1a1a1a]"
+                        : "border border-border shadow-xs hover:border-border/80",
+                    )}
                   >
+                    {isWeakest && (
+                      <div className="absolute top-3 right-3 bg-[#d4ff00] text-[#171e00] font-meta text-[10px] font-bold px-2 py-0.5 uppercase tracking-wider border border-border shadow-2xs">
+                        Focus Next
+                      </div>
+                    )}
+
                     <div>
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-bold text-slate-900">
-                          {meta.name}
-                        </span>
-                        <span
-                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold border ${band.badgeClass}`}
-                        >
-                          {band.label}
-                        </span>
+                      <span className="font-meta text-xs font-bold text-foreground uppercase tracking-wider block mb-1">
+                        {meta.name}
+                      </span>
+
+                      <div
+                        className={cn(
+                          "font-display text-4xl sm:text-5xl font-bold my-2",
+                          isWeakest ? "text-primary" : "text-foreground",
+                        )}
+                      >
+                        {score}
                       </div>
 
-                      <p className="mt-1.5 text-xs text-slate-500 leading-relaxed">
+                      <span
+                        className={cn(
+                          "inline-block font-meta text-[10px] font-semibold px-2 py-0.5 rounded-full border mb-2",
+                          band.badgeClass,
+                        )}
+                      >
+                        {band.label}
+                      </span>
+
+                      <p className="font-sans text-[11px] text-muted-foreground leading-snug">
                         {meta.description}
                       </p>
                     </div>
 
-                    <div className="mt-5 pt-3 border-t border-slate-100 space-y-2">
-                      <div className="flex items-baseline justify-between text-xs font-semibold text-slate-700">
-                        <span className="text-[11px] text-slate-400">
-                          Average Rating
-                        </span>
-                        <span className="font-bold text-slate-900 text-sm">
-                          {score} / 100
-                        </span>
-                      </div>
-                      <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
-                        <div
-                          className={`h-full rounded-full ${band.progressClass}`}
-                          style={{
-                            width: `${Math.min(100, Math.max(0, score))}%`,
-                          }}
-                        />
-                      </div>
+                    <div className="w-full bg-surface-container-high h-2 mt-4 border border-border/30 rounded-full overflow-hidden">
+                      <div
+                        className={cn(
+                          "h-full rounded-full",
+                          isWeakest ? "bg-primary" : band.progressClass,
+                        )}
+                        style={{
+                          width: `${Math.min(100, Math.max(0, score))}%`,
+                        }}
+                      />
                     </div>
                   </div>
                 );
               })}
+            </div>
+          </section>
+
+          {/* 3. Next Focus & Recommended Scenario Hero Card */}
+          <section className="glass-surface rounded-card border-2 border-primary bg-primary/5 p-6 sm:p-8 shadow-[6px_6px_0px_0px_#1a1a1a]">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+              <div className="space-y-3 max-w-2xl">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">
+                    <TargetIcon className="w-3.5 h-3.5" />
+                  </span>
+                  <span className="font-meta text-xs font-bold uppercase tracking-wider text-primary">
+                    Your Next Focus
+                  </span>
+                </div>
+
+                <h3 className="font-display text-2xl sm:text-3xl font-bold uppercase tracking-tight text-foreground">
+                  {getSkillMetadata(progress.weakestSkill).name}
+                </h3>
+
+                <p className="font-sans text-sm sm:text-base text-muted-foreground leading-relaxed">
+                  Based on your latest {progress.eligibleSessionCount} eligible
+                  rehearsals,{" "}
+                  <strong className="text-foreground font-semibold">
+                    {getSkillMetadata(progress.weakestSkill).name}
+                  </strong>{" "}
+                  is your primary growth opportunity (currently at{" "}
+                  {
+                    progress.skills[
+                      progress.weakestSkill.toLowerCase() as keyof typeof progress.skills
+                    ]
+                  }{" "}
+                  / 100). Concentrating practice here delivers the highest
+                  leverage on your overall workplace conversation impact.
+                </p>
+
+                {progress.recommendedScenario && (
+                  <div className="pt-2 flex items-center gap-2 font-meta text-xs text-foreground font-semibold">
+                    <StarIcon className="w-3.5 h-3.5 text-primary" />
+                    <span>
+                      Recommended scenario:{" "}
+                      <span className="text-primary font-bold">
+                        {progress.recommendedScenario.title}
+                      </span>
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {progress.recommendedScenario && (
+                <div className="shrink-0">
+                  <Link
+                    href={`/app/scenarios/${encodeURIComponent(progress.recommendedScenario.key)}`}
+                    className="inline-flex items-center justify-center gap-2 rounded-control bg-primary px-6 py-3 font-display text-xs sm:text-sm font-bold uppercase tracking-wider text-primary-foreground border border-border shadow-[4px_4px_0px_0px_#1a1a1a] brutalist-interactive"
+                  >
+                    <span>Rehearse {progress.recommendedScenario.title}</span>
+                    <ArrowRightIcon className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              )}
             </div>
           </section>
         </div>
