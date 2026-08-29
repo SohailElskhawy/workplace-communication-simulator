@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { scenarioDefinitions } from "../scenarios/definitions/index.js";
 import { salaryNegotiationV1 } from "../scenarios/definitions/salary-negotiation.js";
 import {
   buildEvaluationMessages,
@@ -23,6 +24,21 @@ describe("evaluation-prompt", () => {
       assistantText: "That makes sense. I can check with leadership.",
     },
   ];
+
+  it.each(scenarioDefinitions)(
+    "includes every authoritative objective for $key",
+    (scenario) => {
+      const messages = buildEvaluationMessages({
+        scenario,
+        difficulty: "MEDIUM",
+        turns,
+      });
+
+      for (const objective of scenario.objectives) {
+        expect(messages[0]?.content).toContain(`Objective ID: ${objective.id}`);
+      }
+    },
+  );
 
   it("builds structured evaluation messages including prompt version, rubric, objectives, and transcript turns", () => {
     const messages = buildEvaluationMessages({

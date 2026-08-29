@@ -1,9 +1,38 @@
 import { describe, expect, it } from "vitest";
 
+import { scenarioDefinitions } from "../scenarios/definitions/index.js";
 import { salaryNegotiationV1 } from "../scenarios/definitions/salary-negotiation.js";
 import { buildRoleplayMessages } from "./roleplay-prompt.js";
 
 describe("roleplay-v1 prompt", () => {
+  it.each(
+    scenarioDefinitions.flatMap((scenario) =>
+      (["EASY", "MEDIUM", "HARD"] as const).map((difficulty) => ({
+        scenario,
+        difficulty,
+      })),
+    ),
+  )(
+    "builds $scenario.key at $difficulty with its authoritative behavior",
+    ({ scenario, difficulty }) => {
+      const messages = buildRoleplayMessages({
+        scenario,
+        difficulty,
+        previousTurns: [],
+        latestLearnerMessage: "A substantive learner response.",
+      });
+
+      expect(messages[0]?.content).toContain(`Difficulty: ${difficulty}`);
+      expect(messages[0]?.content).toContain(
+        scenario.difficulties[difficulty].behaviorGuidance,
+      );
+      expect(messages[1]).toEqual({
+        role: "assistant",
+        content: scenario.openingMessage,
+      });
+    },
+  );
+
   it("assembles authoritative completed turns chronologically before the latest message", () => {
     const messages = buildRoleplayMessages({
       scenario: salaryNegotiationV1,

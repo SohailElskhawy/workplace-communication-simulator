@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { AiService } from "../ai/ai-service.js";
 import { AiProviderError } from "../ai/openrouter-provider.js";
+import { scenarioDefinitions } from "../scenarios/definitions/index.js";
 import { salaryNegotiationV1 } from "../scenarios/definitions/salary-negotiation.js";
 import { calculateAttemptComparison } from "./attempt-comparison.js";
 import { getFinishStatus, getTurnRejection } from "./attempt-rules.js";
@@ -65,7 +66,10 @@ function createMemoryRepository() {
 
   const repository: AttemptRepository = {
     async createAttempt(input) {
-      if (input.scenarioKey !== salaryNegotiationV1.key) {
+      const definition = scenarioDefinitions.find(
+        (candidate) => candidate.key === input.scenarioKey,
+      );
+      if (!definition) {
         return { kind: "not_found" };
       }
 
@@ -96,10 +100,10 @@ function createMemoryRepository() {
         evaluationStartedAt: null,
         scenario: {
           id: "20000000-0000-4000-8000-000000000001",
-          key: salaryNegotiationV1.key,
-          version: salaryNegotiationV1.version,
-          title: salaryNegotiationV1.title,
-          definition: structuredClone(salaryNegotiationV1),
+          key: definition.key,
+          version: definition.version,
+          title: definition.title,
+          definition: structuredClone(definition),
         },
         turns: [],
         evaluation: null,
@@ -241,6 +245,48 @@ async function startAttempt(
 }
 
 describe("attempt service", () => {
+  it.each(
+    scenarioDefinitions.flatMap((scenario) =>
+      (["EASY", "MEDIUM", "HARD"] as const).map((difficulty) => ({
+        scenario,
+        difficulty,
+      })),
+    ),
+  )(
+    "runs the text attempt lifecycle for $scenario.key at $difficulty",
+    async ({ scenario, difficulty }) => {
+      const { repository } = createMemoryRepository();
+      const aiService = createSuccessfulAiService();
+      const service = createAttemptService(repository, aiService, () => now);
+      const attempt = await service.create(ownerId, {
+        scenarioKey: scenario.key,
+        difficulty,
+        retryOfAttemptId: null,
+      });
+
+      expect(attempt).toMatchObject({
+        status: "ACTIVE",
+        difficulty,
+        scenario: { key: scenario.key, version: 1 },
+        openingMessage: scenario.openingMessage,
+      });
+
+      const turn = await service.createTurn(ownerId, attempt.id, {
+        clientRequestId: `${scenario.key}-${difficulty}`,
+        text: "Here is my position and a proposed next step.",
+        inputMethod: "TEXT",
+      });
+      expect(turn.data.status).toBe("COMPLETED");
+      expect(aiService.generateRoleplayReply).toHaveBeenCalledWith(
+        expect.objectContaining({ scenario, difficulty }),
+      );
+      await expect(service.finish(ownerId, attempt.id)).resolves.toEqual({
+        id: attempt.id,
+        status: "EVALUATING",
+      });
+    },
+  );
+
   it("creates an active attempt with a 15-minute expiry and opening message", async () => {
     const { repository } = createMemoryRepository();
     const service = createAttemptService(

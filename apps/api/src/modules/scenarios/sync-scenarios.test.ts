@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { scenarioDefinitions } from "./definitions/index.js";
 import { salaryNegotiationV1 } from "./definitions/salary-negotiation.js";
 import type { ScenarioDefinition } from "./scenario-definition.js";
 import {
@@ -76,6 +77,22 @@ function createMemoryStore(initial: StoredScenario[] = []): {
 }
 
 describe("syncScenarioDefinitions", () => {
+  it("persists and activates all six Release 1 definitions idempotently", async () => {
+    const { records, store } = createMemoryStore();
+
+    await syncScenarioDefinitions(store);
+    await syncScenarioDefinitions(store);
+
+    expect(records.size).toBe(6);
+    for (const definition of scenarioDefinitions) {
+      expect(records.get(scenarioIdentity(definition.key, 1))).toMatchObject({
+        key: definition.key,
+        version: 1,
+        isActive: true,
+      });
+    }
+  });
+
   it("persists and activates Salary Negotiation v1 idempotently", async () => {
     const { records, store } = createMemoryStore();
 

@@ -25,24 +25,24 @@ export const SKILL_TO_RECOMMENDED_SCENARIO: Record<
   RecommendedScenario
 > = {
   CLARITY: {
-    key: "salary-negotiation",
-    title: "Salary Negotiation",
+    key: "behavioral-interview",
+    title: "Behavioral Interview",
   },
   ASSERTIVENESS: {
     key: "salary-negotiation",
     title: "Salary Negotiation",
   },
   EMPATHY: {
-    key: "salary-negotiation",
-    title: "Salary Negotiation",
+    key: "difficult-feedback",
+    title: "Difficult Teammate Feedback",
   },
   STRUCTURE: {
-    key: "salary-negotiation",
-    title: "Salary Negotiation",
+    key: "promotion-request",
+    title: "Promotion Request",
   },
   CONCISENESS: {
-    key: "salary-negotiation",
-    title: "Salary Negotiation",
+    key: "scope-creep",
+    title: "Scope Creep / Saying No",
   },
 };
 

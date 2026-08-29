@@ -232,6 +232,21 @@ Do not implement:
 
 ## Current Development Milestone
 
+**Milestone 12 — Remaining Scenarios** is complete. All six curated Release 1 scenarios now have backend-only, Zod-validated, immutable version 1 definitions synchronized through the existing Prisma seed path. Behavioral Interview, Promotion Request, Manager Pushback, Difficult Teammate Feedback, and Scope Creep / Saying No each include distinct public context, persona, motivations, constraints, opening message, four stable evaluation objectives, skill emphasis, and Easy / Medium / Hard behavior across the five approved difficulty axes.
+
+The existing generic loop was verified for every scenario and difficulty: attempt creation exposes the correct opening message, text turns route the authoritative scenario and difficulty to roleplay, finish freezes the attempt for evaluation, evaluation prompts contain only the active scenario version's objective IDs, and immutable synchronization remains idempotent. Deterministic progress recommendations now use the expanded curated scenario catalog.
+
+Verified on August 29, 2026 with:
+
+```text
+247 tests across 41 test files passing
+API, web, and contracts TypeScript checks
+API, web, and contracts lint checks
+repository-wide Prettier check
+```
+
+### Prior milestone: Optional TTS
+
 **Milestone 11 — Optional TTS** is complete. Stored assistant replies are synthesized on demand through the authenticated API and existing OpenRouter/AiService architecture, played from temporary browser object URLs, and discarded without audio persistence. TTS failure remains isolated from conversation state and text interaction.
 
 ### Prior milestone: Push-to-Talk STT
@@ -295,6 +310,7 @@ corepack pnpm prisma:generate
 13. Session history and progress profile (Milestone 9 - Complete)
 14. Voice input / Push-to-talk transcription (Milestone 10 - Complete)
 15. Text-to-Speech audio generation / Playback (Milestone 11 - Complete)
+16. Remaining curated scenarios (Milestone 12 - Complete)
 
 ---
 
@@ -316,4 +332,4 @@ Some of these documents may not exist yet. Do not invent missing requirements; u
 
 ## Current Next Task
 
-Milestone 11 is complete. Optional, user-triggered speech playback uses `TTS_MODEL=hexgrad/kokoro-82m`, stored `assistantText`, the authenticated `/speech` endpoint, memory-only binary responses, and safe TTS usage telemetry. Proceed to the next approved P0 milestone only when directed.
+Milestone 12 is complete. All six Release 1 scenarios are available through the existing simulation, evaluation, retry, history, and progress architecture. Proceed to the next approved P0 milestone only when directed.

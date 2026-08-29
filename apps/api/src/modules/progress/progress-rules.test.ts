@@ -110,10 +110,18 @@ describe("Progress rules", () => {
   });
 
   it("returns recommended scenario for each skill", () => {
+    const expectedKeys = {
+      CLARITY: "behavioral-interview",
+      ASSERTIVENESS: "salary-negotiation",
+      EMPATHY: "difficult-feedback",
+      STRUCTURE: "promotion-request",
+      CONCISENESS: "scope-creep",
+    } as const;
+
     for (const skill of CANONICAL_UNIVERSAL_SKILLS) {
       const recommended = getRecommendedScenario(skill);
       expect(recommended).toEqual(SKILL_TO_RECOMMENDED_SCENARIO[skill]);
-      expect(recommended?.key).toBe("salary-negotiation");
+      expect(recommended?.key).toBe(expectedKeys[skill]);
     }
   });
 
