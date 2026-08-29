@@ -14,6 +14,8 @@ import { randomUUID } from "node:crypto";
 
 import { registerAttemptRoutes } from "./modules/attempts/attempt-routes.js";
 import type { AttemptService } from "./modules/attempts/attempt-service.js";
+import { registerEvaluationRoutes } from "./modules/evaluations/evaluation-routes.js";
+import type { EvaluationService } from "./modules/evaluations/evaluation-service.js";
 import { registerScenarioRoutes } from "./modules/scenarios/scenario-routes.js";
 import type { ScenarioService } from "./modules/scenarios/scenario-service.js";
 import type { LocalUserProvisioner } from "./modules/users/provision-local-user.js";
@@ -21,6 +23,7 @@ import type { LocalUserProvisioner } from "./modules/users/provision-local-user.
 export interface AuthenticatedAppDependencies {
   attemptService: AttemptService;
   authenticationMiddleware: RequestHandler;
+  evaluationService: EvaluationService;
   resolveAuthProviderUserId(request: Request): string | null;
   scenarioService: ScenarioService;
   userProvisioner: LocalUserProvisioner;
@@ -88,6 +91,7 @@ export function createApp(dependencies: AuthenticatedAppDependencies): Express {
 
   registerScenarioRoutes(app, dependencies.scenarioService);
   registerAttemptRoutes(app, dependencies);
+  registerEvaluationRoutes(app, dependencies);
 
   const errorHandler: ErrorRequestHandler = (
     error,

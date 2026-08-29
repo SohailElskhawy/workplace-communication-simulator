@@ -40,6 +40,13 @@ function createScenarioApp() {
   return createApp({
     attemptService: unusedAttemptService,
     authenticationMiddleware: (_request, _response, next) => next(),
+    evaluationService: {
+      evaluate: async () => {
+        throw new Error(
+          "Evaluation service should not run for scenario routes",
+        );
+      },
+    },
     resolveAuthProviderUserId: () => null,
     scenarioService: createScenarioService({
       async listActive() {
@@ -106,6 +113,17 @@ describe("scenario endpoints", () => {
     expect(response.status).toBe(404);
     expect(ApiErrorResponseSchema.parse(response.body).error.code).toBe(
       "NOT_FOUND",
+    );
+  });
+
+  it("returns validation failed for an invalid scenario key", async () => {
+    const response = await request(createScenarioApp()).get(
+      "/api/v1/scenarios/%20",
+    );
+
+    expect(response.status).toBe(400);
+    expect(ApiErrorResponseSchema.parse(response.body).error.code).toBe(
+      "VALIDATION_FAILED",
     );
   });
 });

@@ -8,9 +8,10 @@
     "node": ">=24.0.0"
   },
   "scripts": {
-    "dev": "corepack pnpm --parallel --filter @kalemny/web --filter @kalemny/api dev",
-    "dev:web": "corepack pnpm --filter @kalemny/web dev",
-    "dev:api": "corepack pnpm --filter @kalemny/api dev",
+    "env:sync": "node -e \"const fs = require('fs'); if (fs.existsSync('.env')) { fs.copyFileSync('.env', 'apps/web/.env.local'); fs.copyFileSync('.env', 'apps/api/.env'); }\"",
+    "dev": "corepack pnpm env:sync && corepack pnpm --parallel --filter @kalemny/web --filter @kalemny/api dev",
+    "dev:web": "corepack pnpm env:sync && corepack pnpm --filter @kalemny/web dev",
+    "dev:api": "corepack pnpm env:sync && corepack pnpm --filter @kalemny/api dev",
     "build": "corepack pnpm prisma:generate && corepack pnpm -r build",
     "typecheck": "corepack pnpm prisma:generate && corepack pnpm -r typecheck",
     "lint": "eslint apps/api/src packages/contracts/src vitest.config.ts && corepack pnpm --filter @kalemny/web lint",

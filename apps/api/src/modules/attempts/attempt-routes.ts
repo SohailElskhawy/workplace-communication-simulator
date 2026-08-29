@@ -1,17 +1,20 @@
 import {
   CreateAttemptRequestSchema,
   CreateTurnRequestSchema,
-  type ApiErrorResponse,
   type AttemptDetailResponse,
   type CreateAttemptResponse,
   type FinishAttemptResponse,
   type TurnResponse,
 } from "@kalemny/contracts";
-import type { Express, Request, Response } from "express";
+import type { Express, Request } from "express";
 import { z } from "zod";
 
+import {
+  handleAttemptError,
+  resolveLocalUserId,
+  sendError,
+} from "../common/route-helpers.js";
 import type { LocalUserProvisioner } from "../users/provision-local-user.js";
-import { AttemptError } from "./attempt-errors.js";
 import type { AttemptService } from "./attempt-service.js";
 
 const AttemptParamsSchema = z.strictObject({ attemptId: z.uuid() });
@@ -24,48 +27,6 @@ export interface AttemptRouteDependencies {
   attemptService: AttemptService;
   resolveAuthProviderUserId(request: Request): string | null;
   userProvisioner: LocalUserProvisioner;
-}
-
-function sendError(
-  response: Response,
-  status: number,
-  code: string,
-  message: string,
-): void {
-  const body: ApiErrorResponse = {
-    error: {
-      code,
-      message,
-      requestId: response.locals.requestId as string,
-    },
-  };
-  response.status(status).json(body);
-}
-
-async function resolveLocalUserId(
-  request: Request,
-  response: Response,
-  dependencies: AttemptRouteDependencies,
-): Promise<string | null> {
-  const authProviderUserId = dependencies.resolveAuthProviderUserId(request);
-
-  if (!authProviderUserId) {
-    sendError(response, 401, "UNAUTHENTICATED", "Authentication is required.");
-    return null;
-  }
-
-  const user =
-    await dependencies.userProvisioner.ensureUser(authProviderUserId);
-  return user.id;
-}
-
-function handleAttemptError(response: Response, error: unknown): boolean {
-  if (!(error instanceof AttemptError)) {
-    return false;
-  }
-
-  sendError(response, error.status, error.code, error.message);
-  return true;
 }
 
 export function registerAttemptRoutes(

@@ -1,5 +1,5 @@
 import { Prisma, type PrismaClient } from "../../generated/prisma/client.js";
-
+import { mapPrismaEvaluationToData } from "../evaluations/evaluation-repository.js";
 import { getFinishStatus, getTurnRejection } from "./attempt-rules.js";
 import type {
   AttemptRecord,
@@ -33,6 +33,7 @@ const attemptInclude = {
     orderBy: { sequence: "asc" },
     select: turnSelection,
   },
+  evaluation: true,
 } as const;
 
 type PrismaAttemptRecord = Prisma.SimulationAttemptGetPayload<{
@@ -60,6 +61,7 @@ function mapAttempt(attempt: PrismaAttemptRecord): AttemptRecord {
     evaluationStartedAt: attempt.evaluationStartedAt,
     scenario: attempt.scenario,
     turns: attempt.conversationTurns.map(mapTurn),
+    evaluation: mapPrismaEvaluationToData(attempt.evaluation),
   };
 }
 

@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { EvaluationDataSchema } from "./evaluation.js";
 import { DifficultySchema } from "./scenario.js";
 
 export const MAX_TURN_TEXT_LENGTH = 60_000;
@@ -61,7 +62,7 @@ export const AttemptDetailResponseSchema = z.strictObject({
     scenario: AttemptScenarioSchema,
     retryOfAttemptId: ResourceIdSchema.nullable(),
     turns: z.array(ConversationTurnSchema),
-    evaluation: z.null(),
+    evaluation: EvaluationDataSchema.nullable(),
     startedAt: TimestampSchema,
     endedAt: TimestampSchema.nullable(),
     expiresAt: TimestampSchema,

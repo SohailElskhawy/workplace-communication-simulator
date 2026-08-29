@@ -31,12 +31,19 @@ const unusedAttemptService = {
   },
 };
 
+const unusedEvaluationService = {
+  evaluate: async () => {
+    throw new Error("Evaluation service should not run");
+  },
+};
+
 describe("GET /api/v1/health", () => {
   it("returns the shared health response", async () => {
     const response = await request(
       createApp({
         attemptService: unusedAttemptService,
         authenticationMiddleware: (_req, _res, next) => next(),
+        evaluationService: unusedEvaluationService,
         resolveAuthProviderUserId: () => null,
         scenarioService: unusedScenarioService,
         userProvisioner: {
@@ -69,6 +76,7 @@ describe("GET /api/v1/me", () => {
       createApp({
         attemptService: unusedAttemptService,
         authenticationMiddleware,
+        evaluationService: unusedEvaluationService,
         resolveAuthProviderUserId: () => null,
         scenarioService: unusedScenarioService,
         userProvisioner: {
@@ -92,6 +100,7 @@ describe("GET /api/v1/me", () => {
       createApp({
         attemptService: unusedAttemptService,
         authenticationMiddleware,
+        evaluationService: unusedEvaluationService,
         resolveAuthProviderUserId: () => "user_clerk_123",
         scenarioService: unusedScenarioService,
         userProvisioner: {

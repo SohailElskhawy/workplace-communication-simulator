@@ -4,8 +4,13 @@ import type {
   ScenarioListResponse,
 } from "@kalemny/contracts";
 import type { Express } from "express";
+import { z } from "zod";
 
 import type { ScenarioService } from "./scenario-service.js";
+
+const ScenarioParamsSchema = z.strictObject({
+  scenarioKey: z.string().trim().min(1),
+});
 
 export function registerScenarioRoutes(
   app: Express,
@@ -20,8 +25,21 @@ export function registerScenarioRoutes(
   });
 
   app.get("/api/v1/scenarios/:scenarioKey", async (request, response) => {
+    const parsed = ScenarioParamsSchema.safeParse(request.params);
+    if (!parsed.success) {
+      const body: ApiErrorResponse = {
+        error: {
+          code: "VALIDATION_FAILED",
+          message: "Scenario key is invalid.",
+          requestId: response.locals.requestId as string,
+        },
+      };
+      response.status(400).json(body);
+      return;
+    }
+
     const scenario = await scenarioService.getActiveByKey(
-      request.params.scenarioKey,
+      parsed.data.scenarioKey,
     );
 
     if (!scenario) {

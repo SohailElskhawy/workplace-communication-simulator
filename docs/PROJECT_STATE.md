@@ -233,26 +233,25 @@ Do not implement:
 
 ## Current Development Milestone
 
-**Milestone 4 — Attempt Lifecycle** remains the current milestone. Its planned
-implementation and OpenRouter environment/configuration alignment are locally
-verified. No Milestone 5 AI implementation has started.
+**Milestone 6 — Evaluation Pipeline** is complete. Its planned implementation,
+prompt versioning, reference validation, deterministic scoring, persistence,
+and endpoints are verified locally.
 
-Completed attempt lifecycle:
+Completed evaluation pipeline:
 
-- `SimulationAttempt` and `ConversationTurn` Prisma models with approved enums, ownership/version relations, retry linkage, lifecycle timestamps, and cascade/restrict behavior;
-- migration-level `sequence >= 1` enforcement plus unique sequence and client-request idempotency constraints;
-- PostgreSQL partial unique index enforcing at most one `PENDING` turn per attempt;
-- frontend-safe shared Zod contracts for attempt creation, retrieval, turn acceptance, and finishing;
-- `POST /api/v1/attempts` and `GET /api/v1/attempts/:attemptId` with authenticated local-user ownership and non-owned-resource hiding;
-- `POST /api/v1/attempts/:attemptId/turns` with learner-text persistence, `(attemptId, clientRequestId)` idempotency, a 20-turn ceiling, 15-minute expiry, and pending-turn exclusion;
-- `POST /api/v1/attempts/:attemptId/finish` with idempotent `ACTIVE → ABANDONED` and `ACTIVE → EVALUATING` transitions;
-- row-locked Prisma transactions serializing turn acceptance and finish operations per attempt;
-- stable recovery from unique-constraint races through idempotent replay or pending-turn conflict;
-- safe lifecycle errors and 64 KB JSON request limit without logging learner content;
-- focused ownership, retry validation, lifecycle, expiry, turn-limit, pending-turn, idempotency, contract, and endpoint tests.
-- required server-only OpenRouter credential; explicit roleplay, evaluation,
-  and transcription model IDs; optional blank TTS model until its milestone;
-  automatic-routing rejection; and configurable per-operation timeout budgets.
+- `UniversalSkill` enum and `Evaluation` Prisma model with relational columns for universal/scenario/overall scores (with 0–100 check constraints), JSONB coaching moments/strengths/improvements/objectives, ownership/attempt relation, and cascade deletion;
+- `20260829030000_add_evaluation` PostgreSQL migration script with check constraints on all score columns;
+- frontend-safe shared Zod contracts in `@kalemny/contracts` (`UniversalSkillSchema`, `ObjectiveStatusSchema`, `CoachingMomentTypeSchema`, `SkillScoresSchema`, `ObjectiveResultSchema`, `StrengthFeedbackSchema`, `ImprovementFeedbackSchema`, `CoachingMomentSchema`, `NextFocusSchema`, `EvaluationDataSchema`, `EvaluationResponseSchema`);
+- `AttemptDetailResponseSchema` updated to include the canonical `EvaluationData` when present;
+- universal 5-skill rubric definition (Clarity, Assertiveness, Empathy, Structure, Conciseness) and versioned prompt (`EVALUATION_PROMPT_VERSION=evaluation-v1`);
+- OpenRouter structured JSON evaluation generation with explicit candidate model (`openai/gpt-5.6-luna-pro`), `provider.zdr=true`, `provider.data_collection="deny"`, and timeout cancellation;
+- runtime Zod schema validation and domain reference validation (ensuring all cited turn IDs exist on the evaluated attempt and all scenario objectives are evaluated without quote fabrication);
+- one automatic controlled retry on malformed/invalid evaluation output or transient provider failure;
+- deterministic 70/30 scoring: 70% universal skill average + 30% scenario objective score computed strictly in application logic;
+- atomic database transaction persisting canonical `Evaluation`, transitioning attempt status to `COMPLETED`, setting `progressEligible` (>= 3 completed learner turns), and recording safe `AiUsageEvent` with operation `EVALUATION`;
+- `POST /api/v1/attempts/:attemptId/evaluation` endpoint with ownership checks, state validation (`EVALUATING`, `EVALUATION_FAILED`, `COMPLETED`), and idempotent evaluation retrieval without re-calling the AI provider;
+- `GET /api/v1/attempts/:attemptId` returning the persisted evaluation when attempt is `COMPLETED`;
+- focused tests for rubric assembly, prompt building, structured output validation, reference integrity, deterministic scoring calculations, lifecycle transitions, automated retry, error handling, repository transactions, and route handlers.
 
 Verified on August 29, 2026 with:
 
@@ -264,13 +263,9 @@ corepack pnpm build
 corepack pnpm format:check
 corepack pnpm prisma:validate
 corepack pnpm prisma:generate
-Prisma migration diff from an empty PostgreSQL schema
 ```
 
-The full suite contains 48 passing tests across 14 files. Applying migrations
-and running `corepack pnpm prisma:seed` against the configured Neon target remain
-deployment smoke checks; local verification does not use production or staging
-credentials.
+The full suite contains 93 passing tests across 22 test files.
 
 The active development target remains the first end-to-end **text-only vertical slice** using:
 
@@ -286,17 +281,17 @@ Voice, TTS, retry comparison, progress, history, and the remaining scenarios com
 
 ## Immediate Development Order
 
-1. Repository/workspace foundation
-2. Next.js + Express + shared contracts
-3. Environment validation
-4. Clerk authentication
-5. Prisma + Neon database foundation
-6. Salary Negotiation scenario v1
-7. Attempt/session lifecycle
-8. Text roleplay
-9. Structured evaluation + Zod validation
-10. Deterministic 70/30 scoring
-11. Results experience
+1. Repository/workspace foundation (Complete)
+2. Next.js + Express + shared contracts (Complete)
+3. Environment validation (Complete)
+4. Clerk authentication (Complete)
+5. Prisma + Neon database foundation (Complete)
+6. Salary Negotiation scenario v1 (Complete)
+7. Attempt/session lifecycle (Complete)
+8. Text roleplay (Complete)
+9. Structured evaluation + Zod validation (Complete)
+10. Deterministic 70/30 scoring (Complete)
+11. Results experience (Milestone 7)
 
 ---
 
@@ -318,7 +313,4 @@ Some of these documents may not exist yet. Do not invent missing requirements; u
 
 ## Current Next Task
 
-No Milestone 4 implementation work remains in the approved plan. Await explicit
-authorization before beginning Milestone 5. Do not implement `AiService`,
-`OpenRouterProvider`, roleplay generation, evaluation, transcription, or TTS
-while Milestone 4 remains current.
+Milestone 6 is complete. Proceed to **Milestone 7 — Results Experience** to deliver the frontend results page, presenting the five universal skill scores, scenario objectives, evidence-linked moments, stronger responses, and next focus.

@@ -12,6 +12,7 @@ describe("parseApiEnv", () => {
     ROLEPLAY_MODEL: "provider/roleplay-model",
     ROLEPLAY_PROMPT_VERSION: "roleplay-v1",
     EVALUATION_MODEL: "provider/evaluation-model",
+    EVALUATION_PROMPT_VERSION: "evaluation-v1",
     TRANSCRIPTION_MODEL: "provider/transcription-model",
   };
 

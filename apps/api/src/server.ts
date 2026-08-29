@@ -1,3 +1,7 @@
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
+import dotenv from "dotenv";
+
 import { createApp } from "./app.js";
 import { parseApiEnv } from "./config/env.js";
 import { createPrismaClient } from "./infrastructure/database/prisma.js";
@@ -9,9 +13,18 @@ import {
 } from "./modules/auth/clerk-auth.js";
 import { createAttemptService } from "./modules/attempts/attempt-service.js";
 import { createPrismaAttemptRepository } from "./modules/attempts/prisma-attempt-repository.js";
+import { createEvaluationService } from "./modules/evaluations/evaluation-service.js";
+import { createPrismaEvaluationRepository } from "./modules/evaluations/prisma-evaluation-repository.js";
 import { createPrismaScenarioRepository } from "./modules/scenarios/prisma-scenario-repository.js";
 import { createScenarioService } from "./modules/scenarios/scenario-service.js";
 import { createLocalUserProvisioner } from "./modules/users/provision-local-user.js";
+
+const rootEnvPath = resolve(process.cwd(), "../../.env");
+if (existsSync(rootEnvPath)) {
+  dotenv.config({ path: rootEnvPath });
+} else {
+  dotenv.config();
+}
 
 const apiEnv = parseApiEnv(process.env);
 const prisma = createPrismaClient(apiEnv.DATABASE_URL);
@@ -26,9 +39,16 @@ const aiService = createAiService({
   roleplayModel: apiEnv.ROLEPLAY_MODEL,
   roleplayPromptVersion: apiEnv.ROLEPLAY_PROMPT_VERSION,
   roleplayTimeoutMs: apiEnv.ROLEPLAY_TIMEOUT_MS,
+  evaluationModel: apiEnv.EVALUATION_MODEL,
+  evaluationPromptVersion: apiEnv.EVALUATION_PROMPT_VERSION,
+  evaluationTimeoutMs: apiEnv.EVALUATION_TIMEOUT_MS,
 });
 const attemptService = createAttemptService(
   createPrismaAttemptRepository(prisma),
+  aiService,
+);
+const evaluationService = createEvaluationService(
+  createPrismaEvaluationRepository(prisma),
   aiService,
 );
 
@@ -38,6 +58,7 @@ const app = createApp({
     publishableKey: apiEnv.CLERK_PUBLISHABLE_KEY,
     secretKey: apiEnv.CLERK_SECRET_KEY,
   }),
+  evaluationService,
   resolveAuthProviderUserId: resolveClerkUserId,
   scenarioService,
   userProvisioner,

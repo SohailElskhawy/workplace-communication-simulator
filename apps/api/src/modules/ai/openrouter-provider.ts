@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+import type {
+  EvaluationMessage,
+  RawAiEvaluation,
+} from "./evaluation-prompt.js";
+import { RawAiEvaluationSchema } from "./evaluation-prompt.js";
 import type { RoleplayMessage } from "./roleplay-prompt.js";
 
 const OpenRouterResponseSchema = z.object({
@@ -51,10 +56,27 @@ export interface OpenRouterRoleplayResult {
   estimatedCost: number | null;
 }
 
+export interface OpenRouterEvaluationRequest {
+  model: string;
+  messages: EvaluationMessage[];
+  timeoutMs: number;
+}
+
+export interface OpenRouterEvaluationResult {
+  evaluation: RawAiEvaluation;
+  latencyMs: number;
+  inputTokens: number | null;
+  outputTokens: number | null;
+  estimatedCost: number | null;
+}
+
 export interface OpenRouterProvider {
   generateRoleplayReply(
     request: OpenRouterRoleplayRequest,
   ): Promise<OpenRouterRoleplayResult>;
+  evaluateSimulation(
+    request: OpenRouterEvaluationRequest,
+  ): Promise<OpenRouterEvaluationResult>;
 }
 
 interface OpenRouterProviderOptions {
@@ -69,70 +91,123 @@ export function createOpenRouterProvider(
   const fetchImplementation = options.fetchImplementation ?? fetch;
   const clock = options.clock ?? Date.now;
 
+  async function sendChatCompletion(
+    bodyPayload: Record<string, unknown>,
+    timeoutMs: number,
+  ) {
+    const startedAt = clock();
+    const controller = new AbortController();
+    let timedOut = false;
+    const timeout = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, timeoutMs);
+
+    try {
+      const response = await fetchImplementation(
+        "https://openrouter.ai/api/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${options.apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(bodyPayload),
+          signal: controller.signal,
+        },
+      );
+      const latencyMs = Math.max(0, clock() - startedAt);
+
+      if (!response.ok) {
+        throw new AiProviderError("AI_PROVIDER_ERROR", latencyMs);
+      }
+
+      const rawResponse = await response.json();
+      const parsed = OpenRouterResponseSchema.safeParse(rawResponse);
+      const content = parsed.success
+        ? parsed.data.choices[0]?.message.content.trim()
+        : "";
+
+      if (!parsed.success || !content) {
+        throw new AiProviderError("AI_PROVIDER_ERROR", latencyMs);
+      }
+
+      return {
+        content,
+        latencyMs,
+        inputTokens: parsed.data.usage?.prompt_tokens ?? null,
+        outputTokens: parsed.data.usage?.completion_tokens ?? null,
+        estimatedCost: parsed.data.usage?.cost ?? null,
+      };
+    } catch (error) {
+      if (error instanceof AiProviderError) throw error;
+      throw new AiProviderError(
+        timedOut ? "AI_TIMEOUT" : "AI_PROVIDER_ERROR",
+        Math.max(0, clock() - startedAt),
+      );
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
   return {
     async generateRoleplayReply(request) {
-      const startedAt = clock();
-      const controller = new AbortController();
-      let timedOut = false;
-      const timeout = setTimeout(() => {
-        timedOut = true;
-        controller.abort();
-      }, request.timeoutMs);
-
-      try {
-        const response = await fetchImplementation(
-          "https://openrouter.ai/api/v1/chat/completions",
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${options.apiKey}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              model: request.model,
-              messages: request.messages,
-              stream: false,
-              provider: {
-                zdr: true,
-                data_collection: "deny",
-              },
-            }),
-            signal: controller.signal,
+      const result = await sendChatCompletion(
+        {
+          model: request.model,
+          messages: request.messages,
+          stream: false,
+          provider: {
+            zdr: true,
+            data_collection: "deny",
           },
-        );
-        const latencyMs = Math.max(0, clock() - startedAt);
+        },
+        request.timeoutMs,
+      );
 
-        if (!response.ok) {
-          throw new AiProviderError("AI_PROVIDER_ERROR", latencyMs);
-        }
+      return {
+        text: result.content,
+        latencyMs: result.latencyMs,
+        inputTokens: result.inputTokens,
+        outputTokens: result.outputTokens,
+        estimatedCost: result.estimatedCost,
+      };
+    },
 
-        const parsed = OpenRouterResponseSchema.safeParse(
-          await response.json(),
-        );
-        const text = parsed.success
-          ? parsed.data.choices[0]?.message.content.trim()
-          : "";
+    async evaluateSimulation(request) {
+      const result = await sendChatCompletion(
+        {
+          model: request.model,
+          messages: request.messages,
+          stream: false,
+          response_format: { type: "json_object" },
+          provider: {
+            zdr: true,
+            data_collection: "deny",
+          },
+        },
+        request.timeoutMs,
+      );
 
-        if (!parsed.success || !text) {
-          throw new AiProviderError("AI_PROVIDER_ERROR", latencyMs);
-        }
-
-        return {
-          text,
-          latencyMs,
-          inputTokens: parsed.data.usage?.prompt_tokens ?? null,
-          outputTokens: parsed.data.usage?.completion_tokens ?? null,
-          estimatedCost: parsed.data.usage?.cost ?? null,
-        };
-      } catch (error) {
-        if (error instanceof AiProviderError) throw error;
-        throw new AiProviderError(
-          timedOut ? "AI_TIMEOUT" : "AI_PROVIDER_ERROR",
-          Math.max(0, clock() - startedAt),
-        );
-      } finally {
-        clearTimeout(timeout);
+      let jsonPayload: unknown;
+      try {
+        jsonPayload = JSON.parse(result.content);
+      } catch {
+        throw new AiProviderError("AI_PROVIDER_ERROR", result.latencyMs);
       }
+
+      const evaluated = RawAiEvaluationSchema.safeParse(jsonPayload);
+      if (!evaluated.success) {
+        throw new AiProviderError("AI_PROVIDER_ERROR", result.latencyMs);
+      }
+
+      return {
+        evaluation: evaluated.data,
+        latencyMs: result.latencyMs,
+        inputTokens: result.inputTokens,
+        outputTokens: result.outputTokens,
+        estimatedCost: result.estimatedCost,
+      };
     },
   };
 }

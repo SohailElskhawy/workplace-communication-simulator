@@ -71,6 +71,14 @@ enum AiUsageStatus {
   FAILED
 }
 
+enum UniversalSkill {
+  CLARITY
+  ASSERTIVENESS
+  EMPATHY
+  STRUCTURE
+  CONCISENESS
+}
+
 model SimulationAttempt {
   id                  String        @id @default(uuid()) @db.Uuid
   userId              String        @db.Uuid
@@ -92,6 +100,7 @@ model SimulationAttempt {
   retryAttempts     SimulationAttempt[] @relation("AttemptRetries")
   conversationTurns ConversationTurn[]
   aiUsageEvents     AiUsageEvent[]
+  evaluation        Evaluation?
 
   @@index([userId, createdAt])
   @@index([userId, status])
@@ -115,6 +124,33 @@ model ConversationTurn {
 
   @@unique([attemptId, sequence])
   @@unique([attemptId, clientRequestId])
+}
+
+model Evaluation {
+  id               String         @id @default(uuid()) @db.Uuid
+  attemptId        String         @unique @db.Uuid
+  clarity          Int
+  assertiveness    Int
+  empathy          Int
+  structure        Int
+  conciseness      Int
+  universalScore   Int
+  scenarioScore    Int
+  overallScore     Int
+  objectiveResults Json
+  strengths        Json
+  improvements     Json
+  moments          Json
+  nextFocusSkill   UniversalSkill
+  nextFocusReason  String         @db.Text
+  summary          String         @db.Text
+  model            String
+  promptVersion    String
+  createdAt        DateTime       @default(now()) @db.Timestamptz(3)
+
+  attempt SimulationAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  @@index([attemptId])
 }
 
 model AiUsageEvent {

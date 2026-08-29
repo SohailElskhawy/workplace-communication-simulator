@@ -20,6 +20,7 @@ function createSuccessfulAiService(
 ): AiService {
   return {
     roleplayModel: "deepseek/deepseek-v4-flash-0731",
+    evaluationModel: "openai/gpt-5.6-luna-pro",
     generateRoleplayReply: vi.fn().mockResolvedValue({
       text: "What evidence supports the adjustment you have in mind?",
       latencyMs: 125,
@@ -27,6 +28,7 @@ function createSuccessfulAiService(
       outputTokens: 18,
       estimatedCost: 0.00012,
     }),
+    evaluateSimulation: vi.fn(),
     ...overrides,
   };
 }
@@ -95,6 +97,7 @@ function createMemoryRepository() {
           definition: structuredClone(salaryNegotiationV1),
         },
         turns: [],
+        evaluation: null,
       };
       attempts.set(id, attempt);
       return { kind: "created", attempt };

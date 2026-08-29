@@ -4,7 +4,8 @@ export type AttemptErrorCode =
   | "SESSION_LIMIT_REACHED"
   | "TURN_ALREADY_PENDING"
   | "AI_TIMEOUT"
-  | "AI_PROVIDER_ERROR";
+  | "AI_PROVIDER_ERROR"
+  | "EVALUATION_FAILED";
 
 const errorDetails: Record<
   AttemptErrorCode,
@@ -31,15 +32,19 @@ const errorDetails: Record<
     status: 502,
     message: "The roleplay response could not be generated. Retry this turn.",
   },
+  EVALUATION_FAILED: {
+    status: 500,
+    message: "The evaluation could not be completed.",
+  },
 };
 
 export class AttemptError extends Error {
   readonly code: AttemptErrorCode;
   readonly status: number;
 
-  constructor(code: AttemptErrorCode) {
+  constructor(code: AttemptErrorCode, customMessage?: string) {
     const details = errorDetails[code];
-    super(details.message);
+    super(customMessage ?? details.message);
     this.name = "AttemptError";
     this.code = code;
     this.status = details.status;

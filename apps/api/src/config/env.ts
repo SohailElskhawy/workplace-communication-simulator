@@ -26,6 +26,9 @@ const ApiEnvSchema = z.object({
   ROLEPLAY_MODEL: ExplicitOpenRouterModelSchema,
   ROLEPLAY_PROMPT_VERSION: z.literal("roleplay-v1"),
   EVALUATION_MODEL: ExplicitOpenRouterModelSchema,
+  EVALUATION_PROMPT_VERSION: z
+    .literal("evaluation-v1")
+    .default("evaluation-v1"),
   TRANSCRIPTION_MODEL: ExplicitOpenRouterModelSchema,
   TTS_MODEL: OptionalExplicitOpenRouterModelSchema,
   ROLEPLAY_TIMEOUT_MS: z.coerce.number().int().positive().default(15_000),
@@ -35,5 +38,10 @@ const ApiEnvSchema = z.object({
 });
 
 export function parseApiEnv(input: Record<string, string | undefined>) {
-  return ApiEnvSchema.parse(input);
+  const normalized = {
+    ...input,
+    CLERK_PUBLISHABLE_KEY:
+      input.CLERK_PUBLISHABLE_KEY ?? input.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
+  };
+  return ApiEnvSchema.parse(normalized);
 }

@@ -77,6 +77,9 @@ function createAttemptApp(
   const app = createApp({
     attemptService,
     authenticationMiddleware: (_request, _response, next) => next(),
+    evaluationService: {
+      evaluate: vi.fn(),
+    },
     resolveAuthProviderUserId: () => authProviderUserId,
     scenarioService: {
       listActive: async () => [],

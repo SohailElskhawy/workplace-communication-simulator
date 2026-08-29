@@ -23,6 +23,30 @@ export {
   type TurnResponse,
   type TurnStatus,
 } from "./attempt.js";
+export {
+  CoachingMomentSchema,
+  CoachingMomentTypeSchema,
+  EvaluationDataSchema,
+  EvaluationResponseSchema,
+  ImprovementFeedbackSchema,
+  NextFocusSchema,
+  ObjectiveResultSchema,
+  ObjectiveStatusSchema,
+  SkillScoresSchema,
+  StrengthFeedbackSchema,
+  UniversalSkillSchema,
+  type CoachingMoment,
+  type CoachingMomentType,
+  type EvaluationData,
+  type EvaluationResponse,
+  type ImprovementFeedback,
+  type NextFocus,
+  type ObjectiveResult,
+  type ObjectiveStatus,
+  type SkillScores,
+  type StrengthFeedback,
+  type UniversalSkill,
+} from "./evaluation.js";
 export { HealthResponseSchema, type HealthResponse } from "./health.js";
 export { MeResponseSchema, type MeResponse } from "./me.js";
 export {

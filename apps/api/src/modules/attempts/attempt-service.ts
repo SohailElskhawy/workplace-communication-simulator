@@ -6,6 +6,7 @@ import type {
   CreateAttemptResponse,
   CreateTurnRequest,
   Difficulty,
+  EvaluationData,
   FinishAttemptResponse,
   InputMethod,
   TurnStatus,
@@ -49,6 +50,7 @@ export interface AttemptRecord {
   evaluationStartedAt: Date | null;
   scenario: AttemptScenarioRecord;
   turns: ConversationTurnRecord[];
+  evaluation: EvaluationData | null;
 }
 
 export interface CreateAttemptRepositoryInput {
@@ -196,7 +198,7 @@ function mapAttempt(attempt: AttemptRecord): AttemptDetailResponse["data"] {
     scenario: mapScenario(attempt.scenario),
     retryOfAttemptId: attempt.retryOfAttemptId,
     turns: attempt.turns.map(mapTurn),
-    evaluation: null,
+    evaluation: attempt.evaluation,
     startedAt: attempt.startedAt.toISOString(),
     endedAt: attempt.endedAt?.toISOString() ?? null,
     expiresAt: attempt.expiresAt.toISOString(),
