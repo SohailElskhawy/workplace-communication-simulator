@@ -211,6 +211,15 @@ function createMemoryRepository() {
       }
       return { kind: "finished", id: attempt.id, status: attempt.status };
     },
+
+    async deleteAttempt(attemptId, userId) {
+      const attempt = attempts.get(attemptId);
+      if (!attempt || attempt.userId !== userId) {
+        return false;
+      }
+      attempts.delete(attemptId);
+      return true;
+    },
   };
 
   return { attempts, repository, usageEvents };
@@ -653,5 +662,40 @@ describe("attempt service", () => {
 
     const comparison = await service.getComparison(ownerId, attempt.id);
     expect(comparison).toBeNull();
+  });
+
+  it("deletes an owned attempt successfully", async () => {
+    const { attempts, repository } = createMemoryRepository();
+    const service = createAttemptService(
+      repository,
+      createSuccessfulAiService(),
+      () => now,
+    );
+    const attempt = await startAttempt(service);
+    expect(attempts.has(attempt.id)).toBe(true);
+
+    await service.delete(ownerId, attempt.id);
+    expect(attempts.has(attempt.id)).toBe(false);
+  });
+
+  it("rejects deleting non-owned attempt or non-existent attempt with NOT_FOUND", async () => {
+    const { repository } = createMemoryRepository();
+    const service = createAttemptService(
+      repository,
+      createSuccessfulAiService(),
+      () => now,
+    );
+    const attempt = await startAttempt(service);
+
+    await expect(service.delete(otherUserId, attempt.id)).rejects.toMatchObject(
+      {
+        code: "NOT_FOUND",
+      },
+    );
+    await expect(
+      service.delete(ownerId, "99999999-9999-4999-8999-999999999999"),
+    ).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
   });
 });

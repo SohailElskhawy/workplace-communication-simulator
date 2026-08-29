@@ -42,6 +42,9 @@ export default function ResultsPage() {
   const [retryDifficulty, setRetryDifficulty] = useState<Difficulty | null>(
     null,
   );
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const turnMap = useMemo(() => {
     const map = new Map<string, ConversationTurn>();
@@ -196,6 +199,26 @@ export default function ResultsPage() {
     }
   };
 
+  const handleDeleteAttempt = async () => {
+    try {
+      setDeleteLoading(true);
+      setDeleteError(null);
+      const token = await getToken();
+      if (!token) throw new Error("Authentication token not available.");
+
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
+      const client = createApiClient(apiUrl);
+
+      await client.deleteAttempt(token, attemptId);
+      router.push("/app/history");
+    } catch (err) {
+      setDeleteError(
+        err instanceof Error ? err.message : "Failed to delete attempt.",
+      );
+      setDeleteLoading(false);
+    }
+  };
+
   // 1. Initial Loading State
   if (loading && !attempt) {
     return (
@@ -345,6 +368,13 @@ export default function ResultsPage() {
               Scenarios
             </Link>
             <span className="text-slate-300">/</span>
+            <Link
+              href="/app/history"
+              className="text-xs font-medium text-slate-500 hover:text-slate-900"
+            >
+              History
+            </Link>
+            <span className="text-slate-300">/</span>
             <span className="text-xs font-medium text-slate-900">
               {attempt.scenario.title}
             </span>
@@ -400,11 +430,19 @@ export default function ResultsPage() {
             {retryingPractice ? "Starting..." : "Practice Again (Retry)"}
           </button>
           <Link
-            href="/app"
-            className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-700 shadow-xs hover:bg-slate-50"
+            href="/app/progress"
+            className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-700 shadow-xs hover:bg-slate-50"
           >
-            All Scenarios
+            View Progress
           </Link>
+          <button
+            type="button"
+            onClick={() => setShowDeleteModal(true)}
+            title="Delete Session"
+            className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white p-2.5 text-xs font-semibold text-slate-400 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600"
+          >
+            🗑️
+          </button>
         </div>
       </div>
 
@@ -1175,6 +1213,61 @@ export default function ResultsPage() {
           </div>
         )}
       </section>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-xl space-y-4">
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-100 text-rose-600 text-lg">
+                ⚠️
+              </span>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">
+                  Delete This Rehearsal Session?
+                </h3>
+                <p className="text-xs text-slate-500">
+                  {attempt.scenario.title} ({attempt.difficulty})
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed">
+              This action will permanently delete this rehearsal session, its
+              conversation messages, and its evaluation data. Subsequent retry
+              attempts will remain safely preserved.
+            </p>
+
+            {deleteError && (
+              <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">
+                {deleteError}
+              </div>
+            )}
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeleteError(null);
+                }}
+                disabled={deleteLoading}
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteAttempt}
+                disabled={deleteLoading}
+                className="rounded-xl bg-rose-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-rose-500 disabled:opacity-50"
+              >
+                {deleteLoading ? "Deleting..." : "Permanently Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

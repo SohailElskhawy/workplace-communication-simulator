@@ -139,6 +139,7 @@ export interface AttemptRepository {
     userId: string,
     currentTime: Date,
   ): Promise<FinishAttemptRepositoryResult>;
+  deleteAttempt(attemptId: string, userId: string): Promise<boolean>;
 }
 
 export interface CreatedTurnResult {
@@ -173,6 +174,7 @@ export interface AttemptService {
     userId: string,
     attemptId: string,
   ): Promise<FinishAttemptResponse["data"]>;
+  delete(userId: string, attemptId: string): Promise<void>;
 }
 
 function mapScenario(scenario: AttemptScenarioRecord) {
@@ -401,6 +403,13 @@ export function createAttemptService(
       }
 
       return { id: result.id, status: result.status };
+    },
+
+    async delete(userId, attemptId) {
+      const deleted = await repository.deleteAttempt(attemptId, userId);
+      if (!deleted) {
+        throw new AttemptError("NOT_FOUND");
+      }
     },
   };
 }

@@ -75,6 +75,7 @@ function createAttemptApp(
       finish: vi
         .fn<AttemptService["finish"]>()
         .mockResolvedValue({ id: attemptId, status: "EVALUATING" }),
+      delete: vi.fn<AttemptService["delete"]>().mockResolvedValue(undefined),
     } satisfies AttemptService,
     overrides,
   );
@@ -84,6 +85,12 @@ function createAttemptApp(
     authenticationMiddleware: (_request, _response, next) => next(),
     evaluationService: {
       evaluate: vi.fn(),
+    },
+    historyService: {
+      getHistory: vi.fn(),
+    },
+    progressService: {
+      getProgress: vi.fn(),
     },
     resolveAuthProviderUserId: () => authProviderUserId,
     scenarioService: {
@@ -331,5 +338,54 @@ describe("attempt endpoints", () => {
       AttemptComparisonResponseSchema.parse(response.body).data,
     ).toBeNull();
     expect(getComparison).toHaveBeenCalledWith(ownerId, attemptId);
+  });
+
+  it("deletes an attempt and returns 204 No Content", async () => {
+    const deleteFn = vi
+      .fn<AttemptService["delete"]>()
+      .mockResolvedValue(undefined);
+    const { app } = createAttemptApp({ delete: deleteFn });
+
+    const response = await request(app).delete(`/api/v1/attempts/${attemptId}`);
+
+    expect(response.status).toBe(204);
+    expect(response.body).toEqual({});
+    expect(deleteFn).toHaveBeenCalledWith(ownerId, attemptId);
+  });
+
+  it("returns 404 when deleting a non-existent or non-owned attempt", async () => {
+    const deleteFn = vi
+      .fn<AttemptService["delete"]>()
+      .mockRejectedValue(new AttemptError("NOT_FOUND"));
+    const { app } = createAttemptApp({ delete: deleteFn });
+
+    const response = await request(app).delete(`/api/v1/attempts/${attemptId}`);
+
+    expect(response.status).toBe(404);
+    expect(ApiErrorResponseSchema.parse(response.body).error.code).toBe(
+      "NOT_FOUND",
+    );
+  });
+
+  it("returns 400 when attempt ID is invalid UUID", async () => {
+    const { app } = createAttemptApp();
+
+    const response = await request(app).delete("/api/v1/attempts/not-a-uuid");
+
+    expect(response.status).toBe(400);
+    expect(ApiErrorResponseSchema.parse(response.body).error.code).toBe(
+      "VALIDATION_FAILED",
+    );
+  });
+
+  it("returns 401 when deleting unauthenticated", async () => {
+    const { app } = createAttemptApp({}, null);
+
+    const response = await request(app).delete(`/api/v1/attempts/${attemptId}`);
+
+    expect(response.status).toBe(401);
+    expect(ApiErrorResponseSchema.parse(response.body).error.code).toBe(
+      "UNAUTHENTICATED",
+    );
   });
 });

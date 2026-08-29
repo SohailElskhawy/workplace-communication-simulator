@@ -32,11 +32,26 @@ const unusedAttemptService = {
   finish: async () => {
     throw new Error("Attempt service should not run");
   },
+  delete: async () => {
+    throw new Error("Attempt service should not run");
+  },
 };
 
 const unusedEvaluationService = {
   evaluate: async () => {
     throw new Error("Evaluation service should not run");
+  },
+};
+
+const unusedHistoryService = {
+  getHistory: async () => {
+    throw new Error("History service should not run");
+  },
+};
+
+const unusedProgressService = {
+  getProgress: async () => {
+    throw new Error("Progress service should not run");
   },
 };
 
@@ -47,6 +62,8 @@ describe("GET /api/v1/health", () => {
         attemptService: unusedAttemptService,
         authenticationMiddleware: (_req, _res, next) => next(),
         evaluationService: unusedEvaluationService,
+        historyService: unusedHistoryService,
+        progressService: unusedProgressService,
         resolveAuthProviderUserId: () => null,
         scenarioService: unusedScenarioService,
         userProvisioner: {
@@ -80,6 +97,8 @@ describe("GET /api/v1/me", () => {
         attemptService: unusedAttemptService,
         authenticationMiddleware,
         evaluationService: unusedEvaluationService,
+        historyService: unusedHistoryService,
+        progressService: unusedProgressService,
         resolveAuthProviderUserId: () => null,
         scenarioService: unusedScenarioService,
         userProvisioner: {
@@ -104,6 +123,8 @@ describe("GET /api/v1/me", () => {
         attemptService: unusedAttemptService,
         authenticationMiddleware,
         evaluationService: unusedEvaluationService,
+        historyService: unusedHistoryService,
+        progressService: unusedProgressService,
         resolveAuthProviderUserId: () => "user_clerk_123",
         scenarioService: unusedScenarioService,
         userProvisioner: {

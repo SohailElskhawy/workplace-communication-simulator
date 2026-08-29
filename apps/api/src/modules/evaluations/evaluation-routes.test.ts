@@ -84,6 +84,7 @@ function createEvaluationApp(
     createTurn: vi.fn(),
     retryTurn: vi.fn(),
     finish: vi.fn(),
+    delete: vi.fn(),
   };
 
   const scenarioService: ScenarioService = {
@@ -99,6 +100,12 @@ function createEvaluationApp(
     attemptService,
     authenticationMiddleware: (_req, _res, next) => next(),
     evaluationService,
+    historyService: {
+      getHistory: vi.fn(),
+    },
+    progressService: {
+      getProgress: vi.fn(),
+    },
     resolveAuthProviderUserId: () => authProviderUserId,
     scenarioService,
     userProvisioner,

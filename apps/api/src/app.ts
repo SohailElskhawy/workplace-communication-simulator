@@ -16,6 +16,10 @@ import { registerAttemptRoutes } from "./modules/attempts/attempt-routes.js";
 import type { AttemptService } from "./modules/attempts/attempt-service.js";
 import { registerEvaluationRoutes } from "./modules/evaluations/evaluation-routes.js";
 import type { EvaluationService } from "./modules/evaluations/evaluation-service.js";
+import { registerHistoryRoutes } from "./modules/history/history-routes.js";
+import type { HistoryService } from "./modules/history/history-service.js";
+import { registerProgressRoutes } from "./modules/progress/progress-routes.js";
+import type { ProgressService } from "./modules/progress/progress-service.js";
 import { registerScenarioRoutes } from "./modules/scenarios/scenario-routes.js";
 import type { ScenarioService } from "./modules/scenarios/scenario-service.js";
 import type { LocalUserProvisioner } from "./modules/users/provision-local-user.js";
@@ -24,6 +28,8 @@ export interface AuthenticatedAppDependencies {
   attemptService: AttemptService;
   authenticationMiddleware: RequestHandler;
   evaluationService: EvaluationService;
+  historyService: HistoryService;
+  progressService: ProgressService;
   resolveAuthProviderUserId(request: Request): string | null;
   scenarioService: ScenarioService;
   userProvisioner: LocalUserProvisioner;
@@ -92,6 +98,8 @@ export function createApp(dependencies: AuthenticatedAppDependencies): Express {
   registerScenarioRoutes(app, dependencies.scenarioService);
   registerAttemptRoutes(app, dependencies);
   registerEvaluationRoutes(app, dependencies);
+  registerHistoryRoutes(app, dependencies);
+  registerProgressRoutes(app, dependencies);
 
   const errorHandler: ErrorRequestHandler = (
     error,

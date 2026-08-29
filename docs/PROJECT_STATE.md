@@ -233,38 +233,41 @@ Do not implement:
 
 ## Current Development Milestone
 
-**Milestone 8 — Retry & Attempt Comparison** is complete. The retry flow and deterministic comparison engine are implemented and verified end-to-end across contracts, backend, and frontend.
+**Milestone 9 — History & Progress Profile** is complete. Rehearsal history, dynamic rolling 5-session progress calculation, weakest skill identification, deterministic scenario recommendation, session deletion, and past result reopening are implemented and verified end-to-end across contracts, backend, and frontend.
 
-Completed Retry & Comparison features:
+Completed History & Progress features:
 
-- Shared Comparison Contract (`packages/contracts`):
-  - `SkillDeltasSchema` & `type SkillDeltas` calculating exact point deltas for all 5 universal communication skills (Clarity, Assertiveness, Empathy, Structure, Conciseness);
-  - `ObjectiveDeltaStatusSchema` (`IMPROVED`, `REGRESSED`, `UNCHANGED`) & `ObjectiveDeltaSchema` comparing previous vs. current status for all scenario objectives;
-  - `WeakAreaComparisonSchema` tracking progress against the specific growth target identified in the previous attempt's `nextFocus.skill`;
-  - `AttemptComparisonSchema` with difficulty equivalence checking (`comparable: boolean`, `nonEquivalentReason: string | null`), deterministic overall score delta, universal skill deltas, objective status changes, and weak area focus progress;
-  - `AttemptComparisonResponseSchema` for dedicated endpoint queries (`GET /api/v1/attempts/:attemptId/comparison`);
-  - Extended `AttemptDetailResponseSchema` to optionally include `comparison`.
-- Pure Deterministic Comparison Logic (`apps/api`):
-  - `calculateAttemptComparison(current, previous)` computing score deltas, objective outcome changes, weak area progress, and cross-difficulty non-equivalence flags;
-  - Strictly enforces the cross-difficulty rule: attempts with differing difficulty levels (e.g. Medium to Hard) are marked `comparable: false` with explicit informational reason text, while preserving numerical transparency.
-- Backend Repository, Service, and Routes (`apps/api`):
-  - Prisma query inclusion of `retryOfAttempt` relation;
-  - Automatic calculation and embedding of `comparison` in attempt details;
-  - Added dedicated `GET /api/v1/attempts/:attemptId/comparison` endpoint with authentication, authorization, and 404 validation.
-- Web Results UI & Score Utilities (`apps/web`):
-  - `formatDelta` helper formatting positive (+X, emerald badge), negative (-X, rose badge), and neutral (0, slate badge) deltas;
-  - `formatObjectiveDeltaStatus` helper displaying visual outcome changes (↑ Improved, ↓ Regressed, – No Change);
-  - `fetchAttemptComparison` in typed `api-client.ts`;
-  - Dedicated **Attempt Comparison** section on the results page (`/app/results/[attemptId]`):
-    - Overall score change card with point delta pill;
-    - Targeted Weak Area progress card with previous vs. current score and goal outcome badge ("✓ Goal Improved" / "Needs Continued Focus");
-    - 5 Universal Skills delta breakdown table;
-    - Scenario Objectives outcome changes table;
-    - Prominent cross-difficulty warning notice when comparing across different difficulty settings.
-  - Interactive retry controls defaulting to the current attempt's difficulty while allowing explicit difficulty selection (Easy / Medium / Hard) for the retry attempt;
-  - Immutability preserved: every retry creates a new attempt referencing `retryOfAttemptId`; historical attempts are never overwritten or mutated.
+- Shared History & Progress Contracts (`packages/contracts`):
+  - `HistoryItemSchema`, `HistoryPaginationMetaSchema`, `HistoryResponseSchema`, and `HistoryQuerySchema` for paginated rehearsal records;
+  - `RecommendedScenarioSchema`, `ProgressDataSchema`, and `ProgressResponseSchema` for universal skill averages, weakest skill spotlight, and scenario recommendations.
+- Pure Deterministic Progress Logic (`apps/api`):
+  - `calculateProgressProfile` computing integer averages (`Math.round`) for each of the 5 universal skills across the learner's latest up to 5 eligible sessions (`progressEligible: true`, >= 3 substantive user turns);
+  - Deterministic weakest skill determination with canonical tie-breaker (`CLARITY` → `ASSERTIVENESS` → `EMPATHY` → `STRUCTURE` → `CONCISENESS`);
+  - `getRecommendedScenario` providing deterministic scenario recommendations based on the learner's weakest skill without AI hallucinations or runtime LLM dependencies.
+- Backend Repository, Services, and Routes (`apps/api`):
+  - `DELETE /api/v1/attempts/:attemptId` with strict user ownership checks (returns 404 for non-owned attempts), cascading deletion of turns and evaluation, and foreign key `onDelete: SetNull` for retries;
+  - `GET /api/v1/history?cursor=...&limit=...` with cursor-based pagination and status mapping;
+  - `GET /api/v1/progress` querying latest <= 5 eligible completed evaluations and computing the active skill profile.
+- Web Client, Navigation, and Pages (`apps/web`):
+  - `fetchHistory`, `fetchProgress`, and `deleteAttempt` in typed `api-client.ts`;
+  - Global `AppHeader` updated with direct navigation links to `/app` (Scenarios), `/app/progress` (Progress), and `/app/history` (History);
+  - `/app/history` Page:
+    - Session list with difficulty, status badges, score pills, retry indicators, and formatted timestamps;
+    - Cursor pagination with "Load Older Sessions";
+    - "Resume" link for active sessions and "View Results" link for completed/evaluating sessions;
+    - Modal confirmation dialog for secure session deletion.
+  - `/app/progress` Page:
+    - 5-session rolling window overview banner;
+    - Weakest Skill spotlight card explaining primary growth opportunities;
+    - Recommended Practice Scenario CTA card linking directly to rehearsal;
+    - 5 Universal Skill breakdown grid with score bands and visual progress bars;
+    - Friendly 0-session empty state guiding users to their first simulation.
+  - `/app/results/[attemptId]` Page:
+    - Breadcrumbs linking back to History and Scenarios;
+    - Action bar button linking directly to the Progress Profile;
+    - In-page Session Deletion with confirmation modal and redirect to History.
 - Comprehensive Unit & Integration Tests:
-  - 126 tests across 26 test files passing cleanly.
+  - 162 tests across 33 test files passing cleanly.
 
 Verified on August 29, 2026 with:
 
@@ -294,7 +297,8 @@ corepack pnpm prisma:generate
 10. Deterministic 70/30 scoring (Complete)
 11. Results experience (Complete)
 12. Retry and comparison (Milestone 8 - Complete)
-13. Session history and progress profile (Milestone 9)
+13. Session history and progress profile (Milestone 9 - Complete)
+14. Voice input / Push-to-talk transcription (Milestone 10)
 
 ---
 
@@ -316,4 +320,4 @@ Some of these documents may not exist yet. Do not invent missing requirements; u
 
 ## Current Next Task
 
-Milestone 8 is complete. The retry loop and attempt comparison are fully verified across contracts, API, and web. Proceed to **Milestone 9 — History & Progress Profile** when directed. Do not start Milestone 9 without user approval.
+Milestone 9 is complete. Session history, rolling 5-session progress calculation, weakest skill determination, recommended scenarios, session deletion, and past result reopening are fully verified across contracts, API, and web. Proceed to **Milestone 10 — Voice Input / STT (Push-to-Talk)** when directed. Do not start Milestone 10 without user approval.

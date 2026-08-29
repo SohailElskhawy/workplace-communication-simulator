@@ -212,4 +212,22 @@ export function registerAttemptRoutes(
       }
     },
   );
+
+  app.delete("/api/v1/attempts/:attemptId", async (request, response, next) => {
+    try {
+      const userId = await resolveLocalUserId(request, response, dependencies);
+      if (!userId) return;
+
+      const parsed = AttemptParamsSchema.safeParse(request.params);
+      if (!parsed.success) {
+        sendError(response, 400, "VALIDATION_FAILED", "Attempt ID is invalid.");
+        return;
+      }
+
+      await dependencies.attemptService.delete(userId, parsed.data.attemptId);
+      response.status(204).end();
+    } catch (error) {
+      if (!handleAttemptError(response, error)) next(error);
+    }
+  });
 }

@@ -15,12 +15,24 @@ export function AppHeader() {
             </span>
             <span className="text-lg">Kalemny</span>
           </Link>
-          <nav className="hidden sm:flex items-center gap-4 text-sm font-medium text-slate-600">
+          <nav className="flex items-center gap-1 sm:gap-2 text-sm font-medium text-slate-600">
             <Link
               href="/app"
-              className="rounded-md px-3 py-1.5 transition hover:bg-slate-100 hover:text-slate-900"
+              className="rounded-lg px-2.5 py-1.5 transition hover:bg-slate-100 hover:text-slate-900"
             >
               Scenarios
+            </Link>
+            <Link
+              href="/app/progress"
+              className="rounded-lg px-2.5 py-1.5 transition hover:bg-slate-100 hover:text-slate-900"
+            >
+              Progress
+            </Link>
+            <Link
+              href="/app/history"
+              className="rounded-lg px-2.5 py-1.5 transition hover:bg-slate-100 hover:text-slate-900"
+            >
+              History
             </Link>
           </nav>
         </div>

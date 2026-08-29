@@ -444,5 +444,22 @@ export function createPrismaAttemptRepository(
         } as const;
       });
     },
+
+    async deleteAttempt(attemptId, userId) {
+      const attempt = await prisma.simulationAttempt.findFirst({
+        where: { id: attemptId, userId },
+        select: { id: true },
+      });
+
+      if (!attempt) {
+        return false;
+      }
+
+      await prisma.simulationAttempt.delete({
+        where: { id: attemptId },
+      });
+
+      return true;
+    },
   };
 }

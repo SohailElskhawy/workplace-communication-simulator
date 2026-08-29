@@ -37,6 +37,9 @@ const unusedAttemptService = {
   finish: async () => {
     throw new Error("Attempt service should not run for scenario routes");
   },
+  delete: async () => {
+    throw new Error("Attempt service should not run for scenario routes");
+  },
 };
 
 function createScenarioApp() {
@@ -48,6 +51,16 @@ function createScenarioApp() {
         throw new Error(
           "Evaluation service should not run for scenario routes",
         );
+      },
+    },
+    historyService: {
+      getHistory: async () => {
+        throw new Error("History service should not run for scenario routes");
+      },
+    },
+    progressService: {
+      getProgress: async () => {
+        throw new Error("Progress service should not run for scenario routes");
       },
     },
     resolveAuthProviderUserId: () => null,

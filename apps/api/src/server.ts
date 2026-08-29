@@ -15,6 +15,10 @@ import { createAttemptService } from "./modules/attempts/attempt-service.js";
 import { createPrismaAttemptRepository } from "./modules/attempts/prisma-attempt-repository.js";
 import { createEvaluationService } from "./modules/evaluations/evaluation-service.js";
 import { createPrismaEvaluationRepository } from "./modules/evaluations/prisma-evaluation-repository.js";
+import { createHistoryService } from "./modules/history/history-service.js";
+import { createPrismaHistoryRepository } from "./modules/history/prisma-history-repository.js";
+import { createPrismaProgressRepository } from "./modules/progress/prisma-progress-repository.js";
+import { createProgressService } from "./modules/progress/progress-service.js";
 import { createPrismaScenarioRepository } from "./modules/scenarios/prisma-scenario-repository.js";
 import { createScenarioService } from "./modules/scenarios/scenario-service.js";
 import { createLocalUserProvisioner } from "./modules/users/provision-local-user.js";
@@ -51,6 +55,12 @@ const evaluationService = createEvaluationService(
   createPrismaEvaluationRepository(prisma),
   aiService,
 );
+const historyService = createHistoryService(
+  createPrismaHistoryRepository(prisma),
+);
+const progressService = createProgressService(
+  createPrismaProgressRepository(prisma),
+);
 
 const app = createApp({
   attemptService,
@@ -59,6 +69,8 @@ const app = createApp({
     secretKey: apiEnv.CLERK_SECRET_KEY,
   }),
   evaluationService,
+  historyService,
+  progressService,
   resolveAuthProviderUserId: resolveClerkUserId,
   scenarioService,
   userProvisioner,

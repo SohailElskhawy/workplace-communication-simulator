@@ -64,6 +64,26 @@ export {
 export { HealthResponseSchema, type HealthResponse } from "./health.js";
 export { MeResponseSchema, type MeResponse } from "./me.js";
 export {
+  HistoryItemScenarioSchema,
+  HistoryItemSchema,
+  HistoryPaginationMetaSchema,
+  HistoryQuerySchema,
+  HistoryResponseSchema,
+  type HistoryItem,
+  type HistoryItemScenario,
+  type HistoryPaginationMeta,
+  type HistoryQuery,
+  type HistoryResponse,
+} from "./history.js";
+export {
+  ProgressDataSchema,
+  ProgressResponseSchema,
+  RecommendedScenarioSchema,
+  type ProgressData,
+  type ProgressResponse,
+  type RecommendedScenario,
+} from "./progress.js";
+export {
   DifficultySchema,
   PublicScenarioContextSchema,
   PublicScenarioDetailSchema,

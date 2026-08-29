@@ -160,4 +160,101 @@ describe("api-client", () => {
     expect(result?.comparable).toBe(true);
     expect(result?.overallDelta).toBe(13);
   });
+
+  it("fetches history with query parameters", async () => {
+    const mockHistory = {
+      data: [
+        {
+          attemptId: "123e4567-e89b-12d3-a456-426614174000",
+          scenario: {
+            key: "salary-negotiation",
+            title: "Salary Negotiation",
+          },
+          difficulty: "MEDIUM",
+          status: "COMPLETED",
+          overallScore: 82,
+          retryOfAttemptId: null,
+          startedAt: "2026-08-29T10:00:00.000Z",
+          completedAt: "2026-08-29T10:10:00.000Z",
+          createdAt: "2026-08-29T10:00:00.000Z",
+        },
+      ],
+      meta: {
+        nextCursor: null,
+      },
+    };
+
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => mockHistory,
+    } as Response);
+
+    const result = await client.fetchHistory(token, { limit: 10 });
+
+    expect(fetch).toHaveBeenCalledWith(
+      "https://api.test.kalemny.com/api/v1/history?limit=10",
+      expect.objectContaining({
+        headers: expect.any(Headers),
+        method: "GET",
+      }),
+    );
+    expect(result.data).toHaveLength(1);
+    expect(result.meta.nextCursor).toBeNull();
+  });
+
+  it("fetches progress profile", async () => {
+    const mockProgress = {
+      data: {
+        skills: {
+          clarity: 82,
+          assertiveness: 68,
+          empathy: 75,
+          structure: 80,
+          conciseness: 74,
+        },
+        weakestSkill: "ASSERTIVENESS",
+        recommendedScenario: {
+          key: "salary-negotiation",
+          title: "Salary Negotiation",
+        },
+        eligibleSessionCount: 3,
+      },
+    };
+
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => mockProgress,
+    } as Response);
+
+    const result = await client.fetchProgress(token);
+
+    expect(fetch).toHaveBeenCalledWith(
+      "https://api.test.kalemny.com/api/v1/progress",
+      expect.objectContaining({
+        headers: expect.any(Headers),
+        method: "GET",
+      }),
+    );
+    expect(result.eligibleSessionCount).toBe(3);
+    expect(result.weakestSkill).toBe("ASSERTIVENESS");
+  });
+
+  it("deletes attempt with status 204", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      status: 204,
+    } as Response);
+
+    await client.deleteAttempt(token, "123e4567-e89b-12d3-a456-426614174000");
+
+    expect(fetch).toHaveBeenCalledWith(
+      "https://api.test.kalemny.com/api/v1/attempts/123e4567-e89b-12d3-a456-426614174000",
+      expect.objectContaining({
+        headers: expect.any(Headers),
+        method: "DELETE",
+      }),
+    );
+  });
 });

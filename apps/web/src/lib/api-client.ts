@@ -5,6 +5,8 @@ import {
   CreateAttemptResponseSchema,
   EvaluationResponseSchema,
   FinishAttemptResponseSchema,
+  HistoryResponseSchema,
+  ProgressResponseSchema,
   ScenarioDetailResponseSchema,
   ScenarioListResponseSchema,
   TurnResponseSchema,
@@ -15,6 +17,8 @@ import {
   type CreateTurnRequest,
   type EvaluationResponse,
   type FinishAttemptResponse,
+  type HistoryResponse,
+  type ProgressData,
   type PublicScenarioDetail,
   type PublicScenarioSummary,
   type TurnResponse,
@@ -92,6 +96,108 @@ async function request<T>(
 
   const parsed = schema.parse(rawJson);
   return parsed.data;
+}
+
+async function requestFull<T>(
+  baseUrl: string,
+  path: string,
+  token: string,
+  options: RequestInit = {},
+  schema: { parse(data: unknown): T },
+): Promise<T> {
+  const url = `${baseUrl}${path}`;
+  const headers = new Headers(options.headers);
+  headers.set("Authorization", `Bearer ${token}`);
+  if (
+    options.body &&
+    typeof options.body === "string" &&
+    !headers.has("Content-Type")
+  ) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      ...options,
+      headers,
+    });
+  } catch {
+    throw new ApiClientError(
+      "Network connection failure. Please check your internet connection.",
+      "NETWORK_ERROR",
+      0,
+    );
+  }
+
+  const rawJson = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const errorParsed = ApiErrorResponseSchema.safeParse(rawJson);
+    if (errorParsed.success) {
+      throw new ApiClientError(
+        errorParsed.data.error.message,
+        errorParsed.data.error.code,
+        response.status,
+        errorParsed.data.error.requestId,
+      );
+    }
+    throw new ApiClientError(
+      `API request failed with status ${response.status}.`,
+      "HTTP_ERROR",
+      response.status,
+    );
+  }
+
+  return schema.parse(rawJson);
+}
+
+async function requestVoid(
+  baseUrl: string,
+  path: string,
+  token: string,
+  options: RequestInit = {},
+): Promise<void> {
+  const url = `${baseUrl}${path}`;
+  const headers = new Headers(options.headers);
+  headers.set("Authorization", `Bearer ${token}`);
+
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      ...options,
+      headers,
+    });
+  } catch {
+    throw new ApiClientError(
+      "Network connection failure. Please check your internet connection.",
+      "NETWORK_ERROR",
+      0,
+    );
+  }
+
+  if (response.status === 204) {
+    return;
+  }
+
+  const rawJson = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const errorParsed = ApiErrorResponseSchema.safeParse(rawJson);
+    if (errorParsed.success) {
+      throw new ApiClientError(
+        errorParsed.data.error.message,
+        errorParsed.data.error.code,
+        response.status,
+        errorParsed.data.error.requestId,
+      );
+    }
+    throw new ApiClientError(
+      `API request failed with status ${response.status}.`,
+      "HTTP_ERROR",
+      response.status,
+    );
+  }
 }
 
 export function createApiClient(baseUrl: string) {
@@ -221,6 +327,44 @@ export function createApiClient(baseUrl: string) {
         token,
         { method: "GET" },
         AttemptComparisonResponseSchema,
+      );
+    },
+
+    async fetchHistory(
+      token: string,
+      query?: { cursor?: string | undefined; limit?: number | undefined },
+    ): Promise<HistoryResponse> {
+      const params = new URLSearchParams();
+      if (query?.cursor) params.set("cursor", query.cursor);
+      if (query?.limit) params.set("limit", query.limit.toString());
+      const queryString = params.toString();
+      const path = `/api/v1/history${queryString ? `?${queryString}` : ""}`;
+
+      return requestFull(
+        baseUrl,
+        path,
+        token,
+        { method: "GET" },
+        HistoryResponseSchema,
+      );
+    },
+
+    async fetchProgress(token: string): Promise<ProgressData> {
+      return request(
+        baseUrl,
+        "/api/v1/progress",
+        token,
+        { method: "GET" },
+        ProgressResponseSchema,
+      );
+    },
+
+    async deleteAttempt(token: string, attemptId: string): Promise<void> {
+      return requestVoid(
+        baseUrl,
+        `/api/v1/attempts/${encodeURIComponent(attemptId)}`,
+        token,
+        { method: "DELETE" },
       );
     },
   };
