@@ -10,7 +10,9 @@ export default function AuthenticatedLayout({
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
       <AppHeader />
-      <main className="flex-1 py-8">{children}</main>
+      <main id="main-content" className="flex-1 py-5 sm:py-8">
+        {children}
+      </main>
     </div>
   );
 }

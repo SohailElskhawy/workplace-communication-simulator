@@ -26,6 +26,10 @@ describe("parseApiEnv", () => {
       EVALUATION_TIMEOUT_MS: 30_000,
       TRANSCRIPTION_TIMEOUT_MS: 20_000,
       TTS_TIMEOUT_MS: 15_000,
+      GENERAL_RATE_LIMIT_WINDOW_MS: 60_000,
+      GENERAL_RATE_LIMIT_MAX: 120,
+      AI_RATE_LIMIT_WINDOW_MS: 60_000,
+      AI_RATE_LIMIT_MAX: 30,
       ...requiredEnvironment,
     });
   });
@@ -54,6 +58,27 @@ describe("parseApiEnv", () => {
     expect(() =>
       parseApiEnv({ ...requiredEnvironment, ROLEPLAY_TIMEOUT_MS: "0" }),
     ).toThrow();
+  });
+
+  it("rejects excessive timeout and invalid limiter settings", () => {
+    expect(() =>
+      parseApiEnv({ ...requiredEnvironment, EVALUATION_TIMEOUT_MS: "120001" }),
+    ).toThrow();
+    expect(() =>
+      parseApiEnv({ ...requiredEnvironment, AI_RATE_LIMIT_MAX: "0" }),
+    ).toThrow();
+  });
+
+  it("accepts optional Sentry settings and empty values disable monitoring", () => {
+    expect(
+      parseApiEnv({ ...requiredEnvironment, SENTRY_DSN: "" }).SENTRY_DSN,
+    ).toBeUndefined();
+    expect(
+      parseApiEnv({
+        ...requiredEnvironment,
+        SENTRY_DSN: "https://public@example.ingest.sentry.io/1",
+      }).SENTRY_DSN,
+    ).toBe("https://public@example.ingest.sentry.io/1");
   });
 
   it("rejects OpenRouter automatic model routing", () => {

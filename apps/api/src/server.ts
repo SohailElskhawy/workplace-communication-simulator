@@ -5,6 +5,8 @@ import dotenv from "dotenv";
 import { createApp } from "./app.js";
 import { parseApiEnv } from "./config/env.js";
 import { createPrismaClient } from "./infrastructure/database/prisma.js";
+import { logger } from "./infrastructure/logging/logger.js";
+import { initializeApiMonitoring } from "./infrastructure/monitoring/sentry.js";
 import { createAiService } from "./modules/ai/ai-service.js";
 import { createOpenRouterProvider } from "./modules/ai/openrouter-provider.js";
 import {
@@ -35,6 +37,11 @@ if (existsSync(rootEnvPath)) {
 }
 
 const apiEnv = parseApiEnv(process.env);
+const captureException = initializeApiMonitoring({
+  dsn: apiEnv.SENTRY_DSN,
+  environment: apiEnv.SENTRY_ENVIRONMENT ?? apiEnv.NODE_ENV,
+  release: apiEnv.SENTRY_RELEASE,
+});
 const prisma = createPrismaClient(apiEnv.DATABASE_URL);
 const userProvisioner = createLocalUserProvisioner({
   upsert: (args) => prisma.user.upsert(args),
@@ -93,14 +100,24 @@ const app = createApp({
   voiceService,
   ttsService,
   webOrigin: apiEnv.WEB_ORIGIN,
+  logger,
+  captureException,
+  generalRateLimit: {
+    windowMs: apiEnv.GENERAL_RATE_LIMIT_WINDOW_MS,
+    limit: apiEnv.GENERAL_RATE_LIMIT_MAX,
+  },
+  aiRateLimit: {
+    windowMs: apiEnv.AI_RATE_LIMIT_WINDOW_MS,
+    limit: apiEnv.AI_RATE_LIMIT_MAX,
+  },
 });
 
 const server = app.listen(apiEnv.PORT, () => {
-  console.log(`API listening on port ${apiEnv.PORT}`);
+  logger.info({ event: "api_started", status: apiEnv.PORT });
 });
 
 const shutdown = (signal: string) => {
-  console.log(`Received ${signal}. Shutting down gracefully...`);
+  logger.info({ event: "api_shutdown_started", operation: signal });
   server.close(async () => {
     await prisma.$disconnect();
     process.exit(0);

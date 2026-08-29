@@ -5,6 +5,7 @@ import type { HistoryItem } from "@kalemny/contracts";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
+import { AccessibleDialog } from "../../../components/accessible-dialog";
 import { ApiClientError, createApiClient } from "../../../lib/api-client";
 import { getScoreBand } from "../../../lib/score-utils";
 
@@ -407,28 +408,29 @@ export default function HistoryPage() {
       )}
 
       {/* Delete Confirmation Modal Dialog */}
-      {deletingItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-xl space-y-4">
+      <AccessibleDialog
+        open={deletingItem !== null}
+        title="Delete practice session?"
+        description="This permanently deletes this simulation attempt, its stored conversation messages, and evaluation data. Later retry sessions remain preserved."
+        onClose={() => {
+          if (!deleteLoading) {
+            setDeletingItem(null);
+            setDeleteError(null);
+          }
+        }}
+      >
+        {deletingItem && (
+          <div className="space-y-4">
             <div className="flex items-center gap-3">
               <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-100 text-rose-600 text-lg">
                 ⚠️
               </span>
               <div>
-                <h3 className="text-base font-bold text-slate-900">
-                  Delete Practice Session?
-                </h3>
                 <p className="text-xs text-slate-500">
                   {deletingItem.scenario.title} ({deletingItem.difficulty})
                 </p>
               </div>
             </div>
-
-            <p className="text-xs text-slate-600 leading-relaxed">
-              This action will permanently delete this simulation attempt, all
-              stored conversation messages, and its evaluation data. Subsequent
-              retry sessions will remain safely preserved.
-            </p>
 
             {deleteError && (
               <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">
@@ -458,8 +460,8 @@ export default function HistoryPage() {
               </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </AccessibleDialog>
     </div>
   );
 }

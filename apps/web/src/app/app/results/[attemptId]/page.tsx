@@ -14,6 +14,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
+import { AccessibleDialog } from "../../../../components/accessible-dialog";
 import { ApiClientError, createApiClient } from "../../../../lib/api-client";
 import { SpeechButton } from "../../../../components/speech-button";
 import {
@@ -1217,28 +1218,29 @@ export default function ResultsPage() {
       </section>
 
       {/* Delete Confirmation Modal */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-xl space-y-4">
+      <AccessibleDialog
+        open={showDeleteModal}
+        title="Delete this rehearsal session?"
+        description="This permanently deletes this rehearsal session, its conversation messages, and evaluation data. Later retry attempts remain preserved."
+        onClose={() => {
+          if (!deleteLoading) {
+            setShowDeleteModal(false);
+            setDeleteError(null);
+          }
+        }}
+      >
+        {showDeleteModal && (
+          <div className="space-y-4">
             <div className="flex items-center gap-3">
               <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-100 text-rose-600 text-lg">
                 ⚠️
               </span>
               <div>
-                <h3 className="text-base font-bold text-slate-900">
-                  Delete This Rehearsal Session?
-                </h3>
                 <p className="text-xs text-slate-500">
                   {attempt.scenario.title} ({attempt.difficulty})
                 </p>
               </div>
             </div>
-
-            <p className="text-xs text-slate-600 leading-relaxed">
-              This action will permanently delete this rehearsal session, its
-              conversation messages, and its evaluation data. Subsequent retry
-              attempts will remain safely preserved.
-            </p>
 
             {deleteError && (
               <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">
@@ -1268,8 +1270,8 @@ export default function ResultsPage() {
               </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </AccessibleDialog>
     </div>
   );
 }

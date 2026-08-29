@@ -5,12 +5,26 @@ import type {
 } from "@kalemny/contracts";
 import cors from "cors";
 import express, {
-  type ErrorRequestHandler,
   type Express,
   type Request,
   type RequestHandler,
 } from "express";
-import { randomUUID } from "node:crypto";
+import helmet from "helmet";
+
+import {
+  logger as defaultLogger,
+  type AppLogger,
+} from "./infrastructure/logging/logger.js";
+import {
+  createErrorHandler,
+  notFoundHandler,
+} from "./middleware/error-handler.js";
+import {
+  createAiRateLimiter,
+  createGeneralRateLimiter,
+  isExpensiveAiRequest,
+} from "./middleware/rate-limits.js";
+import { requestContext } from "./middleware/request-context.js";
 
 import { registerAttemptRoutes } from "./modules/attempts/attempt-routes.js";
 import type { AttemptService } from "./modules/attempts/attempt-service.js";
@@ -40,6 +54,13 @@ export interface AuthenticatedAppDependencies {
   voiceService: VoiceService;
   ttsService?: TtsService;
   webOrigin: string;
+  logger?: AppLogger;
+  captureException?: (
+    error: unknown,
+    context: { requestId: string; route: string },
+  ) => void;
+  generalRateLimit?: { windowMs: number; limit: number };
+  aiRateLimit?: { windowMs: number; limit: number };
 }
 
 function unauthenticated(requestId: string): ApiErrorResponse {
@@ -54,13 +75,12 @@ function unauthenticated(requestId: string): ApiErrorResponse {
 
 export function createApp(dependencies: AuthenticatedAppDependencies): Express {
   const app = express();
+  const appLogger = dependencies.logger ?? defaultLogger;
 
   app.disable("x-powered-by");
 
-  app.use((_request, response, next) => {
-    response.locals.requestId = randomUUID();
-    next();
-  });
+  app.use(requestContext(appLogger));
+  app.use(helmet({ contentSecurityPolicy: false }));
 
   app.use(
     cors({
@@ -73,6 +93,31 @@ export function createApp(dependencies: AuthenticatedAppDependencies): Express {
   app.use(express.json({ limit: "64kb" }));
 
   app.use(dependencies.authenticationMiddleware);
+
+  if (dependencies.generalRateLimit) {
+    app.use(
+      "/api/v1",
+      createGeneralRateLimiter({
+        ...dependencies.generalRateLimit,
+        resolveUserId: dependencies.resolveAuthProviderUserId,
+      }),
+    );
+  }
+
+  if (dependencies.aiRateLimit) {
+    const aiLimiter = createAiRateLimiter({
+      ...dependencies.aiRateLimit,
+      resolveUserId: dependencies.resolveAuthProviderUserId,
+    });
+    app.use(isExpensiveAiRequest);
+    app.use((request, response, next) => {
+      if (response.locals.isExpensiveAiRequest === true) {
+        aiLimiter(request, response, next);
+        return;
+      }
+      next();
+    });
+  }
 
   app.get("/api/v1/health", (_request, response) => {
     const body: HealthResponse = {
@@ -113,57 +158,15 @@ export function createApp(dependencies: AuthenticatedAppDependencies): Express {
       dependencies as AuthenticatedAppDependencies & { ttsService: TtsService },
     );
 
-  const errorHandler: ErrorRequestHandler = (
-    error,
-    _request,
-    response,
-    _next,
-  ) => {
-    void _next;
-
-    const requestId =
-      (response.locals.requestId as string | undefined) ?? randomUUID();
-
-    const syntaxError =
-      error instanceof SyntaxError &&
-      typeof error === "object" &&
-      error !== null &&
-      "status" in error &&
-      error.status === 400;
-    const payloadTooLarge =
-      typeof error === "object" &&
-      error !== null &&
-      "status" in error &&
-      error.status === 413;
-
-    if (syntaxError || payloadTooLarge) {
-      const body: ApiErrorResponse = {
-        error: {
-          code: "VALIDATION_FAILED",
-          message: payloadTooLarge
-            ? "Request body is too large."
-            : "Request body is invalid.",
-          requestId,
-        },
-      };
-      response.status(payloadTooLarge ? 413 : 400).json(body);
-      return;
-    }
-
-    console.error(`[${requestId}] Unhandled API error.`);
-
-    const body: ApiErrorResponse = {
-      error: {
-        code: "INTERNAL_ERROR",
-        message: "An unexpected error occurred.",
-        requestId,
-      },
-    };
-
-    response.status(500).json(body);
-  };
-
-  app.use(errorHandler);
+  app.use(notFoundHandler);
+  app.use(
+    createErrorHandler({
+      logger: appLogger,
+      ...(dependencies.captureException
+        ? { captureException: dependencies.captureException }
+        : {}),
+    }),
+  );
 
   return app;
 }

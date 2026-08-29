@@ -272,9 +272,12 @@ export default function SimulationPage() {
   if (!attempt) return null;
 
   return (
-    <div className="mx-auto flex h-[calc(100vh-6rem)] max-w-4xl flex-col px-4 sm:px-6">
+    <div
+      className="mx-auto flex min-h-[calc(100dvh-9rem)] max-w-4xl flex-col px-3 sm:h-[calc(100vh-6rem)] sm:px-6"
+      aria-busy={loading || sendingTurn || finishing}
+    >
       {/* Top Header */}
-      <div className="flex items-center justify-between border-b border-slate-200 bg-white px-5 py-3.5 rounded-t-2xl shadow-xs">
+      <div className="flex flex-col gap-3 border-b border-slate-200 bg-white px-4 py-3.5 rounded-t-2xl shadow-xs sm:flex-row sm:items-center sm:justify-between sm:px-5">
         <div className="flex items-center gap-3">
           <div>
             <div className="flex items-center gap-2">
@@ -305,12 +308,17 @@ export default function SimulationPage() {
 
       {/* Error notification banner if any */}
       {error && (
-        <div className="bg-rose-50 border-b border-rose-200 px-4 py-2.5 text-xs font-medium text-rose-800 flex items-center justify-between">
+        <div
+          role="alert"
+          aria-live="assertive"
+          className="bg-rose-50 border-b border-rose-200 px-4 py-2.5 text-xs font-medium text-rose-800 flex items-center justify-between"
+        >
           <span>{error}</span>
           <button
             type="button"
             onClick={() => setError(null)}
-            className="text-rose-600 hover:text-rose-900 font-bold"
+            aria-label="Dismiss error"
+            className="min-h-11 min-w-11 text-rose-600 hover:text-rose-900 font-bold"
           >
             ✕
           </button>
@@ -335,7 +343,7 @@ export default function SimulationPage() {
           <div key={turn.id} className="space-y-4">
             {/* User Message */}
             <div className="flex justify-end">
-              <div className="max-w-[82%] rounded-2xl rounded-tr-xs bg-indigo-600 px-4 py-3 text-white shadow-xs">
+              <div className="max-w-[92%] rounded-2xl rounded-tr-xs bg-indigo-600 px-4 py-3 text-white shadow-xs sm:max-w-[82%]">
                 <div className="flex items-center justify-between gap-2 text-[10px] text-indigo-200 mb-1">
                   <span>You (Turn #{turn.sequence})</span>
                   <span>
@@ -354,7 +362,7 @@ export default function SimulationPage() {
             {/* AI Response or Error */}
             {turn.status === "COMPLETED" && turn.assistantText && (
               <div className="flex justify-start">
-                <div className="max-w-[82%] rounded-2xl rounded-tl-xs border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-xs">
+                <div className="max-w-[92%] rounded-2xl rounded-tl-xs border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-xs sm:max-w-[82%]">
                   <div className="flex items-center justify-between gap-2 text-[10px] text-slate-400 mb-1">
                     <span className="font-semibold text-slate-700">
                       Counterpart
@@ -402,7 +410,7 @@ export default function SimulationPage() {
 
         {/* Sending indicator */}
         {sendingTurn && (
-          <div className="flex justify-start">
+          <div className="flex justify-start" role="status" aria-live="polite">
             <div className="flex items-center gap-2 rounded-2xl rounded-tl-xs border border-slate-200 bg-white px-4 py-3 text-slate-600 shadow-xs">
               <span className="h-2 w-2 animate-ping rounded-full bg-indigo-600" />
               <span className="text-xs font-medium text-slate-500">
@@ -419,7 +427,11 @@ export default function SimulationPage() {
       <div className="border-t border-slate-200 bg-white p-4 rounded-b-2xl shadow-xs">
         {/* Voice Error Notification */}
         {voiceError && (
-          <div className="mb-3 flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2 text-xs font-medium text-amber-900">
+          <div
+            role="status"
+            aria-live="polite"
+            className="mb-3 flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2 text-xs font-medium text-amber-900"
+          >
             <div className="flex items-center gap-2">
               <span className="font-semibold text-amber-700">Voice Note:</span>
               <span>{voiceError}</span>
@@ -495,9 +507,14 @@ export default function SimulationPage() {
           </div>
         )}
 
-        <form onSubmit={handleSendTurn} className="space-y-2">
+        <form
+          onSubmit={handleSendTurn}
+          className="space-y-2"
+          aria-label="Send a practice response"
+        >
           <div className="relative">
             <textarea
+              aria-label="Your response"
               ref={textareaRef}
               value={composerText}
               onChange={(e) => {
@@ -519,7 +536,7 @@ export default function SimulationPage() {
             />
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2">
               <span className="text-[11px] text-slate-400">
                 {composerText.length} / 60,000 characters

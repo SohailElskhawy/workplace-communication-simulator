@@ -29,4 +29,15 @@ describe("parseWebEnv", () => {
       parseWebEnv({ NEXT_PUBLIC_API_URL: "http://localhost:4000" }),
     ).toThrow();
   });
+
+  it("accepts optional monitoring configuration", () => {
+    expect(
+      parseWebEnv({
+        NEXT_PUBLIC_API_URL: "http://localhost:4000",
+        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_example",
+        NEXT_PUBLIC_SENTRY_DSN: "https://public@example.ingest.sentry.io/1",
+        NEXT_PUBLIC_SENTRY_ENVIRONMENT: "staging",
+      }),
+    ).toMatchObject({ NEXT_PUBLIC_SENTRY_ENVIRONMENT: "staging" });
+  });
 });

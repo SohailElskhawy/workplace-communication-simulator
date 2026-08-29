@@ -232,6 +232,29 @@ Do not implement:
 
 ## Current Development Milestone
 
+**Milestone 13 — P0 Hardening** implementation is complete. The API now has centralized safe fallback errors, request IDs, structured privacy-safe logging, Helmet security headers, configurable process-local general and expensive-AI rate limits, bounded operation-specific timeout configuration, and optional Sentry exception monitoring with mandatory sensitive-event scrubbing. Existing `AiUsageEvent` persistence was audited across roleplay, evaluation, transcription, and TTS; an internal aggregation utility proves that provider-reported costs can be totaled per operation and attempt without billing infrastructure.
+
+The web application now has optional scrubbed Sentry integration, global and authenticated-segment error/loading/not-found coverage, shared accessible route states, visible keyboard focus, reduced-motion behavior, responsive navigation and simulation layouts, semantic live error/progress announcements, and keyboard/focus-safe destructive confirmation dialogs. Voice continues to retain a complete text fallback.
+
+Verified on August 29, 2026 with:
+
+```text
+259 tests across 48 test files passing
+API, web, and contracts strict TypeScript checks
+API and web ESLint checks
+repository Prettier and diff checks
+Prisma Client generation and schema validation
+API/contracts production TypeScript builds
+Next.js 16 production build for all Release 1 routes
+78 focused core-loop route/service integration smoke tests
+```
+
+The authenticated live staging smoke test is not yet verified because the local web environment has no configured Clerk publishable key. Clerk, Neon, OpenRouter, and deployed Sentry behavior therefore remain staging-environment verification boundaries. Do not move formally from Development to Testing until the authenticated staging loop—scenario selection, text turn, finish/evaluation, results, retry, history, and progress—passes with deployed credentials.
+
+No known release-blocking code defect remains from the Milestone 13 implementation.
+
+### Prior milestone: Remaining Scenarios
+
 **Milestone 12 — Remaining Scenarios** is complete. All six curated Release 1 scenarios now have backend-only, Zod-validated, immutable version 1 definitions synchronized through the existing Prisma seed path. Behavioral Interview, Promotion Request, Manager Pushback, Difficult Teammate Feedback, and Scope Creep / Saying No each include distinct public context, persona, motivations, constraints, opening message, four stable evaluation objectives, skill emphasis, and Easy / Medium / Hard behavior across the five approved difficulty axes.
 
 The existing generic loop was verified for every scenario and difficulty: attempt creation exposes the correct opening message, text turns route the authoritative scenario and difficulty to roleplay, finish freezes the attempt for evaluation, evaluation prompts contain only the active scenario version's objective IDs, and immutable synchronization remains idempotent. Deterministic progress recommendations now use the expanded curated scenario catalog.
@@ -311,6 +334,7 @@ corepack pnpm prisma:generate
 14. Voice input / Push-to-talk transcription (Milestone 10 - Complete)
 15. Text-to-Speech audio generation / Playback (Milestone 11 - Complete)
 16. Remaining curated scenarios (Milestone 12 - Complete)
+17. P0 production hardening (Milestone 13 - Implementation complete; authenticated staging smoke pending)
 
 ---
 
@@ -332,4 +356,4 @@ Some of these documents may not exist yet. Do not invent missing requirements; u
 
 ## Current Next Task
 
-Milestone 12 is complete. All six Release 1 scenarios are available through the existing simulation, evaluation, retry, history, and progress architecture. Proceed to the next approved P0 milestone only when directed.
+Run the authenticated Milestone 13 core-loop smoke test in staging with valid Clerk, Neon, and OpenRouter configuration. If it passes with no release-blocking defect, record the evidence here, freeze features, and move formally from Development to Testing.
