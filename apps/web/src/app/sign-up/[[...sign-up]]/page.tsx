@@ -1,9 +1,22 @@
+"use client";
+
 import { SignUp } from "@clerk/nextjs";
+
+import {
+  AuthPanelShell,
+  CLERK_NEO_BRUTALIST_APPEARANCE,
+} from "@/components/auth-panel-shell";
 
 export default function SignUpPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center px-6">
-      <SignUp />
-    </main>
+    <AuthPanelShell mode="sign-up">
+      <SignUp
+        appearance={CLERK_NEO_BRUTALIST_APPEARANCE}
+        routing="path"
+        path="/sign-up"
+        signInUrl="/sign-in"
+        fallbackRedirectUrl="/app"
+      />
+    </AuthPanelShell>
   );
 }
