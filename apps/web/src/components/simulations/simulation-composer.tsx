@@ -29,6 +29,7 @@ export interface SimulationComposerProps {
       "idle" | "requesting_permission" | "recording" | "transcribing" | "error",
   ) => void;
   onVoiceTranscriptReady: () => void;
+  onMicrophoneLevelChange: (level: number) => void;
 }
 
 function formatRecordDuration(seconds: number): string {
@@ -51,6 +52,7 @@ export function SimulationComposer({
   onSendTurn,
   onVoiceStatusChange,
   onVoiceTranscriptReady,
+  onMicrophoneLevelChange,
 }: SimulationComposerProps) {
   const { getToken } = useAuth();
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
@@ -59,6 +61,7 @@ export function SimulationComposer({
   const {
     status: voiceStatus,
     durationSeconds,
+    microphoneLevel,
     errorMessage: voiceError,
     startRecording,
     stopAndTranscribe,
@@ -97,6 +100,10 @@ export function SimulationComposer({
   useEffect(() => {
     onVoiceStatusChange(voiceStatus);
   }, [onVoiceStatusChange, voiceStatus]);
+
+  useEffect(() => {
+    onMicrophoneLevelChange(microphoneLevel);
+  }, [microphoneLevel, onMicrophoneLevelChange]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {

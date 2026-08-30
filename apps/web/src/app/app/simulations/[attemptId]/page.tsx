@@ -23,6 +23,7 @@ import {
   type PendingTurnState,
 } from "@/components/simulations/transcript-drawer";
 import { ApiClientError, createApiClient } from "@/lib/api-client";
+import type { SpeechPlaybackStatus } from "@/lib/speech-playback-controller";
 
 export default function SimulationPage() {
   const params = useParams();
@@ -62,7 +63,9 @@ export default function SimulationPage() {
     "idle" | "requesting_permission" | "recording" | "transcribing" | "error"
   >("idle");
   const [hasVoiceDraft, setHasVoiceDraft] = useState(false);
-  const [isCounterpartSpeaking, setIsCounterpartSpeaking] = useState(false);
+  const [microphoneLevel, setMicrophoneLevel] = useState(0);
+  const [counterpartSpeechStatus, setCounterpartSpeechStatus] =
+    useState<SpeechPlaybackStatus>("idle");
 
   // Timer and Expiry state
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -263,7 +266,12 @@ export default function SimulationPage() {
 
   const simulationUiState = useMemo<SimulationUiState>(() => {
     if (sendingTurn) return "AI_THINKING";
-    if (isCounterpartSpeaking) return "AI_SPEAKING";
+    if (
+      counterpartSpeechStatus === "loading" ||
+      counterpartSpeechStatus === "playing"
+    ) {
+      return "AI_SPEAKING";
+    }
     if (
       voiceStatus === "recording" ||
       voiceStatus === "requesting_permission"
@@ -273,7 +281,7 @@ export default function SimulationPage() {
     if (voiceStatus === "transcribing") return "TRANSCRIBING";
     if (hasVoiceDraft) return "REVIEWING";
     return "YOUR_TURN";
-  }, [hasVoiceDraft, isCounterpartSpeaking, sendingTurn, voiceStatus]);
+  }, [counterpartSpeechStatus, hasVoiceDraft, sendingTurn, voiceStatus]);
 
   const handleSendTurn = async (overrideText?: string) => {
     const textToSend = (overrideText ?? composerText).trim();
@@ -468,7 +476,8 @@ export default function SimulationPage() {
             turnCount={attempt.turns.length}
             uiState={simulationUiState}
             autoPlaySpeech={autoPlaySpeech}
-            onSpeechStatusChange={setIsCounterpartSpeaking}
+            onSpeechStatusChange={setCounterpartSpeechStatus}
+            microphoneLevel={microphoneLevel}
             onOpenTranscript={() => setTranscriptOpen(true)}
           />
 
@@ -486,6 +495,7 @@ export default function SimulationPage() {
             onSendTurn={() => void handleSendTurn()}
             onVoiceStatusChange={setVoiceStatus}
             onVoiceTranscriptReady={() => setHasVoiceDraft(true)}
+            onMicrophoneLevelChange={setMicrophoneLevel}
           />
 
           <TranscriptDrawer

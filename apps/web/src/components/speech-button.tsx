@@ -5,6 +5,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { RefreshIcon, VolumeIcon } from "@/components/icons";
 import { createApiClient } from "@/lib/api-client";
+import {
+  SpeechPlaybackController,
+  type SpeechPlaybackStatus,
+} from "@/lib/speech-playback-controller";
 
 export function SpeechButton({
   attemptId,
@@ -15,101 +19,66 @@ export function SpeechButton({
   attemptId: string;
   turnId: string;
   autoPlay?: boolean;
-  onStatusChange?: (status: "idle" | "loading" | "playing" | "error") => void;
+  onStatusChange?: (status: SpeechPlaybackStatus) => void;
 }) {
   const { getToken } = useAuth();
-  const [status, setStatus] = useState<
-    "idle" | "loading" | "playing" | "error"
-  >("idle");
-  const statusRef = useRef<"idle" | "loading" | "playing" | "error">("idle");
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const urlRef = useRef<string | null>(null);
+  const [status, setStatus] = useState<SpeechPlaybackStatus>("idle");
+  const statusRef = useRef<SpeechPlaybackStatus>("idle");
   const isMountedRef = useRef<boolean>(true);
   const hasAutoPlayedRef = useRef<boolean>(false);
+  const onStatusChangeRef = useRef(onStatusChange);
+  const playbackRequestRef = useRef({ attemptId, getToken, turnId });
+  const controllerRef = useRef<SpeechPlaybackController | null>(null);
 
-  // Sync ref with current state in effect
   useEffect(() => {
-    statusRef.current = status;
-    onStatusChange?.(status);
-  }, [onStatusChange, status]);
+    onStatusChangeRef.current = onStatusChange;
+  }, [onStatusChange]);
 
-  const cleanup = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.onended = null;
-      audioRef.current.onerror = null;
-      audioRef.current = null;
-    }
-    if (urlRef.current) {
-      URL.revokeObjectURL(urlRef.current);
-      urlRef.current = null;
-    }
+  useEffect(() => {
+    playbackRequestRef.current = { attemptId, getToken, turnId };
+  }, [attemptId, getToken, turnId]);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    const controller = new SpeechPlaybackController({
+      requestAudio: async () => {
+        const request = playbackRequestRef.current;
+        const token = await request.getToken();
+        if (!token) throw new Error("Authentication token not available.");
+
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
+        return createApiClient(apiUrl).generateSpeech(
+          token,
+          request.attemptId,
+          request.turnId,
+        );
+      },
+      createObjectUrl: (audio) => URL.createObjectURL(audio),
+      revokeObjectUrl: (url) => URL.revokeObjectURL(url),
+      createAudio: (url) => new Audio(url),
+      onStatusChange: (nextStatus) => {
+        statusRef.current = nextStatus;
+        onStatusChangeRef.current?.(nextStatus);
+        if (isMountedRef.current) setStatus(nextStatus);
+      },
+    });
+    controllerRef.current = controller;
+
+    return () => {
+      isMountedRef.current = false;
+      controller.dispose();
+      if (controllerRef.current === controller) controllerRef.current = null;
+    };
   }, []);
 
   const playAudio = useCallback(async () => {
-    if (statusRef.current === "playing" || statusRef.current === "loading") {
-      return;
-    }
+    await controllerRef.current?.play();
+  }, []);
 
-    cleanup();
-    statusRef.current = "loading";
-    if (isMountedRef.current) setStatus("loading");
-
-    try {
-      const token = await getToken();
-      if (!token) {
-        statusRef.current = "idle";
-        if (isMountedRef.current) setStatus("idle");
-        return;
-      }
-
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
-      const blob = await createApiClient(apiUrl).generateSpeech(
-        token,
-        attemptId,
-        turnId,
-      );
-
-      if (!isMountedRef.current) {
-        cleanup();
-        return;
-      }
-
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-      urlRef.current = url;
-      audioRef.current = audio;
-
-      audio.onended = () => {
-        cleanup();
-        statusRef.current = "idle";
-        if (isMountedRef.current) setStatus("idle");
-      };
-
-      audio.onerror = () => {
-        cleanup();
-        statusRef.current = "error";
-        if (isMountedRef.current) setStatus("error");
-      };
-
-      try {
-        await audio.play();
-        if (isMountedRef.current) {
-          statusRef.current = "playing";
-          setStatus("playing");
-        }
-      } catch {
-        // Autoplay policy prevented playback: revert to idle so user can click to play
-        cleanup();
-        statusRef.current = "idle";
-        if (isMountedRef.current) setStatus("idle");
-      }
-    } catch {
-      cleanup();
-      statusRef.current = "error";
-      if (isMountedRef.current) setStatus("error");
-    }
-  }, [attemptId, cleanup, getToken, turnId]);
+  useEffect(() => {
+    controllerRef.current?.stop();
+    hasAutoPlayedRef.current = false;
+  }, [attemptId, turnId]);
 
   // Handle Autoplay on mount
   useEffect(() => {
@@ -119,20 +88,9 @@ export function SpeechButton({
     }
   }, [autoPlay, playAudio]);
 
-  // Clean up on component unmount
-  useEffect(() => {
-    isMountedRef.current = true;
-    return () => {
-      isMountedRef.current = false;
-      cleanup();
-    };
-  }, [cleanup]);
-
   const toggle = async () => {
-    if (statusRef.current === "playing") {
-      cleanup();
-      statusRef.current = "idle";
-      if (isMountedRef.current) setStatus("idle");
+    if (statusRef.current === "playing" || statusRef.current === "loading") {
+      controllerRef.current?.stop();
       return;
     }
     await playAudio();

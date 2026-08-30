@@ -8,7 +8,9 @@ import {
   SpeakingWithIcon,
 } from "@/components/icons";
 import { SpeechButton } from "@/components/speech-button";
+import { MicrophoneLevelVisualizer } from "@/components/simulations/microphone-level-visualizer";
 import { cn } from "@/lib/cn";
+import type { SpeechPlaybackStatus } from "@/lib/speech-playback-controller";
 
 export type SimulationUiState =
   | "YOUR_TURN"
@@ -54,7 +56,8 @@ export interface ConversationStageProps {
   turnCount: number;
   uiState: SimulationUiState;
   autoPlaySpeech: boolean;
-  onSpeechStatusChange: (isPlaying: boolean) => void;
+  onSpeechStatusChange: (status: SpeechPlaybackStatus) => void;
+  microphoneLevel: number;
   onOpenTranscript: () => void;
 }
 
@@ -67,6 +70,7 @@ export function ConversationStage({
   uiState,
   autoPlaySpeech,
   onSpeechStatusChange,
+  microphoneLevel,
   onOpenTranscript,
 }: ConversationStageProps) {
   const message = useMemo(() => {
@@ -130,9 +134,7 @@ export function ConversationStage({
                 attemptId={attemptId}
                 turnId={message.turnId}
                 autoPlay={autoPlaySpeech && uiState !== "AI_THINKING"}
-                onStatusChange={(speechStatus) =>
-                  onSpeechStatusChange(speechStatus === "playing")
-                }
+                onStatusChange={onSpeechStatusChange}
               />
             </div>
           ) : (
@@ -171,6 +173,9 @@ export function ConversationStage({
                 {status.detail}
               </p>
             </div>
+            {uiState === "LISTENING" && (
+              <MicrophoneLevelVisualizer level={microphoneLevel} />
+            )}
           </div>
         </div>
       </div>

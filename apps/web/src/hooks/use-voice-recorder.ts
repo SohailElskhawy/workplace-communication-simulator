@@ -2,6 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import {
+  MicrophoneLevelMeter,
+  type MicrophoneAudioContext,
+} from "../lib/microphone-level-meter";
+
 export const MAX_RECORDING_DURATION_SECONDS = 120;
 
 export type VoiceRecorderStatus =
@@ -23,12 +28,27 @@ function checkIsSupported(): boolean {
   );
 }
 
+function createBrowserAudioContext(): MicrophoneAudioContext | null {
+  if (typeof window === "undefined") return null;
+
+  const browserWindow = window as Window & {
+    webkitAudioContext?: typeof AudioContext;
+  };
+  const BrowserAudioContext =
+    globalThis.AudioContext ?? browserWindow.webkitAudioContext;
+
+  return BrowserAudioContext
+    ? (new BrowserAudioContext() as unknown as MicrophoneAudioContext)
+    : null;
+}
+
 export function useVoiceRecorder({
   onTranscriptReady,
   onTranscribeAudio,
 }: UseVoiceRecorderOptions) {
   const [status, setStatus] = useState<VoiceRecorderStatus>("idle");
   const [durationSeconds, setDurationSeconds] = useState(0);
+  const [microphoneLevel, setMicrophoneLevel] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSupported] = useState<boolean>(() => checkIsSupported());
 
@@ -43,13 +63,21 @@ export function useVoiceRecorder({
   const audioChunksRef = useRef<Blob[]>([]);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const recordingStartTimeRef = useRef<number>(0);
+  const microphoneLevelMeterRef = useRef<MicrophoneLevelMeter | null>(null);
+
+  const cleanupMicrophoneLevelMeter = useCallback(() => {
+    microphoneLevelMeterRef.current?.stop();
+    microphoneLevelMeterRef.current = null;
+    setMicrophoneLevel(0);
+  }, []);
 
   const cleanupStream = useCallback(() => {
+    cleanupMicrophoneLevelMeter();
     if (audioStreamRef.current) {
       audioStreamRef.current.getTracks().forEach((track) => track.stop());
       audioStreamRef.current = null;
     }
-  }, []);
+  }, [cleanupMicrophoneLevelMeter]);
 
   const clearTimer = useCallback(() => {
     if (timerIntervalRef.current) {
@@ -79,7 +107,10 @@ export function useVoiceRecorder({
       }
 
       try {
-        const result = await optionsRef.current.onTranscribeAudio(audioBlob, elapsedMs);
+        const result = await optionsRef.current.onTranscribeAudio(
+          audioBlob,
+          elapsedMs,
+        );
         if (result.transcript) {
           optionsRef.current.onTranscriptReady(result.transcript);
         }
@@ -134,6 +165,16 @@ export function useVoiceRecorder({
       });
 
       audioStreamRef.current = stream;
+
+      const levelMeter = new MicrophoneLevelMeter({
+        createAudioContext: createBrowserAudioContext,
+        requestAnimationFrame: (callback) =>
+          window.requestAnimationFrame(callback),
+        cancelAnimationFrame: (handle) => window.cancelAnimationFrame(handle),
+        onLevelChange: setMicrophoneLevel,
+      });
+      microphoneLevelMeterRef.current = levelMeter;
+      levelMeter.start(stream);
 
       let mimeType = "";
       if (typeof MediaRecorder !== "undefined") {
@@ -222,6 +263,7 @@ export function useVoiceRecorder({
   return {
     status,
     durationSeconds,
+    microphoneLevel,
     errorMessage,
     isSupported,
     startRecording,
