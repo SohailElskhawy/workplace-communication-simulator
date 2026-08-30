@@ -1,7 +1,7 @@
 import { parseBuffer } from "music-metadata";
 
 export interface AudioDurationParser {
-  parseDurationMs(audio: Buffer, mimeType: string): Promise<number>;
+  parseDurationMs(audio: Buffer, mimeType: string): Promise<number | null>;
 }
 
 export type ParseAudioMetadata = (
@@ -14,15 +14,19 @@ export function createAudioDurationParser(
 ): AudioDurationParser {
   return {
     async parseDurationMs(audio, mimeType) {
-      const metadata = await parseMetadata(audio, {
-        mimeType,
-        size: audio.length,
-      });
-      const durationSeconds = metadata.format.duration;
-      if (!Number.isFinite(durationSeconds) || durationSeconds === undefined) {
-        throw new Error("Audio duration is unavailable.");
+      try {
+        const metadata = await parseMetadata(audio, {
+          mimeType,
+          size: audio.length,
+        });
+        const durationSeconds = metadata.format.duration;
+        if (!Number.isFinite(durationSeconds) || durationSeconds === undefined) {
+          return null;
+        }
+        return Math.ceil(durationSeconds * 1000);
+      } catch {
+        return null;
       }
-      return Math.ceil(durationSeconds * 1000);
     },
   };
 }

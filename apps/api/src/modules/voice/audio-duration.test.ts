@@ -18,12 +18,21 @@ describe("AudioDurationParser", () => {
     });
   });
 
-  it("rejects metadata without a finite duration", async () => {
+  it("returns null for metadata without a finite duration", async () => {
     const parser = createAudioDurationParser(
       vi.fn().mockResolvedValue({ format: {} }),
     );
     await expect(
       parser.parseDurationMs(Buffer.from("audio"), "audio/webm"),
-    ).rejects.toThrow("Audio duration is unavailable.");
+    ).resolves.toBeNull();
+  });
+
+  it("returns null when metadata parsing throws", async () => {
+    const parser = createAudioDurationParser(
+      vi.fn().mockRejectedValue(new Error("Corrupt header")),
+    );
+    await expect(
+      parser.parseDurationMs(Buffer.from("audio"), "audio/webm"),
+    ).resolves.toBeNull();
   });
 });

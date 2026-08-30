@@ -57,14 +57,14 @@ export function createVoiceService(
         throw new AttemptError("SESSION_LIMIT_REACHED");
       }
 
-      let durationMs: number;
+      let durationMs: number | null = null;
       try {
         durationMs = await durationParser.parseDurationMs(
           params.audio.buffer,
           params.audio.mimeType,
         );
       } catch {
-        throw new VoiceValidationError("Audio duration could not be verified.");
+        durationMs = null;
       }
 
       const validation = validateAudioInput({
