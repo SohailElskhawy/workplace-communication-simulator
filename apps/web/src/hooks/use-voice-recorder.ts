@@ -32,6 +32,12 @@ export function useVoiceRecorder({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSupported] = useState<boolean>(() => checkIsSupported());
 
+  const optionsRef = useRef({ onTranscriptReady, onTranscribeAudio });
+
+  useEffect(() => {
+    optionsRef.current = { onTranscriptReady, onTranscribeAudio };
+  });
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioStreamRef = useRef<MediaStream | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -73,9 +79,9 @@ export function useVoiceRecorder({
       }
 
       try {
-        const result = await onTranscribeAudio(audioBlob, elapsedMs);
+        const result = await optionsRef.current.onTranscribeAudio(audioBlob, elapsedMs);
         if (result.transcript) {
-          onTranscriptReady(result.transcript);
+          optionsRef.current.onTranscriptReady(result.transcript);
         }
         setStatus("idle");
         setDurationSeconds(0);
@@ -90,7 +96,7 @@ export function useVoiceRecorder({
     };
 
     recorder.stop();
-  }, [clearTimer, cleanupStream, onTranscribeAudio, onTranscriptReady]);
+  }, [clearTimer, cleanupStream]);
 
   const cancelRecording = useCallback(() => {
     clearTimer();
@@ -106,7 +112,7 @@ export function useVoiceRecorder({
   }, [clearTimer, cleanupStream]);
 
   const startRecording = useCallback(async () => {
-    if (!isSupported) {
+    if (!checkIsSupported()) {
       setStatus("error");
       setErrorMessage(
         "Voice recording is not supported in this browser. Please use text.",
@@ -130,12 +136,14 @@ export function useVoiceRecorder({
       audioStreamRef.current = stream;
 
       let mimeType = "";
-      if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
-        mimeType = "audio/webm;codecs=opus";
-      } else if (MediaRecorder.isTypeSupported("audio/webm")) {
-        mimeType = "audio/webm";
-      } else if (MediaRecorder.isTypeSupported("audio/mp4")) {
-        mimeType = "audio/mp4";
+      if (typeof MediaRecorder !== "undefined") {
+        if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
+          mimeType = "audio/webm;codecs=opus";
+        } else if (MediaRecorder.isTypeSupported("audio/webm")) {
+          mimeType = "audio/webm";
+        } else if (MediaRecorder.isTypeSupported("audio/mp4")) {
+          mimeType = "audio/mp4";
+        }
       }
 
       const recorder = mimeType
@@ -157,7 +165,7 @@ export function useVoiceRecorder({
         setErrorMessage("An error occurred while recording voice.");
       };
 
-      recorder.start(250); // Collect slice every 250ms
+      recorder.start(250);
       recordingStartTimeRef.current = Date.now();
       setStatus("recording");
       setDurationSeconds(0);
@@ -171,7 +179,7 @@ export function useVoiceRecorder({
         if (seconds >= MAX_RECORDING_DURATION_SECONDS) {
           void stopAndTranscribe();
         }
-      }, 500);
+      }, 1000);
     } catch (err: unknown) {
       cleanupStream();
       setStatus("error");
@@ -195,7 +203,7 @@ export function useVoiceRecorder({
         );
       }
     }
-  }, [isSupported, cleanupStream, clearTimer, stopAndTranscribe]);
+  }, [cleanupStream, clearTimer, stopAndTranscribe]);
 
   const clearError = useCallback(() => {
     setErrorMessage(null);
