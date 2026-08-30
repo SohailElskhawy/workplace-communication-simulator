@@ -19,26 +19,43 @@ export function SpeechButton({
   const [status, setStatus] = useState<
     "idle" | "loading" | "playing" | "error"
   >("idle");
+  const statusRef = useRef<"idle" | "loading" | "playing" | "error">("idle");
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const urlRef = useRef<string | null>(null);
   const isMountedRef = useRef<boolean>(true);
   const hasAutoPlayedRef = useRef<boolean>(false);
 
+  // Sync ref with current state in effect
+  useEffect(() => {
+    statusRef.current = status;
+  }, [status]);
+
   const cleanup = useCallback(() => {
-    audioRef.current?.pause();
-    audioRef.current = null;
-    if (urlRef.current) URL.revokeObjectURL(urlRef.current);
-    urlRef.current = null;
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.onended = null;
+      audioRef.current.onerror = null;
+      audioRef.current = null;
+    }
+    if (urlRef.current) {
+      URL.revokeObjectURL(urlRef.current);
+      urlRef.current = null;
+    }
   }, []);
 
   const playAudio = useCallback(async () => {
-    if (status === "playing" || status === "loading") return;
+    if (statusRef.current === "playing" || statusRef.current === "loading") {
+      return;
+    }
+
     cleanup();
+    statusRef.current = "loading";
     if (isMountedRef.current) setStatus("loading");
 
     try {
       const token = await getToken();
       if (!token) {
+        statusRef.current = "idle";
         if (isMountedRef.current) setStatus("idle");
         return;
       }
@@ -50,7 +67,10 @@ export function SpeechButton({
         turnId,
       );
 
-      if (!isMountedRef.current) return;
+      if (!isMountedRef.current) {
+        cleanup();
+        return;
+      }
 
       const url = URL.createObjectURL(blob);
       const audio = new Audio(url);
@@ -59,43 +79,56 @@ export function SpeechButton({
 
       audio.onended = () => {
         cleanup();
+        statusRef.current = "idle";
         if (isMountedRef.current) setStatus("idle");
       };
 
       audio.onerror = () => {
         cleanup();
+        statusRef.current = "error";
         if (isMountedRef.current) setStatus("error");
       };
 
       try {
         await audio.play();
-        if (isMountedRef.current) setStatus("playing");
+        if (isMountedRef.current) {
+          statusRef.current = "playing";
+          setStatus("playing");
+        }
       } catch {
-        // Browser autoplay restriction: revert to idle so user can click to play
+        // Autoplay policy prevented playback: revert to idle so user can click to play
         cleanup();
+        statusRef.current = "idle";
         if (isMountedRef.current) setStatus("idle");
       }
     } catch {
       cleanup();
+      statusRef.current = "error";
       if (isMountedRef.current) setStatus("error");
     }
-  }, [attemptId, cleanup, getToken, status, turnId]);
+  }, [attemptId, cleanup, getToken, turnId]);
 
+  // Handle Autoplay on mount
   useEffect(() => {
-    isMountedRef.current = true;
     if (autoPlay && !hasAutoPlayedRef.current) {
       hasAutoPlayedRef.current = true;
       void playAudio();
     }
+  }, [autoPlay, playAudio]);
+
+  // Clean up on component unmount
+  useEffect(() => {
+    isMountedRef.current = true;
     return () => {
       isMountedRef.current = false;
       cleanup();
     };
-  }, [autoPlay, cleanup, playAudio]);
+  }, [cleanup]);
 
   const toggle = async () => {
-    if (status === "playing") {
+    if (statusRef.current === "playing") {
       cleanup();
+      statusRef.current = "idle";
       if (isMountedRef.current) setStatus("idle");
       return;
     }

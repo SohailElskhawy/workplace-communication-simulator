@@ -1,10 +1,12 @@
 "use client";
 
 import type { PublicScenarioSummary } from "@kalemny/contracts";
+import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { cn } from "@/lib/cn";
+import { getScenarioImage } from "@/lib/scenario-images";
 
 export interface ScenarioVisualMeta {
   categoryLabel: string;
@@ -341,20 +343,36 @@ export function ScenarioLibraryView({
                   Popular Starting Point
                 </div>
 
-                {/* Abstract Visual */}
-                <div
-                  className={cn(
-                    "w-full md:w-1/3 aspect-video md:aspect-square rounded-control border border-border bg-linear-to-br overflow-hidden relative shrink-0 flex items-center justify-center shadow-xs",
-                    meta.gradientClass,
-                  )}
-                >
-                  <div className="absolute inset-0 flex items-center justify-center mix-blend-overlay opacity-60">
-                    {renderScenarioIcon(
-                      meta.iconName,
-                      "w-20 h-20 md:w-28 md:h-28 text-white",
-                    )}
-                  </div>
-                </div>
+                {/* Scenario Image */}
+                {(() => {
+                  const img = getScenarioImage(featuredScenario.key);
+                  return img ? (
+                    <div className="w-full md:w-1/3 aspect-video md:aspect-square rounded-control border border-border overflow-hidden relative shrink-0 shadow-xs">
+                      <Image
+                        src={img}
+                        alt={featuredScenario.title}
+                        fill
+                        sizes="(max-width: 768px) 100vw, 33vw"
+                        className="object-cover"
+                        placeholder="blur"
+                      />
+                    </div>
+                  ) : (
+                    <div
+                      className={cn(
+                        "w-full md:w-1/3 aspect-video md:aspect-square rounded-control border border-border bg-linear-to-br overflow-hidden relative shrink-0 flex items-center justify-center shadow-xs",
+                        meta.gradientClass,
+                      )}
+                    >
+                      <div className="absolute inset-0 flex items-center justify-center mix-blend-overlay opacity-60">
+                        {renderScenarioIcon(
+                          meta.iconName,
+                          "w-20 h-20 md:w-28 md:h-28 text-white",
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Content */}
                 <div className="flex-1 w-full">
@@ -409,20 +427,36 @@ export function ScenarioLibraryView({
                   className="relative glass-surface rounded-card p-6 flex flex-col group transition-all duration-200 ease-out hover:shadow-[6px_6px_0px_0px_#1a1a1a] hover:-translate-x-0.5 hover:-translate-y-0.5"
                 >
                   {/* Card Visual Header */}
-                  <div
-                    className={cn(
-                      "h-32 mb-5 sm:mb-6 rounded-control border border-border relative overflow-hidden flex items-center justify-center shadow-xs bg-linear-to-br",
-                      meta.gradientClass,
-                    )}
-                  >
-                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.25)_0,transparent_100%)] pointer-events-none" />
-                    <div className="relative z-10">
-                      {renderScenarioIcon(
-                        meta.iconName,
-                        "w-12 h-12 text-white/70",
-                      )}
-                    </div>
-                  </div>
+                  {(() => {
+                    const img = getScenarioImage(scenario.key);
+                    return img ? (
+                      <div className="h-32 mb-5 sm:mb-6 rounded-control border border-border relative overflow-hidden shadow-xs">
+                        <Image
+                          src={img}
+                          alt={scenario.title}
+                          fill
+                          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                          className="object-cover object-top"
+                          placeholder="blur"
+                        />
+                      </div>
+                    ) : (
+                      <div
+                        className={cn(
+                          "h-32 mb-5 sm:mb-6 rounded-control border border-border relative overflow-hidden flex items-center justify-center shadow-xs bg-linear-to-br",
+                          meta.gradientClass,
+                        )}
+                      >
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.25)_0,transparent_100%)] pointer-events-none" />
+                        <div className="relative z-10">
+                          {renderScenarioIcon(
+                            meta.iconName,
+                            "w-12 h-12 text-white/70",
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   {/* Category */}
                   <div className="font-meta text-xs text-muted-foreground uppercase tracking-widest mb-2">

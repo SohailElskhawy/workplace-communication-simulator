@@ -1,3 +1,7 @@
+import Image from "next/image";
+
+import { getScenarioImage } from "@/lib/scenario-images";
+
 export interface ScenarioHeroGraphicProps {
   scenarioKey: string;
   title: string;
@@ -7,6 +11,27 @@ export function ScenarioHeroGraphic({
   scenarioKey,
   title,
 }: ScenarioHeroGraphicProps) {
+  const img = getScenarioImage(scenarioKey);
+
+  if (img) {
+    return (
+      <div
+        className="relative w-full h-64 sm:h-80 md:h-96 rounded-card overflow-hidden border border-border select-none shadow-xs"
+      >
+        <Image
+          src={img}
+          alt={title}
+          fill
+          sizes="100vw"
+          className="object-cover object-top"
+          placeholder="blur"
+          priority
+        />
+      </div>
+    );
+  }
+
+  /* Fallback: Memphis geometric composition when no image is available */
   return (
     <div
       aria-hidden="true"
