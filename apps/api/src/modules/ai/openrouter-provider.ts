@@ -206,13 +206,20 @@ export function createOpenRouterProvider(
           signal: controller.signal,
         },
       );
-      const latencyMs = Math.max(0, clock() - startedAt);
 
       if (!response.ok) {
-        throw new AiProviderError("AI_PROVIDER_ERROR", latencyMs);
+        throw new AiProviderError(
+          "AI_PROVIDER_ERROR",
+          Math.max(0, clock() - startedAt),
+        );
       }
 
+      // Measure to body completion, not headers: OpenRouter may send response
+      // headers as soon as the request is accepted while generation finishes
+      // during the body transfer.
       const rawResponse = await response.json();
+      const latencyMs = Math.max(0, clock() - startedAt);
+
       const parsed = OpenRouterResponseSchema.safeParse(rawResponse);
       const rawContent = parsed.success
         ? (parsed.data.choices[0]?.message.content ?? "")
@@ -261,6 +268,9 @@ export function createOpenRouterProvider(
           messages: request.messages,
           stream: false,
           max_tokens: ROLEPLAY_MAX_OUTPUT_TOKENS,
+          // Roleplay replies are short in-character dialogue; hidden reasoning
+          // tokens add generation latency without improving them.
+          reasoning: { enabled: false },
           provider: {
             zdr: true,
             data_collection: "deny",
@@ -352,13 +362,16 @@ export function createOpenRouterProvider(
             signal: controller.signal,
           },
         );
-        const latencyMs = Math.max(0, clock() - startedAt);
 
         if (!response.ok) {
-          throw new AiProviderError("AI_PROVIDER_ERROR", latencyMs);
+          throw new AiProviderError(
+            "AI_PROVIDER_ERROR",
+            Math.max(0, clock() - startedAt),
+          );
         }
 
         const rawResponse = await response.json();
+        const latencyMs = Math.max(0, clock() - startedAt);
         const parsed =
           OpenRouterTranscriptionResponseSchema.safeParse(rawResponse);
         if (!parsed.success) {
@@ -420,16 +433,22 @@ export function createOpenRouterProvider(
             signal: controller.signal,
           },
         );
-        const latencyMs = Math.max(0, clock() - startedAt);
         if (!response.ok) {
-          throw new AiProviderError("AI_PROVIDER_ERROR", latencyMs);
+          throw new AiProviderError(
+            "AI_PROVIDER_ERROR",
+            Math.max(0, clock() - startedAt),
+          );
         }
         const contentType =
           response.headers.get("content-type") ?? "audio/mpeg";
         if (!contentType.toLowerCase().startsWith("audio/")) {
-          throw new AiProviderError("AI_PROVIDER_ERROR", latencyMs);
+          throw new AiProviderError(
+            "AI_PROVIDER_ERROR",
+            Math.max(0, clock() - startedAt),
+          );
         }
         const audio = Buffer.from(await response.arrayBuffer());
+        const latencyMs = Math.max(0, clock() - startedAt);
         if (audio.length === 0) {
           throw new AiProviderError("AI_PROVIDER_ERROR", latencyMs);
         }

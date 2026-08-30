@@ -276,26 +276,19 @@ export function createAttemptService(
     userId: string,
     attemptId: string,
     turn: ConversationTurnRecord,
-    phases?: Record<string, number>,
   ): Promise<ConversationTurn> {
-    // TEMP-LATENCY-DIAGNOSTIC
-    let phaseStart = Date.now();
     const context = await repository.findRoleplayContext({
       attemptId,
       userId,
       beforeSequence: turn.sequence,
     });
-    if (phases) phases.findRoleplayContext = Date.now() - phaseStart;
     if (!context) throw new AttemptError("NOT_FOUND");
 
-    phaseStart = Date.now();
     const scenario = ScenarioDefinitionSchema.parse(
       context.scenarioDefinition,
     );
     const variation = resolveScenarioVariation(scenario, context.variationId);
-    if (phases) phases.parseAndVariation = Date.now() - phaseStart;
 
-    phaseStart = Date.now();
     try {
       const reply = await aiService.generateRoleplayReply({
         scenario,
@@ -304,7 +297,6 @@ export function createAttemptService(
         latestLearnerMessage: turn.userText,
         variation,
       });
-      if (phases) phases.aiCall = Date.now() - phaseStart;
       const finalized = await repository.finalizeRoleplayTurn({
         attemptId,
         userId,
@@ -422,9 +414,6 @@ export function createAttemptService(
     },
 
     async createTurn(userId, attemptId, request) {
-      // TEMP-LATENCY-DIAGNOSTIC
-      const phases: Record<string, number> = {};
-      const phaseStart = Date.now();
       const result = await repository.createTurn({
         attemptId,
         userId,
@@ -433,7 +422,6 @@ export function createAttemptService(
         inputMethod: request.inputMethod,
         currentTime: clock(),
       });
-      phases.repoCreateTurn = Date.now() - phaseStart;
 
       if (result.kind === "not_found") {
         throw new AttemptError("NOT_FOUND");
@@ -447,16 +435,8 @@ export function createAttemptService(
         return { data: mapTurn(result.turn), created: false };
       }
 
-      const data = await generateRoleplayReply(
-        userId,
-        attemptId,
-        result.turn,
-        phases,
-      );
-      // TEMP-LATENCY-DIAGNOSTIC
-      console.log(`PHASE_TIMING ${JSON.stringify({ phase: "createTurn", attemptId, ...phases })}`);
       return {
-        data,
+        data: await generateRoleplayReply(userId, attemptId, result.turn),
         created: true,
       };
     },
