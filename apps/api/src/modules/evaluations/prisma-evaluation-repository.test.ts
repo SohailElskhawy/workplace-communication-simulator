@@ -220,7 +220,13 @@ describe("PrismaEvaluationRepository", () => {
           difficulty: "MEDIUM",
           endedAt: recentClaimedAt,
           evaluationClaimedAt: recentClaimedAt,
-          scenario: { id: "scenario-1", key: "salary-negotiation", version: 1, title: "Salary", definition: {} },
+          scenario: {
+            id: "scenario-1",
+            key: "salary-negotiation",
+            version: 1,
+            title: "Salary",
+            definition: {},
+          },
           conversationTurns: [],
           evaluation: null,
         }),
@@ -228,14 +234,15 @@ describe("PrismaEvaluationRepository", () => {
       },
     };
     const prisma = {
-      $transaction: vi.fn(async (cb: (client: typeof transaction) => Promise<unknown>) => cb(transaction)),
+      $transaction: vi.fn(
+        async (cb: (client: typeof transaction) => Promise<unknown>) =>
+          cb(transaction),
+      ),
     } as unknown as PrismaClient;
 
-    const result = await createPrismaEvaluationRepository(prisma).claimEvaluation(
-      attemptId,
-      userId,
-      newRequestTime,
-    );
+    const result = await createPrismaEvaluationRepository(
+      prisma,
+    ).claimEvaluation(attemptId, userId, newRequestTime);
 
     expect(result.kind).toBe("in_progress");
     expect(transaction.simulationAttempt.updateMany).not.toHaveBeenCalled();
@@ -253,7 +260,13 @@ describe("PrismaEvaluationRepository", () => {
           difficulty: "MEDIUM",
           endedAt: staleClaimedAt,
           evaluationClaimedAt: staleClaimedAt,
-          scenario: { id: "scenario-1", key: "salary-negotiation", version: 1, title: "Salary", definition: {} },
+          scenario: {
+            id: "scenario-1",
+            key: "salary-negotiation",
+            version: 1,
+            title: "Salary",
+            definition: {},
+          },
           conversationTurns: [],
           evaluation: null,
         }),
@@ -261,14 +274,15 @@ describe("PrismaEvaluationRepository", () => {
       },
     };
     const prisma = {
-      $transaction: vi.fn(async (cb: (client: typeof transaction) => Promise<unknown>) => cb(transaction)),
+      $transaction: vi.fn(
+        async (cb: (client: typeof transaction) => Promise<unknown>) =>
+          cb(transaction),
+      ),
     } as unknown as PrismaClient;
 
-    const result = await createPrismaEvaluationRepository(prisma).claimEvaluation(
-      attemptId,
-      userId,
-      newRequestTime,
-    );
+    const result = await createPrismaEvaluationRepository(
+      prisma,
+    ).claimEvaluation(attemptId, userId, newRequestTime);
 
     expect(result.kind).toBe("claimed");
     expect(transaction.simulationAttempt.updateMany).toHaveBeenCalledWith({

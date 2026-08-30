@@ -126,6 +126,7 @@ SimulationAttempt
 - userId              UUID FK → User
 - scenarioId          UUID FK → Scenario
 - retryOfAttemptId    UUID FK → SimulationAttempt nullable
+- variationId         string nullable
 - difficulty          enum
 - status              enum
 - startedAt           timestamp
@@ -160,6 +161,10 @@ ABANDONED
 - a retry creates a new attempt;
 - previous attempts are never overwritten;
 - `retryOfAttemptId` links retry chains;
+- `variationId` records the curated scenario variation selected at attempt
+  start (references configuration inside the scenario version's JSONB
+  definition, not a relational row); it is stable for the attempt, and retries
+  exclude the previous variation when the pool allows;
 - only `ACTIVE` attempts accept new turns;
 - completed transcripts are immutable;
 - progress eligibility is determined by backend logic.

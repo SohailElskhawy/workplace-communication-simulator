@@ -55,8 +55,7 @@ export function resolveScenarioVariation(
     return null;
   }
   return (
-    definition.variations?.find(
-      (variation) => variation.id === variationId,
-    ) ?? null
+    definition.variations?.find((variation) => variation.id === variationId) ??
+    null
   );
 }

@@ -143,10 +143,12 @@ Stable structure:
 4. Counterpart objective
 5. Persona traits
 6. Motivations / constraints
-7. Difficulty behavior
-8. Conversation rules
-9. Role-integrity rules
-10. Response style
+7. Session plan (optional — interview tracks only)
+8. This conversation (optional — variation counterpart brief)
+9. Difficulty behavior
+10. Conversation rules
+11. Role-integrity rules
+12. Response style
 ```
 
 Then append dynamic context:
@@ -160,6 +162,19 @@ latest learner message
 Keep stable prompt content before dynamic content where practical.
 
 Do not create six unrelated prompt systems.
+
+Roleplay prompt version `roleplay-v2` adds the optional variation sections:
+
+- the conversation opens with the selected variation's `openingMessage`;
+- `counterpartBrief` injects hidden variation-specific objections,
+  constraints, reactions, and follow-up angles;
+- for Behavioral Interview, the session plan renders the track's curated
+  questions with categories and conduct rules: ask natural follow-ups based on
+  the learner's actual answer, move to the next planned question/category once
+  explored, treat the plan as flexible guidance (never ask every question
+  mechanically), never repeat answered questions except to clarify. Difficulty
+  continues to control follow-up pressure and challenge; the plan does not
+  change with difficulty.
 
 ---
 
@@ -213,11 +228,35 @@ openingMessage
 difficulty configuration
 scenario objectives
 success/failure signals
+variations (optional curated pool)
 ```
 
 Scenario definitions are backend-only and Zod-validated.
 
 Used scenario versions are immutable.
+
+### Scenario Variations
+
+Each scenario version may carry a curated `variations[]` pool (all six active
+Release 1 v2 definitions do; v1 remains for historical attempts). A variation
+can override the `openingMessage` and situation, add hidden
+`counterpartBrief` context, and — for Behavioral Interview — define an
+`interviewTrack` of 3–5 questions across distinct competency categories
+(introduction, experience, teamwork/conflict, ownership, problem solving,
+failure/learning, adaptability, reflection).
+
+Selection is deterministic application logic, not an AI call:
+
+- one variation is selected uniformly at random when the attempt starts and
+  persisted as `SimulationAttempt.variationId`, keeping conversation content
+  stable for the whole attempt;
+- retries exclude the retry source's variation when the pool has more than
+  one; failed-turn retries reuse the same variation;
+- attempts without a valid `variationId` fall back to the base definition.
+
+Evaluation (`evaluation-v2`) receives the effective situation and the actual
+variation opening/question so objectives are judged against the conversation
+that really happened. Hidden variation content never leaves the backend.
 
 ---
 

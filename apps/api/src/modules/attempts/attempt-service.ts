@@ -191,7 +191,10 @@ export interface AttemptService {
   delete(userId: string, attemptId: string): Promise<void>;
 }
 
-function mapScenario(scenario: AttemptScenarioRecord, variationId: string | null) {
+function mapScenario(
+  scenario: AttemptScenarioRecord,
+  variationId: string | null,
+) {
   let openingMessage: string | undefined;
   const parsed = ScenarioDefinitionSchema.safeParse(scenario.definition);
   if (parsed.success) {

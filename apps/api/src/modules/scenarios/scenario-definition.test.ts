@@ -189,7 +189,10 @@ describe("ScenarioDefinitionSchema variations", () => {
           {
             ...interviewVariation,
             interviewTrack: {
-              questions: interviewVariation.interviewTrack.questions.slice(0, 2),
+              questions: interviewVariation.interviewTrack.questions.slice(
+                0,
+                2,
+              ),
             },
           },
         ],
@@ -229,8 +232,14 @@ describe("ScenarioDefinitionSchema variations", () => {
             ...interviewVariation,
             interviewTrack: {
               questions: [
-                { category: "INTRODUCTION", question: "Tell me about yourself." },
-                { category: "INTRODUCTION", question: "Walk me through your background." },
+                {
+                  category: "INTRODUCTION",
+                  question: "Tell me about yourself.",
+                },
+                {
+                  category: "INTRODUCTION",
+                  question: "Walk me through your background.",
+                },
                 {
                   category: "FAILURE_LEARNING",
                   question: "Tell me about a failure and what you learned.",

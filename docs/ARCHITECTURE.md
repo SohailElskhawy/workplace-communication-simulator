@@ -254,7 +254,13 @@ apps/api/src/scenarios/definitions/
 
 If behavior changes after use, create a new version rather than editing historical configuration.
 
-Hidden persona/rubric content stays backend-only.
+All six active Release 1 definitions are version 2 and add a curated
+`variations[]` pool (v1 files/rows remain for historical attempts). Attempt
+creation selects one variation, persists it as `SimulationAttempt.variationId`,
+and roleplay/evaluation resolve it for the whole attempt. Selection is
+deterministic application logic — no extra AI call.
+
+Hidden persona/rubric/variation content stays backend-only.
 
 ---
 

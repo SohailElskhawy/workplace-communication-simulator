@@ -63,54 +63,56 @@ export const ScenarioVariationSchema = z
     },
   );
 
-export const ScenarioDefinitionSchema = z.object({
-  key: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
-  version: z.int().min(1),
-  title: z.string().min(1),
-  category: z.string().regex(/^[A-Z][A-Z0-9_]*$/),
-  summary: z.string().min(1),
-  publicContext: z.object({
-    description: z.string().min(1),
-    userRole: z.string().min(1),
-    aiRole: z.string().min(1),
-    userObjective: z.string().min(1),
-    stakes: z.string().min(1),
-  }),
-  persona: z.object({
-    role: z.string().min(1),
-    traits: z.array(z.string().min(1)).min(1),
-    communicationStyle: z.string().min(1),
-  }),
-  aiObjective: z.string().min(1),
-  motivations: z.array(z.string().min(1)).min(1),
-  constraints: z.array(z.string().min(1)).min(1),
-  openingMessage: z.string().min(1),
-  difficulties: z.object({
-    EASY: DifficultyBehaviorSchema,
-    MEDIUM: DifficultyBehaviorSchema,
-    HARD: DifficultyBehaviorSchema,
-  }),
-  objectives: z.array(ScenarioObjectiveSchema).min(1),
-  skillEmphasis: z
-    .array(
-      z.enum([
-        "CLARITY",
-        "ASSERTIVENESS",
-        "EMPATHY",
-        "STRUCTURE",
-        "CONCISENESS",
-      ]),
-    )
-    .min(1),
-  roleplayRules: z.array(z.string().min(1)).min(1),
-  variations: z.array(ScenarioVariationSchema).min(1).optional(),
-}).refine(
-  (definition) => {
-    const ids = definition.variations?.map((variation) => variation.id) ?? [];
-    return new Set(ids).size === ids.length;
-  },
-  { message: "Variation ids must be unique within a scenario." },
-);
+export const ScenarioDefinitionSchema = z
+  .object({
+    key: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+    version: z.int().min(1),
+    title: z.string().min(1),
+    category: z.string().regex(/^[A-Z][A-Z0-9_]*$/),
+    summary: z.string().min(1),
+    publicContext: z.object({
+      description: z.string().min(1),
+      userRole: z.string().min(1),
+      aiRole: z.string().min(1),
+      userObjective: z.string().min(1),
+      stakes: z.string().min(1),
+    }),
+    persona: z.object({
+      role: z.string().min(1),
+      traits: z.array(z.string().min(1)).min(1),
+      communicationStyle: z.string().min(1),
+    }),
+    aiObjective: z.string().min(1),
+    motivations: z.array(z.string().min(1)).min(1),
+    constraints: z.array(z.string().min(1)).min(1),
+    openingMessage: z.string().min(1),
+    difficulties: z.object({
+      EASY: DifficultyBehaviorSchema,
+      MEDIUM: DifficultyBehaviorSchema,
+      HARD: DifficultyBehaviorSchema,
+    }),
+    objectives: z.array(ScenarioObjectiveSchema).min(1),
+    skillEmphasis: z
+      .array(
+        z.enum([
+          "CLARITY",
+          "ASSERTIVENESS",
+          "EMPATHY",
+          "STRUCTURE",
+          "CONCISENESS",
+        ]),
+      )
+      .min(1),
+    roleplayRules: z.array(z.string().min(1)).min(1),
+    variations: z.array(ScenarioVariationSchema).min(1).optional(),
+  })
+  .refine(
+    (definition) => {
+      const ids = definition.variations?.map((variation) => variation.id) ?? [];
+      return new Set(ids).size === ids.length;
+    },
+    { message: "Variation ids must be unique within a scenario." },
+  );
 
 export type ScenarioDefinition = z.infer<typeof ScenarioDefinitionSchema>;
 export type ScenarioVariation = z.infer<typeof ScenarioVariationSchema>;

@@ -96,9 +96,9 @@ describe("selectScenarioVariation", () => {
     expect(selectScenarioVariation(definition, { random: () => 0 })?.id).toBe(
       "standard-offer",
     );
-    expect(
-      selectScenarioVariation(definition, { random: () => 0.4 })?.id,
-    ).toBe("tight-budget");
+    expect(selectScenarioVariation(definition, { random: () => 0.4 })?.id).toBe(
+      "tight-budget",
+    );
     expect(
       selectScenarioVariation(definition, { random: () => 0.999 })?.id,
     ).toBe("competing-offer");
@@ -120,6 +120,8 @@ describe("resolveScenarioVariation", () => {
     expect(resolveScenarioVariation(definition, "missing")).toBeNull();
     expect(resolveScenarioVariation(definition, null)).toBeNull();
     expect(resolveScenarioVariation(definition, undefined)).toBeNull();
-    expect(resolveScenarioVariation(salaryNegotiationV1, "standard-offer")).toBeNull();
+    expect(
+      resolveScenarioVariation(salaryNegotiationV1, "standard-offer"),
+    ).toBeNull();
   });
 });
