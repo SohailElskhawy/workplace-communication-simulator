@@ -15,6 +15,8 @@ export interface ConversationStreamProps {
   attemptId: string;
   turns: ConversationTurn[];
   counterpartRole: string;
+  openingMessage?: string | null;
+  autoPlaySpeech?: boolean;
   pendingTurn: PendingTurnState | null;
   sendingTurn: boolean;
   pendingError: string | null;
@@ -28,6 +30,8 @@ export function ConversationStream({
   attemptId,
   turns,
   counterpartRole,
+  openingMessage,
+  autoPlaySpeech = true,
   pendingTurn,
   sendingTurn,
   pendingError,
@@ -45,11 +49,39 @@ export function ConversationStream({
         </span>
       </div>
 
+      {/* Opening Counterpart Message (First speaker in scenario) */}
+      {openingMessage && (
+        <div className="space-y-4">
+          <div className="flex flex-col items-start">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="font-meta text-[10px] uppercase font-bold text-primary">
+                {counterpartRole}
+              </span>
+              <span className="font-meta text-[10px] text-muted-foreground">
+                Opening Statement
+              </span>
+            </div>
+
+            <div className="max-w-xl rounded-card rounded-tl-none bg-surface-solid p-4 text-foreground border border-border shadow-[4px_4px_0px_0px_#1a1a1a]">
+              <p className="font-sans text-xs sm:text-sm leading-relaxed whitespace-pre-wrap">
+                {openingMessage}
+              </p>
+              <SpeechButton
+                attemptId={attemptId}
+                turnId="opening"
+                autoPlay={turns.length === 0 && autoPlaySpeech}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Render Conversation Turns */}
-      {turns.map((turn: ConversationTurn) => {
+      {turns.map((turn: ConversationTurn, index: number) => {
         const isTurnRetrying = retryingTurnId === turn.id;
         const hasAssistantText = Boolean(turn.assistantText);
         const isTurnFailed = turn.status === "FAILED" || (!hasAssistantText && turn.status === "COMPLETED");
+        const isLatestTurn = index === turns.length - 1;
 
         return (
           <div key={turn.id} className="space-y-4">
@@ -95,7 +127,11 @@ export function ConversationStream({
                   <p className="font-sans text-xs sm:text-sm leading-relaxed whitespace-pre-wrap">
                     {turn.assistantText}
                   </p>
-                  <SpeechButton attemptId={attemptId} turnId={turn.id} />
+                  <SpeechButton
+                    attemptId={attemptId}
+                    turnId={turn.id}
+                    autoPlay={isLatestTurn && autoPlaySpeech}
+                  />
                 </div>
               </div>
             )}

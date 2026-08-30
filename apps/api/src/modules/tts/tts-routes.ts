@@ -8,7 +8,10 @@ import {
 import type { LocalUserProvisioner } from "../users/provision-local-user.js";
 import type { TtsService } from "./tts-service.js";
 
-const ParamsSchema = z.strictObject({ attemptId: z.uuid(), turnId: z.uuid() });
+const ParamsSchema = z.strictObject({
+  attemptId: z.uuid(),
+  turnId: z.union([z.uuid(), z.literal("opening")]),
+});
 export interface TtsRouteDependencies {
   ttsService: TtsService;
   resolveAuthProviderUserId(request: Request): string | null;

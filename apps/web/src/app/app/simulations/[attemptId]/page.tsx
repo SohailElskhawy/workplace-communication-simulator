@@ -49,6 +49,7 @@ export default function SimulationPage() {
   const [showFinishDialog, setShowFinishDialog] = useState(false);
   const [finishing, setFinishing] = useState(false);
   const [briefingOpen, setBriefingOpen] = useState(false);
+  const [autoPlaySpeech, setAutoPlaySpeech] = useState(true);
 
   // Timer and Expiry state
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -210,6 +211,28 @@ export default function SimulationPage() {
     );
   }, [scenarioDetail]);
 
+  const openingMessage = useMemo(() => {
+    if (attempt?.scenario?.openingMessage) {
+      return attempt.scenario.openingMessage;
+    }
+    const key = attempt?.scenario?.key ?? "";
+    const defaults: Record<string, string> = {
+      "salary-negotiation":
+        "Thanks for making time to talk. We're excited about the possibility of you joining the team. I understand you wanted to discuss the offer—what would you like us to consider?",
+      "behavioral-interview":
+        "Thanks for joining us today. To start off, could you tell me about a time when a project didn't go according to plan and how you handled it?",
+      "promotion-request":
+        "Hi, thanks for setting up this 1-on-1. You mentioned you wanted to discuss your career progression and role—what's on your mind?",
+      "manager-pushback":
+        "Thanks for meeting on short notice. As you know, leadership wants to pull the release date forward by two weeks. We need your team to commit to this new deadline.",
+      "difficult-feedback":
+        "Hey, thanks for catching up. What was it you wanted to discuss regarding our recent project collaboration?",
+      "scope-creep":
+        "Thanks for taking the call. We've decided we really need the analytics dashboard and multi-currency export included in this sprint before launch.",
+    };
+    return defaults[key] ?? null;
+  }, [attempt?.scenario]);
+
   const isLimitReached = (attempt?.turns.length ?? 0) >= 20;
   const isComposerDisabled =
     sendingTurn || finishing || isExpired || isLimitReached;
@@ -352,6 +375,8 @@ export default function SimulationPage() {
         turnCount={attempt.turns.length}
         elapsedSeconds={elapsedSeconds}
         finishing={finishing}
+        autoPlaySpeech={autoPlaySpeech}
+        onToggleAutoPlay={() => setAutoPlaySpeech((prev) => !prev)}
         onOpenFinishDialog={() => setShowFinishDialog(true)}
       />
 
@@ -373,6 +398,8 @@ export default function SimulationPage() {
             attemptId={attempt.id}
             turns={attempt.turns}
             counterpartRole={counterpartRole}
+            openingMessage={openingMessage}
+            autoPlaySpeech={autoPlaySpeech}
             pendingTurn={pendingTurn}
             sendingTurn={sendingTurn}
             pendingError={pendingError}
@@ -387,6 +414,7 @@ export default function SimulationPage() {
           />
 
           <SimulationComposer
+            attemptId={attempt.id}
             composerText={composerText}
             sendingTurn={sendingTurn}
             isComposerDisabled={isComposerDisabled}

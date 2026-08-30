@@ -30,6 +30,8 @@ import {
   Trash2 as LucideTrash2,
   TrendingUp as LucideTrendingUp,
   User as LucideUser,
+  Volume2 as LucideVolume2,
+  VolumeX as LucideVolumeX,
   X as LucideX,
   type LucideProps,
 } from "lucide-react";
@@ -52,6 +54,8 @@ export const SendIcon = LucideSend;
 export const PlayIcon = LucidePlay;
 export const FlagIcon = LucideFlag;
 export const MicIcon = LucideMic;
+export const VolumeIcon = LucideVolume2;
+export const VolumeMuteIcon = LucideVolumeX;
 
 // Status & Feedback
 export const AlertTriangleIcon = LucideAlertTriangle;

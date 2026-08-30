@@ -47,7 +47,7 @@ describe("OpenRouterProvider", () => {
     expect(body).toMatchObject({
       model: request.model,
       stream: false,
-      max_tokens: 300,
+      max_tokens: 2_000,
       provider: { zdr: true, data_collection: "deny" },
     });
     expect(body).not.toHaveProperty("models");
@@ -235,7 +235,7 @@ describe("OpenRouterProvider", () => {
     expect(body).toMatchObject({
       model: "openai/gpt-5.6-luna-pro",
       response_format: { type: "json_object" },
-      max_tokens: 2000,
+      max_tokens: 6_000,
       provider: { zdr: true, data_collection: "deny" },
     });
   });

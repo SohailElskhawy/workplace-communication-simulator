@@ -178,10 +178,16 @@ export interface AttemptService {
 }
 
 function mapScenario(scenario: AttemptScenarioRecord) {
+  let openingMessage: string | undefined;
+  try {
+    const parsed = ScenarioDefinitionSchema.safeParse(scenario.definition);
+    if (parsed.success) openingMessage = parsed.data.openingMessage;
+  } catch {}
   return {
     key: scenario.key,
     version: scenario.version,
     title: scenario.title,
+    ...(openingMessage ? { openingMessage } : {}),
   };
 }
 

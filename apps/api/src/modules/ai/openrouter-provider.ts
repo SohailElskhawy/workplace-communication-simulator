@@ -11,21 +11,25 @@ const OpenRouterResponseSchema = z.object({
   choices: z
     .array(
       z.object({
-        message: z.object({ content: z.string() }),
+        message: z.object({
+          content: z.string().nullable().optional(),
+          reasoning: z.string().nullable().optional(),
+        }),
       }),
     )
     .min(1),
   usage: z
     .object({
-      prompt_tokens: z.int().nonnegative().optional(),
-      completion_tokens: z.int().nonnegative().optional(),
-      cost: z.number().nonnegative().optional(),
+      prompt_tokens: z.number().nonnegative().nullable().optional(),
+      completion_tokens: z.number().nonnegative().nullable().optional(),
+      cost: z.number().nonnegative().nullable().optional(),
     })
+    .nullable()
     .optional(),
 });
 
-const ROLEPLAY_MAX_OUTPUT_TOKENS = 300;
-const EVALUATION_MAX_OUTPUT_TOKENS = 2_000;
+const ROLEPLAY_MAX_OUTPUT_TOKENS = 2_000;
+const EVALUATION_MAX_OUTPUT_TOKENS = 6_000;
 const ROLEPLAY_MAX_RESPONSE_CHARS = 1_600;
 const EVALUATION_MAX_RESPONSE_CHARS = 60_000;
 
@@ -167,9 +171,10 @@ export function createOpenRouterProvider(
 
       const rawResponse = await response.json();
       const parsed = OpenRouterResponseSchema.safeParse(rawResponse);
-      const content = parsed.success
-        ? parsed.data.choices[0]?.message.content.trim()
+      const rawContent = parsed.success
+        ? (parsed.data.choices[0]?.message.content ?? "")
         : "";
+      const content = rawContent.trim();
 
       if (!parsed.success || !content || content.length > maxResponseChars) {
         throw new AiProviderError("AI_PROVIDER_ERROR", latencyMs);

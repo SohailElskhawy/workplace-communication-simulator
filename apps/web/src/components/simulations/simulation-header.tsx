@@ -9,6 +9,8 @@ import {
   ForumIcon,
   RefreshIcon,
   TimerIcon,
+  VolumeIcon,
+  VolumeMuteIcon,
 } from "@/components/icons";
 import { cn } from "@/lib/cn";
 
@@ -19,6 +21,8 @@ export interface SimulationHeaderProps {
   turnCount: number;
   elapsedSeconds: number;
   finishing: boolean;
+  autoPlaySpeech: boolean;
+  onToggleAutoPlay: () => void;
   onOpenFinishDialog: () => void;
 }
 
@@ -35,6 +39,8 @@ export function SimulationHeader({
   turnCount,
   elapsedSeconds,
   finishing,
+  autoPlaySpeech,
+  onToggleAutoPlay,
   onOpenFinishDialog,
 }: SimulationHeaderProps) {
   return (
@@ -64,14 +70,36 @@ export function SimulationHeader({
           </div>
         </div>
 
-        {/* Right: Timer, Turn Count, and Finish Action */}
-        <div className="flex items-center gap-3 sm:gap-4">
-          <div className="hidden sm:flex items-center gap-1.5 font-meta text-xs text-muted-foreground bg-surface-subtle px-2.5 py-1 rounded-control border border-border/30">
+        {/* Right: Sound toggle, Timer, Turn Count, and Finish Action */}
+        <div className="flex items-center gap-2.5 sm:gap-4">
+          <button
+            type="button"
+            onClick={onToggleAutoPlay}
+            className={cn(
+              "inline-flex items-center gap-1.5 font-meta text-xs px-2.5 py-1.5 rounded-control border transition-all cursor-pointer",
+              autoPlaySpeech
+                ? "bg-primary/10 border-primary text-primary font-bold shadow-2xs"
+                : "bg-surface-subtle border-border/40 text-muted-foreground hover:text-foreground",
+            )}
+            title={autoPlaySpeech ? "Auto-play speech: ON" : "Auto-play speech: OFF"}
+            aria-label={autoPlaySpeech ? "Disable auto-play voice" : "Enable auto-play voice"}
+          >
+            {autoPlaySpeech ? (
+              <VolumeIcon className="w-3.5 h-3.5 text-primary" />
+            ) : (
+              <VolumeMuteIcon className="w-3.5 h-3.5 text-muted-foreground" />
+            )}
+            <span className="hidden sm:inline">
+              {autoPlaySpeech ? "Voice On" : "Voice Off"}
+            </span>
+          </button>
+
+          <div className="hidden sm:flex items-center gap-1.5 font-meta text-xs text-muted-foreground bg-surface-subtle px-2.5 py-1.5 rounded-control border border-border/30">
             <TimerIcon className="w-3.5 h-3.5" />
             <span>{formatDuration(elapsedSeconds)}</span>
           </div>
 
-          <div className="hidden md:flex items-center gap-1.5 font-meta text-xs text-muted-foreground bg-surface-subtle px-2.5 py-1 rounded-control border border-border/30">
+          <div className="hidden md:flex items-center gap-1.5 font-meta text-xs text-muted-foreground bg-surface-subtle px-2.5 py-1.5 rounded-control border border-border/30">
             <ForumIcon className="w-3.5 h-3.5" />
             <span>
               {turnCount} / 20 <span className="hidden lg:inline">turns</span>

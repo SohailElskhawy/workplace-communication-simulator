@@ -13,3 +13,6 @@ coverage/
 pnpm-debug.log*
 .agents
 /stitch
+
+DEPLOYMENT_GUIDE.md
+ENV_SETUP_GUIDE.md

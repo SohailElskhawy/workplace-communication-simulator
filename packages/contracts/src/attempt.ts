@@ -30,6 +30,7 @@ export const AttemptScenarioSchema = z.strictObject({
   key: z.string().min(1),
   version: z.int().min(1),
   title: z.string().min(1),
+  openingMessage: z.string().min(1).optional(),
 });
 
 export const ConversationTurnSchema = z.strictObject({
