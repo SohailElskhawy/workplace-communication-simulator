@@ -92,6 +92,16 @@ export function createApp(dependencies: AuthenticatedAppDependencies): Express {
 
   app.use(express.json({ limit: "64kb" }));
 
+  app.get("/api/v1/health", (_request, response) => {
+    const body: HealthResponse = {
+      data: {
+        status: "ok",
+      },
+    };
+
+    response.status(200).json(body);
+  });
+
   app.use(dependencies.authenticationMiddleware);
 
   if (dependencies.generalRateLimit) {
@@ -118,16 +128,6 @@ export function createApp(dependencies: AuthenticatedAppDependencies): Express {
       next();
     });
   }
-
-  app.get("/api/v1/health", (_request, response) => {
-    const body: HealthResponse = {
-      data: {
-        status: "ok",
-      },
-    };
-
-    response.status(200).json(body);
-  });
 
   app.get("/api/v1/me", async (request, response) => {
     const authProviderUserId = dependencies.resolveAuthProviderUserId(request);
