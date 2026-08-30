@@ -167,168 +167,17 @@ export function getScenarioMeta(scenario: PublicScenarioSummary): ScenarioVisual
   };
 }
 
-function HandshakeIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="m11 17 2 2a1 1 0 0 0 1.42 0l4.58-4.58a5 5 0 0 0 0-7.07l-.29-.29a2 2 0 0 0-2.83 0L12 11" />
-      <path d="m13 7-2-2a1 1 0 0 0-1.42 0L4.71 9.87a5 5 0 0 0 0 7.07l.29.29a2 2 0 0 0 2.83 0L12 13" />
-      <path d="m18 11 3 3" />
-      <path d="m6 13-3-3" />
-    </svg>
-  );
-}
-
-function InterviewIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <polyline points="16 11 18 13 22 9" />
-    </svg>
-  );
-}
-
-function PromotionIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
-      <polyline points="16 7 22 7 22 13" />
-    </svg>
-  );
-}
-
-function PushbackIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-      <path d="M8 9h8" />
-      <path d="M8 13h5" />
-    </svg>
-  );
-}
-
-function FeedbackIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M12 2a5 5 0 0 0-5 5c0 1.6.8 3.1 2 4.1V14a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-2.9c1.2-1 2-2.5 2-4.1a5 5 0 0 0-5-5z" />
-      <path d="M9 18h6" />
-      <path d="M10 22h4" />
-    </svg>
-  );
-}
-
-function BoundaryIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <circle cx="12" cy="12" r="10" />
-      <path d="m4.93 4.93 14.14 14.14" />
-    </svg>
-  );
-}
-
-function ArrowRightIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M5 12h14" />
-      <path d="m12 5 7 7-7 7" />
-    </svg>
-  );
-}
-
-function BarChartIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <line x1="18" y1="20" x2="18" y2="10" />
-      <line x1="12" y1="20" x2="12" y2="4" />
-      <line x1="6" y1="20" x2="6" y2="14" />
-    </svg>
-  );
-}
-
-function PlayIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      aria-hidden="true"
-    >
-      <polygon points="6 3 20 12 6 21 6 3" />
-    </svg>
-  );
-}
+import {
+  ArrowRightIcon,
+  BarChartIcon,
+  BoundaryIcon,
+  FeedbackIcon,
+  HandshakeIcon,
+  InterviewIcon,
+  PlayIcon,
+  PromotionIcon,
+  PushbackIcon,
+} from "@/components/icons";
 
 function renderScenarioIcon(
   iconName: ScenarioVisualMeta["iconName"],

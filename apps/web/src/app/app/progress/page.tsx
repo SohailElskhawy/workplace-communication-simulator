@@ -5,85 +5,15 @@ import type { ProgressData } from "@kalemny/contracts";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
-import { createApiClient } from "../../../lib/api-client";
+import { ArrowRightIcon, RefreshIcon, StarIcon, TargetIcon } from "@/components/icons";
 import { cn } from "@/lib/cn";
+import { SKILL_SCORE_KEYS } from "@/lib/constants";
+import { createApiClient } from "@/lib/api-client";
 import {
   getScoreBand,
   getSkillMetadata,
   UNIVERSAL_SKILLS_META,
-} from "../../../lib/score-utils";
-
-function RefreshIcon({ className = "w-4 h-4" }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <polyline points="23 4 23 10 17 10" />
-      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-    </svg>
-  );
-}
-
-function ArrowRightIcon({ className = "w-4 h-4" }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <line x1="5" y1="12" x2="19" y2="12" />
-      <polyline points="12 5 19 12 12 19" />
-    </svg>
-  );
-}
-
-function TargetIcon({ className = "w-5 h-5" }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <circle cx="12" cy="12" r="10" />
-      <circle cx="12" cy="12" r="6" />
-      <circle cx="12" cy="12" r="2" />
-    </svg>
-  );
-}
-
-function StarIcon({ className = "w-4 h-4" }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-    </svg>
-  );
-}
+} from "@/lib/score-utils";
 
 export default function ProgressPage() {
   const { getToken, isLoaded, isSignedIn } = useAuth();
@@ -197,7 +127,7 @@ export default function ProgressPage() {
           </div>
           <button
             type="button"
-            onClick={() => reloadProgress()}
+            onClick={() => void reloadProgress()}
             className="shrink-0 inline-flex items-center gap-1.5 rounded-control bg-alert px-4 py-2 font-display text-xs font-bold uppercase tracking-wider text-white shadow-2xs hover:opacity-90 cursor-pointer"
           >
             <RefreshIcon className="w-3.5 h-3.5" />
@@ -208,7 +138,7 @@ export default function ProgressPage() {
 
       {/* Loading Skeleton */}
       {loading && !progress && (
-        <div className="space-y-6">
+        <div className="space-y-6" role="status" aria-busy="true">
           <div className="glass-surface rounded-card border border-border p-8 shadow-xs animate-pulse space-y-4">
             <div className="h-4 w-1/4 bg-border/40 rounded" />
             <div className="h-8 w-1/2 bg-border/40 rounded" />
@@ -282,15 +212,7 @@ export default function ProgressPage() {
 
             {/* Bento Grid for 5 Skills */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-5">
-              {(
-                [
-                  "clarity",
-                  "assertiveness",
-                  "empathy",
-                  "structure",
-                  "conciseness",
-                ] as const
-              ).map((skillKey) => {
+              {SKILL_SCORE_KEYS.map((skillKey) => {
                 const score = progress.skills![skillKey];
                 const band = getScoreBand(score);
                 const meta =
