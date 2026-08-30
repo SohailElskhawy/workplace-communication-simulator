@@ -6,6 +6,7 @@ import {
   MicrophoneLevelMeter,
   type MicrophoneAudioContext,
 } from "../lib/microphone-level-meter";
+import { MicrophoneSilenceDetector } from "../lib/microphone-silence-detector";
 
 export const MAX_RECORDING_DURATION_SECONDS = 120;
 
@@ -64,6 +65,8 @@ export function useVoiceRecorder({
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const recordingStartTimeRef = useRef<number>(0);
   const microphoneLevelMeterRef = useRef<MicrophoneLevelMeter | null>(null);
+  const silenceDetectorRef = useRef(new MicrophoneSilenceDetector());
+  const isRecordingRef = useRef(false);
 
   const cleanupMicrophoneLevelMeter = useCallback(() => {
     microphoneLevelMeterRef.current?.stop();
@@ -72,6 +75,8 @@ export function useVoiceRecorder({
   }, []);
 
   const cleanupStream = useCallback(() => {
+    isRecordingRef.current = false;
+    silenceDetectorRef.current.reset();
     cleanupMicrophoneLevelMeter();
     if (audioStreamRef.current) {
       audioStreamRef.current.getTracks().forEach((track) => track.stop());
@@ -90,6 +95,8 @@ export function useVoiceRecorder({
     const recorder = mediaRecorderRef.current;
     if (!recorder || recorder.state === "inactive") return;
 
+    isRecordingRef.current = false;
+    silenceDetectorRef.current.reset();
     clearTimer();
     const elapsedMs = Math.max(0, Date.now() - recordingStartTimeRef.current);
 
@@ -154,6 +161,8 @@ export function useVoiceRecorder({
     setErrorMessage(null);
     setStatus("requesting_permission");
     audioChunksRef.current = [];
+    isRecordingRef.current = false;
+    silenceDetectorRef.current.reset();
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -171,7 +180,15 @@ export function useVoiceRecorder({
         requestAnimationFrame: (callback) =>
           window.requestAnimationFrame(callback),
         cancelAnimationFrame: (handle) => window.cancelAnimationFrame(handle),
-        onLevelChange: setMicrophoneLevel,
+        onLevelChange: (level) => {
+          setMicrophoneLevel(level);
+          if (
+            isRecordingRef.current &&
+            silenceDetectorRef.current.observe(level, window.performance.now())
+          ) {
+            void stopAndTranscribe();
+          }
+        },
       });
       microphoneLevelMeterRef.current = levelMeter;
       levelMeter.start(stream);
@@ -208,6 +225,7 @@ export function useVoiceRecorder({
 
       recorder.start(250);
       recordingStartTimeRef.current = Date.now();
+      isRecordingRef.current = true;
       setStatus("recording");
       setDurationSeconds(0);
 
