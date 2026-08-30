@@ -4,6 +4,8 @@ import type { AiService } from "../ai/ai-service.js";
 import { AiProviderError } from "../ai/openrouter-provider.js";
 import { scenarioDefinitions } from "../scenarios/definitions/index.js";
 import { salaryNegotiationV1 } from "../scenarios/definitions/salary-negotiation.js";
+import { ScenarioDefinitionSchema } from "../scenarios/scenario-definition.js";
+import type { ScenarioDefinition } from "../scenarios/scenario-definition.js";
 import { calculateAttemptComparison } from "./attempt-comparison.js";
 import { getFinishStatus, getTurnRejection } from "./attempt-rules.js";
 import {
@@ -57,7 +59,9 @@ function createTurn(
   };
 }
 
-function createMemoryRepository() {
+function createMemoryRepository(
+  definitions: readonly ScenarioDefinition[] = scenarioDefinitions,
+) {
   const attempts = new Map<string, AttemptRecord>();
   const usageEvents: Array<
     Parameters<AttemptRepository["finalizeRoleplayTurn"]>[0]
@@ -66,13 +70,14 @@ function createMemoryRepository() {
 
   const repository: AttemptRepository = {
     async createAttempt(input) {
-      const definition = scenarioDefinitions.find(
+      const definition = definitions.find(
         (candidate) => candidate.key === input.scenarioKey,
       );
       if (!definition) {
         return { kind: "not_found" };
       }
 
+      let excludeVariationId: string | null = null;
       if (input.retryOfAttemptId) {
         const source = attempts.get(input.retryOfAttemptId);
         if (
@@ -82,7 +87,13 @@ function createMemoryRepository() {
         ) {
           return { kind: "not_found" };
         }
+        excludeVariationId = source.variationId;
       }
+
+      const variationId = input.selectVariationId(
+        structuredClone(definition),
+        excludeVariationId,
+      );
 
       const id = `10000000-0000-4000-8000-${nextAttempt
         .toString()
@@ -94,6 +105,7 @@ function createMemoryRepository() {
         difficulty: input.difficulty,
         status: "ACTIVE",
         retryOfAttemptId: input.retryOfAttemptId,
+        variationId,
         startedAt: input.startedAt,
         endedAt: null,
         expiresAt: input.expiresAt,
@@ -304,6 +316,113 @@ describe("attempt service", () => {
       openingMessage: salaryNegotiationV1.openingMessage,
       startedAt: "2026-08-29T10:00:00.000Z",
       expiresAt: "2026-08-29T10:15:00.000Z",
+    });
+  });
+
+  it("selects a variation, persists its id, and returns its opening message", async () => {
+    const variedDefinition = ScenarioDefinitionSchema.parse({
+      ...salaryNegotiationV1,
+      variations: [
+        {
+          id: "standard-offer",
+          category: "STANDARD_OFFER",
+          openingMessage: "Standard offer opening.",
+        },
+        {
+          id: "tight-budget",
+          category: "TIGHT_BUDGET",
+          openingMessage: "Tight budget opening.",
+        },
+        {
+          id: "competing-offer",
+          category: "COMPETING_OFFER",
+          openingMessage: "Competing offer opening.",
+        },
+      ],
+    });
+    const { attempts, repository } = createMemoryRepository([variedDefinition]);
+    const service = createAttemptService(
+      repository,
+      createSuccessfulAiService(),
+      () => now,
+      () => 0,
+    );
+
+    const attempt = await startAttempt(service);
+
+    expect(attempt.openingMessage).toBe("Standard offer opening.");
+    expect(attempts.get(attempt.id)?.variationId).toBe("standard-offer");
+    await expect(service.getOwned(ownerId, attempt.id)).resolves.toMatchObject({
+      scenario: {
+        key: "salary-negotiation",
+        openingMessage: "Standard offer opening.",
+      },
+    });
+  });
+
+  it("retries with a different variation when the pool allows", async () => {
+    const variedDefinition = ScenarioDefinitionSchema.parse({
+      ...salaryNegotiationV1,
+      variations: [
+        {
+          id: "standard-offer",
+          category: "STANDARD_OFFER",
+          openingMessage: "Standard offer opening.",
+        },
+        {
+          id: "tight-budget",
+          category: "TIGHT_BUDGET",
+          openingMessage: "Tight budget opening.",
+        },
+      ],
+    });
+    const { attempts, repository } = createMemoryRepository([variedDefinition]);
+    const service = createAttemptService(
+      repository,
+      createSuccessfulAiService(),
+      () => now,
+      () => 0,
+    );
+
+    const source = await startAttempt(service);
+    expect(attempts.get(source.id)?.variationId).toBe("standard-offer");
+
+    const retry = await service.create(ownerId, {
+      scenarioKey: "salary-negotiation",
+      difficulty: "MEDIUM",
+      retryOfAttemptId: source.id,
+    });
+
+    expect(attempts.get(retry.id)?.variationId).toBe("tight-budget");
+    expect(retry.openingMessage).toBe("Tight budget opening.");
+  });
+
+  it("falls back to the base opening for unknown stored variation ids", async () => {
+    const variedDefinition = ScenarioDefinitionSchema.parse({
+      ...salaryNegotiationV1,
+      variations: [
+        {
+          id: "standard-offer",
+          category: "STANDARD_OFFER",
+          openingMessage: "Standard offer opening.",
+        },
+      ],
+    });
+    const { attempts, repository } = createMemoryRepository([variedDefinition]);
+    const service = createAttemptService(
+      repository,
+      createSuccessfulAiService(),
+      () => now,
+      () => 0,
+    );
+
+    const attempt = await startAttempt(service);
+    const stored = attempts.get(attempt.id);
+    if (!stored) throw new Error("Expected stored attempt");
+    stored.variationId = "removed-variation";
+
+    await expect(service.getOwned(ownerId, attempt.id)).resolves.toMatchObject({
+      scenario: { openingMessage: salaryNegotiationV1.openingMessage },
     });
   });
 

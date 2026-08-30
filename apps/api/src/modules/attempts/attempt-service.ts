@@ -16,6 +16,10 @@ import type {
 import type { AiService } from "../ai/ai-service.js";
 import { AiProviderError } from "../ai/openrouter-provider.js";
 import { ScenarioDefinitionSchema } from "../scenarios/scenario-definition.js";
+import {
+  resolveScenarioVariation,
+  selectScenarioVariation,
+} from "../scenarios/scenario-variation.js";
 import { AttemptError, type AttemptErrorCode } from "./attempt-errors.js";
 import { ATTEMPT_DURATION_MS } from "./attempt-rules.js";
 
@@ -45,6 +49,7 @@ export interface AttemptRecord {
   difficulty: Difficulty;
   status: AttemptStatus;
   retryOfAttemptId: string | null;
+  variationId: string | null;
   startedAt: Date;
   endedAt: Date | null;
   expiresAt: Date;
@@ -61,6 +66,15 @@ export interface CreateAttemptRepositoryInput {
   difficulty: Difficulty;
   retryOfAttemptId: string | null;
   startedAt: Date;
+  /**
+   * Chooses the variation id to persist for the new attempt. Receives the
+   * active scenario definition (unparsed) and the retry source's variation id
+   * to exclude, so retries use a different variation when possible.
+   */
+  selectVariationId: (
+    definition: unknown,
+    excludeVariationId: string | null,
+  ) => string | null;
   expiresAt: Date;
 }
 
@@ -177,11 +191,12 @@ export interface AttemptService {
   delete(userId: string, attemptId: string): Promise<void>;
 }
 
-function mapScenario(scenario: AttemptScenarioRecord) {
+function mapScenario(scenario: AttemptScenarioRecord, variationId: string | null) {
   let openingMessage: string | undefined;
   const parsed = ScenarioDefinitionSchema.safeParse(scenario.definition);
   if (parsed.success) {
-    openingMessage = parsed.data.openingMessage;
+    const variation = resolveScenarioVariation(parsed.data, variationId);
+    openingMessage = variation?.openingMessage ?? parsed.data.openingMessage;
   }
   return {
     key: scenario.key,
@@ -209,7 +224,7 @@ function mapAttempt(attempt: AttemptRecord): AttemptDetailResponse["data"] {
     id: attempt.id,
     status: attempt.status,
     difficulty: attempt.difficulty,
-    scenario: mapScenario(attempt.scenario),
+    scenario: mapScenario(attempt.scenario, attempt.variationId),
     retryOfAttemptId: attempt.retryOfAttemptId,
     turns: attempt.turns.map(mapTurn),
     evaluation: attempt.evaluation,
@@ -224,6 +239,7 @@ export function createAttemptService(
   repository: AttemptRepository,
   aiService: AiService,
   clock: () => Date = () => new Date(),
+  random: () => number = Math.random,
 ): AttemptService {
   async function generateRoleplayReply(
     userId: string,
@@ -315,6 +331,18 @@ export function createAttemptService(
         retryOfAttemptId: request.retryOfAttemptId,
         startedAt,
         expiresAt: new Date(startedAt.getTime() + ATTEMPT_DURATION_MS),
+        selectVariationId: (definition, excludeVariationId) => {
+          const parsed = ScenarioDefinitionSchema.safeParse(definition);
+          if (!parsed.success) {
+            return null;
+          }
+          return (
+            selectScenarioVariation(parsed.data, {
+              excludeVariationId,
+              random,
+            })?.id ?? null
+          );
+        },
       });
 
       if (result.kind === "not_found") {
@@ -325,13 +353,17 @@ export function createAttemptService(
       const definition = ScenarioDefinitionSchema.parse(
         attempt.scenario.definition,
       );
+      const variation = resolveScenarioVariation(
+        definition,
+        attempt.variationId,
+      );
 
       return {
         id: attempt.id,
         status: "ACTIVE",
         difficulty: attempt.difficulty,
-        scenario: mapScenario(attempt.scenario),
-        openingMessage: definition.openingMessage,
+        scenario: mapScenario(attempt.scenario, attempt.variationId),
+        openingMessage: variation?.openingMessage ?? definition.openingMessage,
         startedAt: attempt.startedAt.toISOString(),
         expiresAt: attempt.expiresAt.toISOString(),
       };

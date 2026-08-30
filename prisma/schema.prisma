@@ -84,6 +84,7 @@ model SimulationAttempt {
   userId              String        @db.Uuid
   scenarioId          String        @db.Uuid
   retryOfAttemptId    String?       @db.Uuid
+  variationId         String?
   difficulty          Difficulty
   status              AttemptStatus @default(ACTIVE)
   startedAt           DateTime      @default(now()) @db.Timestamptz(3)

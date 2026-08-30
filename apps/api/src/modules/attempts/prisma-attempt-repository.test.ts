@@ -215,3 +215,127 @@ describe("Prisma attempt repository race recovery", () => {
     expect(result?.comparison?.weakArea?.improved).toBe(true);
   });
 });
+
+describe("Prisma attempt repository variation persistence", () => {
+  const scenarioDefinition = { marker: "active-definition" };
+  const retrySourceId = "11111111-1111-4111-8111-111111111111";
+
+  function createCreateAttemptPrisma(options: {
+    retrySource?: {
+      scenario: { key: string };
+      variationId: string | null;
+    } | null;
+  }) {
+    const transaction = {
+      scenario: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: "20000000-0000-4000-8000-000000000001",
+          key: "salary-negotiation",
+          definition: scenarioDefinition,
+        }),
+      },
+      simulationAttempt: {
+        findFirst: vi.fn().mockResolvedValue(options.retrySource ?? null),
+        create: vi.fn().mockResolvedValue({
+          id: "22222222-2222-4222-8222-222222222222",
+          userId: input.userId,
+          difficulty: "MEDIUM",
+          status: "ACTIVE",
+          retryOfAttemptId: null,
+          variationId: "tight-budget",
+          startedAt: input.currentTime,
+          endedAt: null,
+          expiresAt: input.currentTime,
+          evaluationStartedAt: null,
+          scenario: {
+            id: "20000000-0000-4000-8000-000000000001",
+            key: "salary-negotiation",
+            version: 1,
+            title: "Salary Negotiation",
+            definition: scenarioDefinition,
+          },
+          conversationTurns: [],
+          evaluation: null,
+          retryOfAttempt: null,
+        }),
+      },
+    };
+    const prisma = {
+      $transaction: vi.fn(
+        async (callback: (client: typeof transaction) => Promise<unknown>) =>
+          callback(transaction),
+      ),
+    } as unknown as PrismaClient;
+    return { prisma, transaction };
+  }
+
+  function createRepositoryInput(overrides: {
+    retryOfAttemptId?: string | null;
+  }) {
+    return {
+      userId: input.userId,
+      scenarioKey: "salary-negotiation",
+      difficulty: "MEDIUM" as const,
+      retryOfAttemptId: overrides.retryOfAttemptId ?? null,
+      startedAt: input.currentTime,
+      expiresAt: input.currentTime,
+      selectVariationId: vi.fn(() => "tight-budget"),
+    };
+  }
+
+  it("persists the variation id chosen by the selection callback", async () => {
+    const { prisma, transaction } = createCreateAttemptPrisma({});
+    const repository = createPrismaAttemptRepository(prisma);
+    const repositoryInput = createRepositoryInput({});
+
+    const result = await repository.createAttempt(repositoryInput);
+
+    if (result.kind !== "created") throw new Error("Expected created attempt");
+    expect(repositoryInput.selectVariationId).toHaveBeenCalledWith(
+      scenarioDefinition,
+      null,
+    );
+    expect(transaction.simulationAttempt.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ variationId: "tight-budget" }),
+      }),
+    );
+    expect(result.attempt.variationId).toBe("tight-budget");
+  });
+
+  it("passes the retry source variation id as excluded to selection", async () => {
+    const { prisma } = createCreateAttemptPrisma({
+      retrySource: {
+        scenario: { key: "salary-negotiation" },
+        variationId: "standard-offer",
+      },
+    });
+    const repository = createPrismaAttemptRepository(prisma);
+    const repositoryInput = createRepositoryInput({
+      retryOfAttemptId: retrySourceId,
+    });
+
+    await repository.createAttempt(repositoryInput);
+
+    expect(repositoryInput.selectVariationId).toHaveBeenCalledWith(
+      scenarioDefinition,
+      "standard-offer",
+    );
+  });
+
+  it("returns not_found when the retry source belongs to another scenario", async () => {
+    const { prisma } = createCreateAttemptPrisma({
+      retrySource: {
+        scenario: { key: "behavioral-interview" },
+        variationId: "standard-offer",
+      },
+    });
+    const repository = createPrismaAttemptRepository(prisma);
+
+    await expect(
+      repository.createAttempt(
+        createRepositoryInput({ retryOfAttemptId: retrySourceId }),
+      ),
+    ).resolves.toEqual({ kind: "not_found" });
+  });
+});

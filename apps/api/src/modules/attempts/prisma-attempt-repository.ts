@@ -83,6 +83,7 @@ function mapAttempt(attempt: PrismaAttemptRecord): AttemptRecord {
     difficulty: attempt.difficulty,
     status: attempt.status,
     retryOfAttemptId: attempt.retryOfAttemptId,
+    variationId: attempt.variationId,
     startedAt: attempt.startedAt,
     endedAt: attempt.endedAt,
     expiresAt: attempt.expiresAt,
@@ -127,25 +128,28 @@ export function createPrismaAttemptRepository(
       return prisma.$transaction(async (transaction) => {
         const scenario = await transaction.scenario.findFirst({
           where: { key: input.scenarioKey, isActive: true },
-          select: { id: true, key: true },
+          select: { id: true, key: true, definition: true },
         });
 
         if (!scenario) {
           return { kind: "not_found" } as const;
         }
 
+        let excludeVariationId: string | null = null;
         if (input.retryOfAttemptId) {
           const retrySource = await transaction.simulationAttempt.findFirst({
             where: {
               id: input.retryOfAttemptId,
               userId: input.userId,
             },
-            select: { scenario: { select: { key: true } } },
+            select: { scenario: { select: { key: true } }, variationId: true },
           });
 
           if (!retrySource || retrySource.scenario.key !== scenario.key) {
             return { kind: "not_found" } as const;
           }
+
+          excludeVariationId = retrySource.variationId;
         }
 
         const attempt = await transaction.simulationAttempt.create({
@@ -154,6 +158,10 @@ export function createPrismaAttemptRepository(
             scenarioId: scenario.id,
             retryOfAttemptId: input.retryOfAttemptId,
             difficulty: input.difficulty,
+            variationId: input.selectVariationId(
+              scenario.definition,
+              excludeVariationId,
+            ),
             startedAt: input.startedAt,
             expiresAt: input.expiresAt,
           },

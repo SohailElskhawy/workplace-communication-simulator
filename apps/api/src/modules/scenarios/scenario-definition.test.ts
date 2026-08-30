@@ -93,3 +93,162 @@ describe("ScenarioDefinitionSchema", () => {
     ).toThrow();
   });
 });
+
+describe("ScenarioDefinitionSchema variations", () => {
+  const standardVariation = {
+    id: "standard-offer",
+    category: "STANDARD_OFFER",
+    openingMessage: "Standard opening.",
+  };
+  const tightBudgetVariation = {
+    id: "tight-budget",
+    category: "TIGHT_BUDGET",
+    openingMessage: "Tight budget opening.",
+  };
+  const competingOfferVariation = {
+    id: "competing-offer",
+    category: "COMPETING_OFFER",
+    openingMessage: "Competing offer opening.",
+  };
+
+  const interviewVariation = {
+    id: "early-career-track",
+    category: "EARLY_CAREER",
+    openingMessage: "Tell me about yourself.",
+    interviewTrack: {
+      questions: [
+        { category: "INTRODUCTION", question: "Tell me about yourself." },
+        {
+          category: "TEAMWORK_CONFLICT",
+          question: "Describe a conflict you navigated on a team.",
+        },
+        {
+          category: "FAILURE_LEARNING",
+          question: "Tell me about a failure and what you learned.",
+        },
+      ],
+    },
+  };
+
+  it("accepts definitions with a variation pool", () => {
+    const definition = ScenarioDefinitionSchema.parse({
+      ...salaryNegotiationV1,
+      variations: [
+        standardVariation,
+        tightBudgetVariation,
+        competingOfferVariation,
+      ],
+    });
+
+    expect(definition.variations?.map(({ id }) => id)).toEqual([
+      "standard-offer",
+      "tight-budget",
+      "competing-offer",
+    ]);
+  });
+
+  it("accepts an interview track whose first question matches the opening", () => {
+    const definition = ScenarioDefinitionSchema.parse({
+      ...salaryNegotiationV1,
+      variations: [interviewVariation],
+    });
+
+    expect(definition.variations?.[0]?.interviewTrack?.questions).toHaveLength(
+      3,
+    );
+  });
+
+  it("rejects duplicate variation ids", () => {
+    expect(() =>
+      ScenarioDefinitionSchema.parse({
+        ...salaryNegotiationV1,
+        variations: [standardVariation, { ...standardVariation }],
+      }),
+    ).toThrow();
+  });
+
+  it("rejects invalid variation ids", () => {
+    expect(() =>
+      ScenarioDefinitionSchema.parse({
+        ...salaryNegotiationV1,
+        variations: [{ ...standardVariation, id: "Standard Offer" }],
+      }),
+    ).toThrow();
+  });
+
+  it("rejects interview tracks with fewer than three questions", () => {
+    expect(() =>
+      ScenarioDefinitionSchema.parse({
+        ...salaryNegotiationV1,
+        variations: [
+          {
+            ...interviewVariation,
+            interviewTrack: {
+              questions: interviewVariation.interviewTrack.questions.slice(0, 2),
+            },
+          },
+        ],
+      }),
+    ).toThrow();
+  });
+
+  it("rejects interview tracks with more than five questions", () => {
+    const questions = [
+      { category: "INTRODUCTION", question: "Q1" },
+      { category: "EXPERIENCE", question: "Q2" },
+      { category: "TEAMWORK_CONFLICT", question: "Q3" },
+      { category: "OWNERSHIP", question: "Q4" },
+      { category: "PROBLEM_SOLVING", question: "Q5" },
+      { category: "REFLECTION", question: "Q6" },
+    ];
+    expect(() =>
+      ScenarioDefinitionSchema.parse({
+        ...salaryNegotiationV1,
+        variations: [
+          {
+            ...interviewVariation,
+            openingMessage: "Q1",
+            interviewTrack: { questions },
+          },
+        ],
+      }),
+    ).toThrow();
+  });
+
+  it("rejects duplicate categories within an interview track", () => {
+    expect(() =>
+      ScenarioDefinitionSchema.parse({
+        ...salaryNegotiationV1,
+        variations: [
+          {
+            ...interviewVariation,
+            interviewTrack: {
+              questions: [
+                { category: "INTRODUCTION", question: "Tell me about yourself." },
+                { category: "INTRODUCTION", question: "Walk me through your background." },
+                {
+                  category: "FAILURE_LEARNING",
+                  question: "Tell me about a failure and what you learned.",
+                },
+              ],
+            },
+          },
+        ],
+      }),
+    ).toThrow();
+  });
+
+  it("rejects an interview track whose first question differs from the opening", () => {
+    expect(() =>
+      ScenarioDefinitionSchema.parse({
+        ...salaryNegotiationV1,
+        variations: [
+          {
+            ...interviewVariation,
+            openingMessage: "A different opening question.",
+          },
+        ],
+      }),
+    ).toThrow();
+  });
+});
