@@ -105,6 +105,7 @@ model SimulationAttempt {
 
   @@index([userId, createdAt])
   @@index([userId, status])
+  @@index([userId, status, progressEligible, endedAt(sort: Desc)])
   @@index([retryOfAttemptId])
 }
 
@@ -125,6 +126,7 @@ model ConversationTurn {
 
   @@unique([attemptId, sequence])
   @@unique([attemptId, clientRequestId])
+  @@index([attemptId, status])
 }
 
 model Evaluation {
@@ -150,8 +152,6 @@ model Evaluation {
   createdAt        DateTime       @default(now()) @db.Timestamptz(3)
 
   attempt SimulationAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
-
-  @@index([attemptId])
 }
 
 model AiUsageEvent {
