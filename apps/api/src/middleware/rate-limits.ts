@@ -46,7 +46,8 @@ export const isExpensiveAiRequest: RequestHandler = (
     (/\/turns(?:\/[^/]+\/retry)?$/.test(path) ||
       /\/evaluation$/.test(path) ||
       /\/transcriptions$/.test(path) ||
-      /\/speech$/.test(path));
+      /\/speech$/.test(path) ||
+      /\/realtime-session$/.test(path));
   response.locals.isExpensiveAiRequest = expensive;
   next();
 };

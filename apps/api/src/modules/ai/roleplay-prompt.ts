@@ -21,6 +21,12 @@ export interface RoleplayPromptInput {
   variation?: ScenarioVariation | null;
 }
 
+export interface RoleplaySystemPromptInput {
+  scenario: ScenarioDefinition;
+  difficulty: Difficulty;
+  variation?: ScenarioVariation | null;
+}
+
 export interface RoleplayMessage {
   role: "system" | "user" | "assistant";
   content: string;
@@ -64,13 +70,18 @@ function conversationBriefLines(variation: ScenarioVariation): string[] {
   return ["", "This conversation", variation.counterpartBrief];
 }
 
-export function buildRoleplayMessages(
-  input: RoleplayPromptInput,
-): RoleplayMessage[] {
+/**
+ * Builds the hidden roleplay system prompt. Shared by the text roleplay
+ * provider and the realtime voice context endpoint so both surfaces use the
+ * exact same scenario/persona/difficulty configuration.
+ */
+export function buildRoleplaySystemPrompt(
+  input: RoleplaySystemPromptInput,
+): string {
   const { scenario } = input;
   const variation = input.variation ?? null;
   const difficulty = scenario.difficulties[input.difficulty];
-  const systemMessage = [
+  return [
     `Workplace roleplay prompt version: ${ROLEPLAY_PROMPT_VERSION}`,
     "",
     "Role and persona",
@@ -111,6 +122,14 @@ export function buildRoleplayMessages(
     "Response style",
     scenario.persona.communicationStyle,
   ].join("\n");
+}
+
+export function buildRoleplayMessages(
+  input: RoleplayPromptInput,
+): RoleplayMessage[] {
+  const { scenario } = input;
+  const variation = input.variation ?? null;
+  const systemMessage = buildRoleplaySystemPrompt(input);
 
   const messages: RoleplayMessage[] = [
     { role: "system", content: systemMessage },

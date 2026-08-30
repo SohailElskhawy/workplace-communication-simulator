@@ -84,6 +84,10 @@ export {
   type RecommendedScenario,
 } from "./progress.js";
 export {
+  RealtimeSessionResponseSchema,
+  type RealtimeSessionResponse,
+} from "./realtime.js";
+export {
   DifficultySchema,
   PublicScenarioContextSchema,
   PublicScenarioDetailSchema,

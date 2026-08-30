@@ -63,6 +63,11 @@ const ApiEnvSchema = z.object({
   SENTRY_DSN: OptionalUrlSchema,
   SENTRY_ENVIRONMENT: OptionalStringSchema,
   SENTRY_RELEASE: OptionalStringSchema,
+  // Server-only ElevenLabs realtime voice bootstrap. All three are optional;
+  // realtime session endpoints are registered only when all are configured.
+  ELEVENLABS_API_KEY: OptionalStringSchema,
+  ELEVENLABS_AGENT_ID: OptionalStringSchema,
+  ELEVENLABS_TOOL_SECRET: OptionalStringSchema,
 });
 
 export function parseApiEnv(input: Record<string, string | undefined>) {

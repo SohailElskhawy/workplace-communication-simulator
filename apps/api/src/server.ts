@@ -28,6 +28,8 @@ import { createPrismaVoiceRepository } from "./modules/voice/prisma-voice-reposi
 import { createVoiceService } from "./modules/voice/voice-service.js";
 import { createPrismaTtsRepository } from "./modules/tts/prisma-tts-repository.js";
 import { createTtsService } from "./modules/tts/tts-service.js";
+import { createElevenLabsProvider } from "./modules/realtime/elevenlabs-provider.js";
+import { createRealtimeVoiceService } from "./modules/realtime/realtime-service.js";
 
 const rootEnvPath = resolve(process.cwd(), "../../.env");
 if (existsSync(rootEnvPath)) {
@@ -70,10 +72,9 @@ const aiService = createAiService({
   ttsTimeoutMs: apiEnv.TTS_TIMEOUT_MS,
 });
 
-const attemptService = createAttemptService(
-  createPrismaAttemptRepository(prisma),
-  aiService,
-);
+const attemptRepository = createPrismaAttemptRepository(prisma);
+
+const attemptService = createAttemptService(attemptRepository, aiService);
 
 const evaluationService = createEvaluationService(
   createPrismaEvaluationRepository(prisma),
@@ -98,6 +99,25 @@ const ttsService = createTtsService(
   aiService,
 );
 
+// Realtime voice bootstrap: enabled only when all server-only ElevenLabs
+// settings are configured. Absent configuration leaves text/STT/TTS flows
+// untouched and the realtime endpoints unregistered.
+const elevenLabsToolSecret = apiEnv.ELEVENLABS_TOOL_SECRET;
+const realtimeVoiceService =
+  apiEnv.ELEVENLABS_API_KEY &&
+  apiEnv.ELEVENLABS_AGENT_ID &&
+  elevenLabsToolSecret
+    ? createRealtimeVoiceService({
+        repository: attemptRepository,
+        elevenLabsProvider: createElevenLabsProvider({
+          apiKey: apiEnv.ELEVENLABS_API_KEY,
+          agentId: apiEnv.ELEVENLABS_AGENT_ID,
+        }),
+        contextTokenSecret: elevenLabsToolSecret,
+        agentId: apiEnv.ELEVENLABS_AGENT_ID,
+      })
+    : undefined;
+
 const app = createApp({
   attemptService,
   authenticationMiddleware: createClerkAuthenticationMiddleware({
@@ -112,6 +132,9 @@ const app = createApp({
   userProvisioner,
   voiceService,
   ttsService,
+  ...(realtimeVoiceService && elevenLabsToolSecret
+    ? { realtimeVoiceService, elevenLabsToolSecret }
+    : {}),
   webOrigin: apiEnv.WEB_ORIGIN,
   logger,
   captureException,
@@ -139,4 +162,3 @@ const shutdown = (signal: string) => {
 
 process.on("SIGTERM", () => shutdown("SIGTERM"));
 process.on("SIGINT", () => shutdown("SIGINT"));
-

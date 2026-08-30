@@ -41,6 +41,8 @@ import { registerTtsRoutes } from "./modules/tts/tts-routes.js";
 import type { TtsService } from "./modules/tts/tts-service.js";
 import { registerVoiceRoutes } from "./modules/voice/voice-routes.js";
 import type { VoiceService } from "./modules/voice/voice-service.js";
+import { registerRealtimeVoiceRoutes } from "./modules/realtime/realtime-routes.js";
+import type { RealtimeVoiceService } from "./modules/realtime/realtime-service.js";
 
 export interface AuthenticatedAppDependencies {
   attemptService: AttemptService;
@@ -53,6 +55,8 @@ export interface AuthenticatedAppDependencies {
   userProvisioner: LocalUserProvisioner;
   voiceService: VoiceService;
   ttsService?: TtsService;
+  realtimeVoiceService?: RealtimeVoiceService;
+  elevenLabsToolSecret?: string;
   webOrigin: string;
   logger?: AppLogger;
   captureException?: (
@@ -157,6 +161,12 @@ export function createApp(dependencies: AuthenticatedAppDependencies): Express {
       app,
       dependencies as AuthenticatedAppDependencies & { ttsService: TtsService },
     );
+  if (dependencies.realtimeVoiceService && dependencies.elevenLabsToolSecret)
+    registerRealtimeVoiceRoutes(app, {
+      ...dependencies,
+      realtimeVoiceService: dependencies.realtimeVoiceService,
+      elevenLabsToolSecret: dependencies.elevenLabsToolSecret,
+    });
 
   app.use(notFoundHandler);
   app.use(

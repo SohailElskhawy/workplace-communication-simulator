@@ -884,3 +884,72 @@ POST /api/v1/attempts/:attemptId/evaluation
 ```
 
 Add voice, history, progress, comparison, and deletion after this slice works end-to-end.
+
+---
+
+## 27. Realtime Voice (backend bootstrap)
+
+Backend-only bootstrap for ElevenLabs realtime voice. No frontend consumes
+these endpoints yet. Enabled only when the server-only settings
+`ELEVENLABS_API_KEY`, `ELEVENLABS_AGENT_ID`, and `ELEVENLABS_TOOL_SECRET` are
+all configured; otherwise the endpoints are not registered.
+
+Existing text, STT, TTS, and evaluation flows are unchanged. No variation is
+selected by these endpoints: the attempt's persisted `variationId` is
+authoritative.
+
+### `POST /api/v1/attempts/:attemptId/realtime-session`
+
+Clerk-authenticated, owner-only.
+
+Rules:
+- attempt must belong to the user (`404 NOT_FOUND` otherwise);
+- attempt must be `ACTIVE` (`409 INVALID_ATTEMPT_STATE`);
+- unexpired (`409 SESSION_LIMIT_REACHED` when past `expiresAt`);
+- issues a short-lived ElevenLabs WebRTC conversation token server-side;
+- issues a short-lived signed context token bound to the attempt and user;
+- rate limited as an expensive AI request.
+
+Response (public scenario data only — never hidden persona, objective,
+counterpart, or prompt configuration):
+
+```json
+{
+  "data": {
+    "attemptId": "uuid",
+    "agentId": "elevenlabs-agent-id",
+    "conversationToken": "short-lived ElevenLabs WebRTC token",
+    "contextToken": "short-lived signed Kalemny context token",
+    "contextTokenExpiresAt": "...",
+    "scenario": {
+      "key": "salary-negotiation",
+      "version": 2,
+      "title": "Salary Negotiation"
+    },
+    "difficulty": "MEDIUM",
+    "openingMessage": "resolved from the attempt's stored variation",
+    "expiresAt": "..."
+  }
+}
+```
+
+Provider failures map to `AI_TIMEOUT` (504) / `AI_PROVIDER_ERROR` (502).
+
+### `POST /api/v1/realtime/scenario-context`
+
+ElevenLabs-agent-only. Not Clerk-authenticated. Protected by:
+
+```text
+x-kalemny-tool-secret: <ELEVENLABS_TOOL_SECRET>
+x-kalemny-context-token: <signed context token>
+```
+
+Missing or wrong tool secret returns `401 UNAUTHENTICATED`. Missing, invalid,
+expired, or attempt-less context tokens return `404 NOT_FOUND` without
+revealing why.
+
+The backend loads the attempt, resolves its stored `variationId`, difficulty,
+and scenario version server-side, and returns the hidden realtime roleplay
+context (the same content the text roleplay system prompt uses, including the
+variation counterpart brief and interview session plan). This response is for
+the voice agent only and must never be returned to the browser.
