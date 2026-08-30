@@ -50,8 +50,10 @@ export default function SimulationPage() {
 
   // In-conversation state
   const [composerText, setComposerText] = useState("");
-  const [composerInputMethod, setComposerInputMethod] =
-    useState<InputMethod>("TEXT");
+  // Persistent input mode (VOICE/TEXT). Independent of transient conversation
+  // state: once the learner picks VOICE it stays active across recording,
+  // transcription, review, send, and AI turns until they choose "Type instead".
+  const [inputMode, setInputMode] = useState<InputMethod>("TEXT");
   const [sendingTurn, setSendingTurn] = useState(false);
   const [pendingTurn, setPendingTurn] = useState<PendingTurnState | null>(null);
   const [pendingError, setPendingError] = useState<string | null>(null);
@@ -300,7 +302,9 @@ export default function SimulationPage() {
     const textToSend = (overrideText ?? composerText).trim();
     if (!textToSend || isComposerDisabled || !attemptId) return;
 
-    const inputMethod = overrideInputMethod ?? composerInputMethod;
+    // Per-turn input method reflects how this draft was produced (voice
+    // transcript vs typed text), not the persistent composer mode.
+    const inputMethod = overrideInputMethod ?? (hasVoiceDraft ? "VOICE" : "TEXT");
     const clientRequestId = `req_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     setPendingTurn({ clientRequestId, inputMethod, text: textToSend });
     setPendingError(null);
@@ -332,7 +336,6 @@ export default function SimulationPage() {
       });
 
       setPendingTurn(null);
-      setComposerInputMethod("TEXT");
       setTimeout(() => {
         textareaRef.current?.focus();
       }, 50);
@@ -532,12 +535,15 @@ export default function SimulationPage() {
             turnCount={attempt.turns.length}
             generalError={generalError}
             textareaRef={textareaRef}
+            inputMode={inputMode}
+            onInputModeChange={setInputMode}
+            hasVoiceDraft={hasVoiceDraft}
+            microphoneLevel={microphoneLevel}
             onChangeText={setComposerText}
             onSendTurn={() => void handleSendTurn()}
             onVoiceStatusChange={setVoiceStatus}
             onVoiceTranscriptReady={() => {
               setHasVoiceDraft(true);
-              setComposerInputMethod("VOICE");
             }}
             onMicrophoneLevelChange={setMicrophoneLevel}
           />

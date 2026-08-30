@@ -1,10 +1,12 @@
 "use client";
 
 import { useAuth } from "@clerk/nextjs";
+import type { InputMethod } from "@kalemny/contracts";
 import { MAX_TURN_TEXT_LENGTH } from "@kalemny/contracts";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 import { CloseIcon, MicIcon, RefreshIcon, SendIcon } from "@/components/icons";
+import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 import {
   MAX_RECORDING_DURATION_SECONDS,
   useVoiceRecorder,
@@ -22,6 +24,13 @@ export interface SimulationComposerProps {
   turnCount: number;
   generalError: string | null;
   textareaRef: React.RefObject<HTMLTextAreaElement | null>;
+  /** Persistent composer mode; owned by the simulation page, not this component. */
+  inputMode: InputMethod;
+  onInputModeChange: (mode: InputMethod) => void;
+  /** True while the current draft is an unreviewed voice transcript. */
+  hasVoiceDraft: boolean;
+  /** Live microphone level (0–1) from the active recording; 0 when idle. */
+  microphoneLevel: number;
   onChangeText: (text: string) => void;
   onSendTurn: () => void;
   onVoiceStatusChange: (
@@ -48,6 +57,10 @@ export function SimulationComposer({
   turnCount,
   generalError,
   textareaRef,
+  inputMode,
+  onInputModeChange,
+  hasVoiceDraft,
+  microphoneLevel,
   onChangeText,
   onSendTurn,
   onVoiceStatusChange,
@@ -56,12 +69,12 @@ export function SimulationComposer({
 }: SimulationComposerProps) {
   const { getToken } = useAuth();
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
-  const [showTextInput, setShowTextInput] = useState(false);
+  const prefersReducedMotion = usePrefersReducedMotion();
 
   const {
     status: voiceStatus,
     durationSeconds,
-    microphoneLevel,
+    microphoneLevel: activeMicrophoneLevel,
     errorMessage: voiceError,
     startRecording,
     stopAndTranscribe,
@@ -71,7 +84,8 @@ export function SimulationComposer({
     onTranscriptReady: (transcript) => {
       const trimmed = transcript.trim();
       if (!trimmed) return;
-      setShowTextInput(true);
+      // Stay in VOICE mode: the transcript lands in the review composer and
+      // the mode persists for the next turn.
       onVoiceTranscriptReady();
       onChangeText(
         composerText.trim() ? `${composerText.trim()} ${trimmed}` : trimmed,
@@ -96,14 +110,37 @@ export function SimulationComposer({
   const isTranscribing = voiceStatus === "transcribing";
   const isRequestingMic = voiceStatus === "requesting_permission";
   const isVoiceBusy = isRecording || isTranscribing || isRequestingMic;
+  const isTextInput = inputMode === "TEXT";
 
   useEffect(() => {
     onVoiceStatusChange(voiceStatus);
   }, [onVoiceStatusChange, voiceStatus]);
 
   useEffect(() => {
-    onMicrophoneLevelChange(microphoneLevel);
-  }, [microphoneLevel, onMicrophoneLevelChange]);
+    onMicrophoneLevelChange(activeMicrophoneLevel);
+  }, [activeMicrophoneLevel, onMicrophoneLevelChange]);
+
+  // Mic button reactivity while LISTENING: driven by the live level already
+  // produced by the recorder's own analyser — no extra stream or analyser.
+  // Suppressed under prefers-reduced-motion; resets with the recording
+  // lifecycle because the level returns to 0 on cleanup.
+  const clampedMicLevel = Math.min(1, Math.max(0, microphoneLevel));
+  const micReactive = isRecording && !prefersReducedMotion;
+  const micScale = micReactive ? 1 + clampedMicLevel * 0.1 : 1;
+  const micRingScale = micReactive ? 1 + clampedMicLevel * 0.35 : 1;
+  const micRingOpacity = micReactive ? 0.2 + clampedMicLevel * 0.5 : 0;
+
+  const handleRecordAgain = () => {
+    // Re-recording replaces the previous draft instead of appending to it.
+    onChangeText("");
+    void startRecording();
+  };
+
+  const switchToTextMode = () => {
+    if (isRecording) cancelRecording();
+    onInputModeChange("TEXT");
+    setTimeout(() => textareaRef.current?.focus(), 0);
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -220,20 +257,76 @@ export function SimulationComposer({
         }}
         className="mx-auto flex w-full max-w-2xl flex-col gap-3"
       >
-        {showTextInput ? (
+        {isTextInput ? (
           <>
             <div className="flex items-center justify-between gap-3 px-0.5">
               <span className="font-meta text-[10px] font-bold uppercase tracking-widest text-primary">
-                {composerText.trim()
+                {hasVoiceDraft && composerText.trim()
                   ? "Review before sending"
                   : "Type your response"}
               </span>
               <button
                 type="button"
-                onClick={() => setShowTextInput(false)}
+                onClick={() => onInputModeChange("VOICE")}
                 className="font-meta text-[10px] font-bold uppercase tracking-wider text-muted-foreground underline underline-offset-2 hover:text-foreground cursor-pointer"
               >
                 Use microphone
+              </button>
+            </div>
+            <div className="relative">
+              <label htmlFor="simulation-response-input" className="sr-only">
+                Type your response
+              </label>
+              <textarea
+                id="simulation-response-input"
+                ref={textareaRef}
+                rows={3}
+                value={composerText}
+                onChange={(e) =>
+                  onChangeText(e.target.value.slice(0, MAX_TURN_TEXT_LENGTH))
+                }
+                onKeyDown={handleKeyDown}
+                disabled={isComposerDisabled}
+                placeholder="Type or edit your response…"
+                className="w-full min-h-22 resize-none rounded-control border-2 border-border bg-surface-subtle p-3 pr-24 font-sans text-sm text-foreground placeholder:text-muted-foreground focus:bg-white focus:outline-none disabled:opacity-60"
+              />
+              <button
+                type="submit"
+                disabled={
+                  isComposerDisabled || isVoiceBusy || !composerText.trim()
+                }
+                className="absolute bottom-3 right-3 inline-flex h-10 items-center gap-1.5 rounded-control bg-primary px-3 text-primary-foreground border border-border disabled:opacity-40 cursor-pointer brutalist-shadow-sm"
+                aria-label="Send response"
+              >
+                {sendingTurn ? (
+                  <RefreshIcon className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <SendIcon className="h-3.5 w-3.5" />
+                )}
+                <span className="font-meta text-[10px] font-bold uppercase tracking-wider">
+                  Send
+                </span>
+              </button>
+            </div>
+          </>
+        ) : hasVoiceDraft ? (
+          <>
+            <div className="flex items-center justify-between gap-3 px-0.5">
+              <span className="font-meta text-[10px] font-bold uppercase tracking-widest text-primary">
+                Review before sending
+              </span>
+              <button
+                type="button"
+                onClick={handleRecordAgain}
+                disabled={isComposerDisabled || isVoiceBusy}
+                className="inline-flex items-center gap-1.5 rounded-control border-2 border-border bg-surface-solid px-2.5 py-1.5 font-meta text-[10px] font-bold uppercase tracking-wider text-foreground brutalist-shadow-sm cursor-pointer hover:bg-surface-subtle disabled:opacity-40"
+                aria-label="Discard this transcript and record again"
+              >
+                <MicIcon
+                  className="h-3.5 w-3.5 text-primary"
+                  aria-hidden="true"
+                />
+                Record again
               </button>
             </div>
             <div className="relative">
@@ -250,8 +343,8 @@ export function SimulationComposer({
                 }
                 onKeyDown={handleKeyDown}
                 disabled={isComposerDisabled}
-                placeholder="Type or edit your response…"
-                className="w-full min-h-[88px] resize-none rounded-control border-2 border-border bg-surface-subtle p-3 pr-24 font-sans text-sm text-foreground placeholder:text-muted-foreground focus:bg-white focus:outline-none disabled:opacity-60"
+                placeholder="Review or edit your spoken response…"
+                className="w-full min-h-22 resize-none rounded-control border-2 border-border bg-surface-subtle p-3 pr-24 font-sans text-sm text-foreground placeholder:text-muted-foreground focus:bg-white focus:outline-none disabled:opacity-60"
               />
               <button
                 type="submit"
@@ -274,35 +367,58 @@ export function SimulationComposer({
           </>
         ) : (
           <div className="flex flex-col items-center gap-2 text-center">
-            <button
-              type="button"
-              onClick={() => void startRecording()}
-              disabled={isComposerDisabled || isVoiceBusy}
-              className={cn(
-                "inline-flex min-h-14 items-center justify-center gap-3 rounded-control border-2 border-border bg-primary px-6 py-3 text-primary-foreground brutalist-interactive cursor-pointer disabled:opacity-40",
-                isRequestingMic && "animate-pulse",
+            <div className="relative inline-flex">
+              {micReactive && (
+                <>
+                  <span
+                    className="absolute inset-0 rounded-control border-2 border-alert/60 transition-all duration-100 ease-out"
+                    style={{
+                      transform: `scale(${micRingScale})`,
+                      opacity: micRingOpacity,
+                    }}
+                    aria-hidden="true"
+                  />
+                  <span
+                    className="absolute inset-0 rounded-control border-2 border-alert/40 transition-all duration-100 ease-out"
+                    style={{
+                      transform: `scale(${micRingScale * 1.2})`,
+                      opacity: micRingOpacity * 0.6,
+                    }}
+                    aria-hidden="true"
+                  />
+                </>
               )}
-              aria-label="Speak your response"
-            >
-              <MicIcon className="h-5 w-5" aria-hidden="true" />
-              <span className="font-display text-sm font-bold uppercase tracking-wider">
-                Tap to speak
-              </span>
-            </button>
+              <button
+                type="button"
+                onClick={() => void startRecording()}
+                disabled={isComposerDisabled || isVoiceBusy}
+                className={cn(
+                  "relative inline-flex min-h-14 items-center justify-center gap-3 rounded-control border-2 border-border bg-primary px-6 py-3 text-primary-foreground brutalist-interactive cursor-pointer disabled:opacity-40 transition-transform duration-100 ease-out",
+                  isRequestingMic && !prefersReducedMotion && "animate-pulse",
+                )}
+                style={
+                  micScale !== 1
+                    ? { transform: `scale(${micScale})` }
+                    : undefined
+                }
+                aria-label="Speak your response"
+              >
+                <MicIcon className="h-5 w-5" aria-hidden="true" />
+                <span className="font-display text-sm font-bold uppercase tracking-wider">
+                  {isRecording ? "Listening…" : "Tap to speak"}
+                </span>
+              </button>
+            </div>
             <p className="text-xs text-muted-foreground">
               Record up to 2 minutes, then review your words before sending.
             </p>
           </div>
         )}
 
-        {!showTextInput && (
+        {!isTextInput && (
           <button
             type="button"
-            onClick={() => {
-              if (isRecording) cancelRecording();
-              setShowTextInput(true);
-              setTimeout(() => textareaRef.current?.focus(), 0);
-            }}
+            onClick={switchToTextMode}
             disabled={isComposerDisabled}
             className="self-center font-meta text-[10px] font-bold uppercase tracking-wider text-muted-foreground underline underline-offset-2 hover:text-foreground disabled:opacity-40 cursor-pointer"
           >
@@ -316,7 +432,7 @@ export function SimulationComposer({
               ? `${turnCount} turns exchanged`
               : "Your response starts the conversation"}
           </span>
-          {showTextInput && (
+          {isTextInput && (
             <span
               className={cn(
                 "shrink-0 ml-2",

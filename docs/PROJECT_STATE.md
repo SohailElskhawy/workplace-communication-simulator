@@ -238,6 +238,8 @@ The August 29 audit follow-up hardened the remaining AI boundaries without start
 
 The web application now has optional scrubbed Sentry integration, global and authenticated-segment error/loading/not-found coverage, shared accessible route states, visible keyboard focus, reduced-motion behavior, responsive navigation and simulation layouts, semantic live error/progress announcements, and keyboard/focus-safe destructive confirmation dialogs. Voice continues to retain a complete text fallback.
 
+A follow-up conversation-mode fix made the composer input mode (`VOICE`/`TEXT`) a persistent page-level state independent of transient conversation state: once the learner selects VOICE it stays active across recording, transcription, review, send, AI thinking/speaking, and the next turn, and switches to TEXT only via the explicit "Type instead" action. The REVIEWING state keeps a one-click "Record again" microphone action, and the LISTENING microphone button now scales and pulses with the existing live microphone level (no extra stream or analyser, suppressed under `prefers-reduced-motion`). Per-turn `inputMethod` is derived from whether the sent draft originated from a voice transcript; STT/TTS/API/domain behavior is unchanged.
+
 Verified on August 29, 2026 with:
 
 ```text
