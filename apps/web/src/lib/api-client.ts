@@ -7,6 +7,7 @@ import {
   FinishAttemptResponseSchema,
   HistoryResponseSchema,
   ProgressResponseSchema,
+  RealtimeSessionResponseSchema,
   ScenarioDetailResponseSchema,
   ScenarioListResponseSchema,
   TranscriptionResponseSchema,
@@ -22,6 +23,7 @@ import {
   type ProgressData,
   type PublicScenarioDetail,
   type PublicScenarioSummary,
+  type RealtimeSessionResponse,
   type TranscriptionData,
   type TurnResponse,
 } from "@kalemny/contracts";
@@ -286,6 +288,25 @@ export function createApiClient(baseUrl: string) {
           method: "POST",
         },
         TurnResponseSchema,
+      );
+    },
+
+    /**
+     * Issues the short-lived ElevenLabs WebRTC conversation token and signed
+     * context token for the feature-flagged live conversation spike. Returns
+     * only public scenario data; hidden persona/prompt configuration is
+     * fetched by the voice agent through the tool-protected endpoint.
+     */
+    async createRealtimeSession(
+      token: string,
+      attemptId: string,
+    ): Promise<RealtimeSessionResponse["data"]> {
+      return request(
+        baseUrl,
+        `/api/v1/attempts/${encodeURIComponent(attemptId)}/realtime-session`,
+        token,
+        { method: "POST" },
+        RealtimeSessionResponseSchema,
       );
     },
 

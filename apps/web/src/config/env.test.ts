@@ -40,4 +40,29 @@ describe("parseWebEnv", () => {
       }),
     ).toMatchObject({ NEXT_PUBLIC_SENTRY_ENVIRONMENT: "staging" });
   });
+
+  it("treats the realtime voice flag as optional and boolean-like", () => {
+    expect(
+      parseWebEnv({
+        NEXT_PUBLIC_API_URL: "http://localhost:4000",
+        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_example",
+      }),
+    ).not.toHaveProperty("NEXT_PUBLIC_ENABLE_REALTIME_VOICE");
+
+    expect(
+      parseWebEnv({
+        NEXT_PUBLIC_API_URL: "http://localhost:4000",
+        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_example",
+        NEXT_PUBLIC_ENABLE_REALTIME_VOICE: "true",
+      }),
+    ).toMatchObject({ NEXT_PUBLIC_ENABLE_REALTIME_VOICE: true });
+
+    expect(
+      parseWebEnv({
+        NEXT_PUBLIC_API_URL: "http://localhost:4000",
+        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_example",
+        NEXT_PUBLIC_ENABLE_REALTIME_VOICE: "false",
+      }),
+    ).toMatchObject({ NEXT_PUBLIC_ENABLE_REALTIME_VOICE: false });
+  });
 });

@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^7.8.2",
+    "@elevenlabs/react": "^1.15.0",
     "@kalemny/contracts": "workspace:*",
     "@sentry/nextjs": "^10.71.0",
     "lucide-react": "^1.35.0",

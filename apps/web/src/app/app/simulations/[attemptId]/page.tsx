@@ -17,6 +17,7 @@ import {
   type SimulationUiState,
 } from "@/components/simulations/conversation-stage";
 import { FinishSimulationDialog } from "@/components/simulations/finish-simulation-dialog";
+import { LiveConversation } from "@/components/simulations/live-conversation";
 import { SimulationComposer } from "@/components/simulations/simulation-composer";
 import { SimulationHeader } from "@/components/simulations/simulation-header";
 import {
@@ -25,8 +26,14 @@ import {
 } from "@/components/simulations/transcript-drawer";
 import { ApiClientError, createApiClient } from "@/lib/api-client";
 import { isConversationInputDisabled } from "@/lib/conversation-input-state";
+import { isRealtimeVoiceEnabled } from "@/lib/feature-flags";
+import type { LiveConversationUiState } from "@/lib/live-conversation-state";
 import { isPersistedRoleplayFailure } from "@/lib/roleplay-recovery";
 import type { SpeechPlaybackStatus } from "@/lib/speech-playback-controller";
+
+// Build-time UI gate only; the backend endpoints remain separately gated by
+// the server-only ELEVENLABS_* settings.
+const realtimeVoiceEnabled = isRealtimeVoiceEnabled();
 
 export default function SimulationPage() {
   const params = useParams();
@@ -73,6 +80,11 @@ export default function SimulationPage() {
   const [microphoneLevel, setMicrophoneLevel] = useState(0);
   const [counterpartSpeechStatus, setCounterpartSpeechStatus] =
     useState<SpeechPlaybackStatus>("idle");
+
+  // Feature-flagged live conversation (ElevenLabs realtime spike).
+  const [liveActive, setLiveActive] = useState(false);
+  const [liveUiState, setLiveUiState] =
+    useState<LiveConversationUiState>("disconnected");
 
   // Timer and Expiry state
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -263,6 +275,10 @@ export default function SimulationPage() {
     isLimitReached,
     sendingTurn,
   });
+  // While a live session is starting or connected, the text/push-to-talk
+  // composer is gated so the two input paths never overlap. The underlying
+  // text flow itself is unchanged.
+  const composerDisabled = isComposerDisabled || liveActive;
 
   const latestAssistantMessage = useMemo(() => {
     const latestTurnWithReply = [...(attempt?.turns ?? [])]
@@ -277,6 +293,10 @@ export default function SimulationPage() {
   }, [attempt?.turns]);
 
   const simulationUiState = useMemo<SimulationUiState>(() => {
+    // Live conversation drives the shared orb while active.
+    if (liveUiState === "listening") return "LISTENING";
+    if (liveUiState === "speaking") return "AI_SPEAKING";
+    if (liveUiState === "connecting") return "AI_THINKING";
     if (sendingTurn) return "AI_THINKING";
     if (
       counterpartSpeechStatus === "loading" ||
@@ -293,18 +313,25 @@ export default function SimulationPage() {
     if (voiceStatus === "transcribing") return "TRANSCRIBING";
     if (hasVoiceDraft) return "REVIEWING";
     return "YOUR_TURN";
-  }, [counterpartSpeechStatus, hasVoiceDraft, sendingTurn, voiceStatus]);
+  }, [
+    counterpartSpeechStatus,
+    hasVoiceDraft,
+    liveUiState,
+    sendingTurn,
+    voiceStatus,
+  ]);
 
   const handleSendTurn = async (
     overrideText?: string,
     overrideInputMethod?: InputMethod,
   ) => {
     const textToSend = (overrideText ?? composerText).trim();
-    if (!textToSend || isComposerDisabled || !attemptId) return;
+    if (!textToSend || composerDisabled || !attemptId) return;
 
     // Per-turn input method reflects how this draft was produced (voice
     // transcript vs typed text), not the persistent composer mode.
-    const inputMethod = overrideInputMethod ?? (hasVoiceDraft ? "VOICE" : "TEXT");
+    const inputMethod =
+      overrideInputMethod ?? (hasVoiceDraft ? "VOICE" : "TEXT");
     const clientRequestId = `req_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     setPendingTurn({ clientRequestId, inputMethod, text: textToSend });
     setPendingError(null);
@@ -519,17 +546,27 @@ export default function SimulationPage() {
             turnCount={attempt.turns.length}
             uiState={simulationUiState}
             autoPlaySpeech={autoPlaySpeech && !finishing}
-            cancelSpeechPlayback={finishing}
+            cancelSpeechPlayback={finishing || liveActive}
             onSpeechStatusChange={setCounterpartSpeechStatus}
             microphoneLevel={microphoneLevel}
             onOpenTranscript={() => setTranscriptOpen(true)}
           />
 
+          {realtimeVoiceEnabled && (
+            <LiveConversation
+              attemptId={attempt.id}
+              startDisabled={isComposerDisabled || finishing}
+              onActiveChange={setLiveActive}
+              onUiStateChange={setLiveUiState}
+              onMicrophoneLevelChange={setMicrophoneLevel}
+            />
+          )}
+
           <SimulationComposer
             attemptId={attempt.id}
             composerText={composerText}
             sendingTurn={sendingTurn}
-            isComposerDisabled={isComposerDisabled}
+            isComposerDisabled={composerDisabled}
             isExpired={isExpired}
             isLimitReached={isLimitReached}
             turnCount={attempt.turns.length}

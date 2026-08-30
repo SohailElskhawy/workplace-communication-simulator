@@ -887,12 +887,20 @@ Add voice, history, progress, comparison, and deletion after this slice works en
 
 ---
 
-## 27. Realtime Voice (backend bootstrap)
+## 27. Realtime Voice (backend bootstrap + frontend spike)
 
-Backend-only bootstrap for ElevenLabs realtime voice. No frontend consumes
-these endpoints yet. Enabled only when the server-only settings
-`ELEVENLABS_API_KEY`, `ELEVENLABS_AGENT_ID`, and `ELEVENLABS_TOOL_SECRET` are
-all configured; otherwise the endpoints are not registered.
+Bootstrap for ElevenLabs realtime voice. The API side is enabled only when the
+server-only settings `ELEVENLABS_API_KEY`, `ELEVENLABS_AGENT_ID`, and
+`ELEVENLABS_TOOL_SECRET` are all configured; otherwise the endpoints are not
+registered.
+
+A feature-flagged frontend spike (`NEXT_PUBLIC_ENABLE_REALTIME_VOICE=true`)
+consumes the session endpoint from the simulation screen: it requests
+microphone permission, calls `realtime-session`, and starts the ElevenLabs
+WebRTC session with the returned `conversationToken` plus the public dynamic
+variables `opening_message` and `secret__kalemny_context_token`. The spike is
+presentation-only: no transcript persistence, no `ConversationTurn` creation,
+and no changes to text, STT, TTS, evaluation, or scoring flows.
 
 Existing text, STT, TTS, and evaluation flows are unchanged. No variation is
 selected by these endpoints: the attempt's persisted `variationId` is

@@ -304,4 +304,71 @@ describe("api-client", () => {
     );
     expect(result).toBe(audio);
   });
+
+  it("requests a realtime session and returns public session data", async () => {
+    const mockData = {
+      data: {
+        attemptId: "123e4567-e89b-12d3-a456-426614174000",
+        agentId: "agent_123",
+        conversationToken: "conversationToken",
+        contextToken: "contextToken",
+        contextTokenExpiresAt: "2026-08-30T12:10:00.000Z",
+        scenario: {
+          key: "salary-negotiation",
+          version: 2,
+          title: "Salary Negotiation",
+        },
+        difficulty: "MEDIUM",
+        openingMessage: "Thanks for making time to talk.",
+        expiresAt: "2026-08-30T12:30:00.000Z",
+      },
+    };
+
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => mockData,
+    } as Response);
+
+    const result = await client.createRealtimeSession(
+      token,
+      "123e4567-e89b-12d3-a456-426614174000",
+    );
+
+    expect(fetch).toHaveBeenCalledWith(
+      "https://api.test.kalemny.com/api/v1/attempts/123e4567-e89b-12d3-a456-426614174000/realtime-session",
+      expect.objectContaining({
+        headers: expect.any(Headers),
+        method: "POST",
+      }),
+    );
+    expect(result.conversationToken).toBe("conversationToken");
+    expect(result.contextToken).toBe("contextToken");
+    expect(result.openingMessage).toBe("Thanks for making time to talk.");
+  });
+
+  it("surfaces realtime session provider errors with stable codes", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: false,
+      status: 502,
+      json: async () => ({
+        error: {
+          code: "AI_PROVIDER_ERROR",
+          message: "The realtime provider is unavailable.",
+          requestId: "req-rt-1",
+        },
+      }),
+    } as Response);
+
+    await expect(
+      client.createRealtimeSession(
+        token,
+        "123e4567-e89b-12d3-a456-426614174000",
+      ),
+    ).rejects.toMatchObject({
+      name: "ApiClientError",
+      code: "AI_PROVIDER_ERROR",
+      status: 502,
+    });
+  });
 });

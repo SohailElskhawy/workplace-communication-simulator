@@ -9,6 +9,12 @@ const WebEnvSchema = z.object({
   ),
   NEXT_PUBLIC_SENTRY_ENVIRONMENT: z.string().trim().min(1).optional(),
   NEXT_PUBLIC_SENTRY_RELEASE: z.string().trim().min(1).optional(),
+  // UI-only gate for the ElevenLabs live conversation spike; never a secret.
+  NEXT_PUBLIC_ENABLE_REALTIME_VOICE: z.preprocess(
+    (value) =>
+      value === undefined ? undefined : value === "true" || value === "1",
+    z.boolean().optional(),
+  ),
 });
 
 export function parseWebEnv(input: Record<string, string | undefined>) {
@@ -23,5 +29,7 @@ export function getWebEnv() {
     NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
     NEXT_PUBLIC_SENTRY_ENVIRONMENT: process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT,
     NEXT_PUBLIC_SENTRY_RELEASE: process.env.NEXT_PUBLIC_SENTRY_RELEASE,
+    NEXT_PUBLIC_ENABLE_REALTIME_VOICE:
+      process.env.NEXT_PUBLIC_ENABLE_REALTIME_VOICE,
   });
 }
