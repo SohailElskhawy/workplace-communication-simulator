@@ -13,6 +13,7 @@
     "@clerk/nextjs": "^7.8.2",
     "@kalemny/contracts": "workspace:*",
     "@sentry/nextjs": "^10.71.0",
+    "lucide-react": "^1.35.0",
     "next": "16.3.3",
     "react": "19.2.8",
     "react-dom": "19.2.8",
