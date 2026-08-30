@@ -35,7 +35,7 @@ export const DEFAULT_MOCK_SCENARIOS: PublicScenarioSummary[] = [
     key: "behavioral-interview",
     version: 1,
     title: "Behavioral Job Interview",
-    category: "CAREER_MANAGEMENT",
+    category: "INTERVIEW",
     summary:
       "Practice answering challenging interview questions clearly and confidently using structured rationale.",
   },
@@ -43,7 +43,7 @@ export const DEFAULT_MOCK_SCENARIOS: PublicScenarioSummary[] = [
     key: "promotion-request",
     version: 1,
     title: "Asking for a Promotion",
-    category: "CAREER_MANAGEMENT",
+    category: "CAREER_GROWTH",
     summary:
       "Make a clear case for increased responsibility, compensation adjustment, and career progression.",
   },
@@ -51,7 +51,7 @@ export const DEFAULT_MOCK_SCENARIOS: PublicScenarioSummary[] = [
     key: "manager-pushback",
     version: 1,
     title: "Disagree with Your Manager",
-    category: "CONFLICT_RESOLUTION",
+    category: "MANAGING_UP",
     summary:
       "Push back constructively on unrealistic deadlines while protecting alignment and the working relationship.",
   },
@@ -134,19 +134,39 @@ export const FILTER_CATEGORIES = [
 ] as const;
 
 export function normalizeCategory(category: string): string {
-  const upper = category.toUpperCase().trim();
-  if (upper === "NEGOTIATION") return "NEGOTIATION";
-  if (upper === "CAREER_MANAGEMENT" || upper === "CAREER MANAGEMENT")
+  const upper = category.toUpperCase().trim().replace(/[\s-]+/g, "_");
+  if (upper === "NEGOTIATION" || upper === "SALARY_NEGOTIATION") {
+    return "NEGOTIATION";
+  }
+  if (
+    upper === "CAREER_MANAGEMENT" ||
+    upper === "CAREER_GROWTH" ||
+    upper === "INTERVIEW" ||
+    upper === "INTERVIEWS" ||
+    upper === "BEHAVIORAL_INTERVIEW" ||
+    upper === "CAREER"
+  ) {
     return "CAREER_MANAGEMENT";
+  }
   if (
     upper === "CONFLICT_RESOLUTION" ||
-    upper === "CONFLICT RESOLUTION" ||
     upper === "WORKPLACE_CONFLICT" ||
-    upper === "WORKPLACE CONFLICT"
-  )
+    upper === "MANAGING_UP" ||
+    upper === "MANAGER_PUSHBACK" ||
+    upper === "CONFLICT"
+  ) {
     return "CONFLICT_RESOLUTION";
-  if (upper === "FEEDBACK") return "FEEDBACK";
-  if (upper === "BOUNDARIES" || upper === "BOUNDARY") return "BOUNDARIES";
+  }
+  if (upper === "FEEDBACK" || upper === "DIFFICULT_FEEDBACK") {
+    return "FEEDBACK";
+  }
+  if (
+    upper === "BOUNDARIES" ||
+    upper === "BOUNDARY" ||
+    upper === "SCOPE_CREEP"
+  ) {
+    return "BOUNDARIES";
+  }
   return upper;
 }
 
@@ -286,7 +306,7 @@ export function ScenarioLibraryView({
       {/* Filter Row */}
       <section
         aria-label="Filter scenarios by category"
-        className="mb-8 sm:mb-12 flex items-center gap-2.5 sm:gap-3 overflow-x-auto pb-3 scrollbar-none [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        className="mb-8 sm:mb-12 flex items-center gap-2.5 sm:gap-3 overflow-x-auto pt-2 pb-4 px-1.5 -mx-1.5 scrollbar-none [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
       >
         {FILTER_CATEGORIES.map((category) => {
           const isActive = selectedFilter === category.key;
@@ -297,10 +317,10 @@ export function ScenarioLibraryView({
               onClick={() => setSelectedFilter(category.key)}
               aria-pressed={isActive}
               className={cn(
-                "shrink-0 px-5 sm:px-6 py-2 rounded-full border border-border font-meta text-xs sm:text-sm transition-all cursor-pointer select-none",
+                "shrink-0 px-5 sm:px-6 py-2.5 rounded-full border border-border font-meta text-xs sm:text-sm transition-all duration-200 ease-out cursor-pointer select-none",
                 isActive
                   ? "bg-primary text-primary-foreground font-bold shadow-[4px_4px_0px_0px_#1a1a1a] -translate-x-0.5 -translate-y-0.5"
-                  : "bg-surface-solid text-foreground font-medium hover:bg-surface-subtle",
+                  : "bg-surface-solid text-foreground font-medium hover:bg-surface-subtle hover:text-foreground",
               )}
             >
               {category.label}
@@ -315,7 +335,7 @@ export function ScenarioLibraryView({
           {(() => {
             const meta = getScenarioMeta(featuredScenario);
             return (
-              <div className="relative glass-surface rounded-card p-6 sm:p-8 md:p-10 flex flex-col md:flex-row gap-6 md:gap-8 items-center group transition-all duration-300 hover:shadow-[8px_8px_0px_0px_#1a1a1a] hover:-translate-x-0.5 hover:-translate-y-0.5 overflow-hidden">
+              <div className="relative glass-surface rounded-card p-6 sm:p-8 md:p-10 flex flex-col md:flex-row gap-6 md:gap-8 items-center group transition-all duration-200 ease-out hover:shadow-[8px_8px_0px_0px_#1a1a1a] hover:-translate-x-0.5 hover:-translate-y-0.5 overflow-hidden">
                 {/* Popular Starting Point Badge */}
                 <div className="absolute top-0 right-0 bg-success text-success-foreground font-meta text-[11px] sm:text-xs px-4 py-1.5 rounded-bl-card rounded-tr-card border-b border-l border-border uppercase tracking-wider font-bold shadow-2xs">
                   Popular Starting Point
@@ -365,7 +385,7 @@ export function ScenarioLibraryView({
 
                   <Link
                     href={`/app/scenarios/${encodeURIComponent(featuredScenario.key)}`}
-                    className="inline-flex items-center gap-2 rounded-control bg-primary px-6 sm:px-8 py-3.5 sm:py-4 font-display text-xs sm:text-sm font-bold uppercase tracking-wide text-primary-foreground border border-border brutalist-shadow hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+                    className="inline-flex items-center gap-2 rounded-control bg-primary px-6 sm:px-8 py-3.5 sm:py-4 font-display text-xs sm:text-sm font-bold uppercase tracking-wide text-primary-foreground border border-border shadow-[4px_4px_0px_0px_#1a1a1a] hover:shadow-[2px_2px_0px_0px_#1a1a1a] hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none active:translate-x-1 active:translate-y-1 transition-all duration-200 ease-out"
                   >
                     Start Simulation
                     <ArrowRightIcon className="w-4 h-4" />
@@ -386,7 +406,7 @@ export function ScenarioLibraryView({
               return (
                 <article
                   key={scenario.key}
-                  className="relative glass-surface rounded-card p-6 flex flex-col group transition-all duration-300 hover:shadow-[6px_6px_0px_0px_#1a1a1a] hover:-translate-x-0.5 hover:-translate-y-0.5"
+                  className="relative glass-surface rounded-card p-6 flex flex-col group transition-all duration-200 ease-out hover:shadow-[6px_6px_0px_0px_#1a1a1a] hover:-translate-x-0.5 hover:-translate-y-0.5"
                 >
                   {/* Card Visual Header */}
                   <div
@@ -410,7 +430,7 @@ export function ScenarioLibraryView({
                   </div>
 
                   {/* Title */}
-                  <h3 className="font-display text-lg sm:text-xl font-bold uppercase tracking-tight text-foreground mb-3 leading-snug">
+                  <h3 className="font-display text-lg sm:text-xl font-bold uppercase tracking-tight text-foreground mb-3 leading-snug group-hover:text-primary transition-colors duration-200">
                     {scenario.title}
                   </h3>
 
@@ -449,7 +469,7 @@ export function ScenarioLibraryView({
           <button
             type="button"
             onClick={() => setSelectedFilter("ALL")}
-            className="px-6 py-2.5 rounded-control bg-surface-solid border border-border font-meta text-xs font-bold text-foreground brutalist-shadow-sm hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all cursor-pointer"
+            className="px-6 py-2.5 rounded-control bg-surface-solid border border-border font-meta text-xs font-bold text-foreground shadow-[2px_2px_0px_0px_#1a1a1a] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all duration-200 ease-out cursor-pointer"
           >
             Show All Scenarios
           </button>
@@ -475,7 +495,7 @@ export function ScenarioLibraryView({
           </p>
           <Link
             href="/app/scenarios/salary-negotiation"
-            className="relative z-10 px-6 sm:px-8 py-3.5 sm:py-4 bg-surface-solid text-foreground font-display text-xs sm:text-sm font-bold uppercase tracking-wider border border-border brutalist-shadow hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all inline-flex items-center gap-2 rounded-control"
+            className="relative z-10 px-6 sm:px-8 py-3.5 sm:py-4 bg-surface-solid text-foreground font-display text-xs sm:text-sm font-bold uppercase tracking-wider border border-border shadow-[4px_4px_0px_0px_#1a1a1a] hover:shadow-[2px_2px_0px_0px_#1a1a1a] hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none active:translate-x-1 active:translate-y-1 transition-all duration-200 ease-out inline-flex items-center gap-2 rounded-control"
           >
             Try Salary Negotiation
             <PlayIcon className="w-3.5 h-3.5 fill-foreground" />

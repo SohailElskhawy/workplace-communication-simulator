@@ -44,13 +44,13 @@ export function SimulationHeader({
   onOpenFinishDialog,
 }: SimulationHeaderProps) {
   return (
-    <header className="sticky top-0 z-30 border-b border-border bg-surface/90 backdrop-blur-md px-4 sm:px-6 py-3 shadow-xs">
+    <header className="shrink-0 border-b border-border bg-surface/90 backdrop-blur-md px-4 sm:px-6 py-3 shadow-xs">
       <div className="flex items-center justify-between gap-4">
         {/* Left: Back Link & Scenario Info */}
         <div className="flex items-center gap-3">
           <Link
             href="/app"
-            className="flex h-9 w-9 items-center justify-center rounded-control border border-border bg-surface-solid text-muted-foreground hover:text-foreground hover:bg-surface-subtle brutalist-shadow-sm transition-all cursor-pointer"
+            className="flex h-9 w-9 items-center justify-center rounded-control border border-border bg-surface-solid text-muted-foreground hover:text-foreground hover:bg-surface-subtle shadow-[2px_2px_0px_0px_#1a1a1a] hover:shadow-none hover:translate-x-px hover:translate-y-px transition-all duration-200 ease-out cursor-pointer"
             aria-label="Back to scenarios"
           >
             <ArrowLeftIcon className="w-4 h-4" />
@@ -76,7 +76,7 @@ export function SimulationHeader({
             type="button"
             onClick={onToggleAutoPlay}
             className={cn(
-              "inline-flex items-center gap-1.5 font-meta text-xs px-2.5 py-1.5 rounded-control border transition-all cursor-pointer",
+              "inline-flex items-center gap-1.5 font-meta text-xs px-2.5 py-1.5 rounded-control border transition-all duration-200 ease-out cursor-pointer",
               autoPlaySpeech
                 ? "bg-primary/10 border-primary text-primary font-bold shadow-2xs"
                 : "bg-surface-subtle border-border/40 text-muted-foreground hover:text-foreground",

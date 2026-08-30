@@ -371,7 +371,7 @@ export default function DashboardPage() {
             return (
               <article
                 key={scenario.key}
-                className="glass-surface rounded-card p-6 flex flex-col justify-between border border-border shadow-xs hover:shadow-[4px_4px_0px_0px_#1a1a1a] hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all group"
+                className="glass-surface rounded-card p-6 flex flex-col justify-between border border-border shadow-xs hover:shadow-[4px_4px_0px_0px_#1a1a1a] hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all duration-200 ease-out group"
               >
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-2.5">
@@ -383,7 +383,7 @@ export default function DashboardPage() {
                     </span>
                   </div>
 
-                  <h3 className="font-display text-base sm:text-lg font-bold uppercase tracking-tight text-foreground group-hover:text-primary transition-colors mb-2">
+                  <h3 className="font-display text-base sm:text-lg font-bold uppercase tracking-tight text-foreground group-hover:text-primary transition-colors duration-200 mb-2">
                     {scenario.title}
                   </h3>
 
@@ -451,7 +451,7 @@ export default function DashboardPage() {
               return (
                 <div
                   key={item.attemptId}
-                  className="glass-surface rounded-card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-border shadow-xs hover:shadow-[2px_2px_0px_0px_#1a1a1a] transition-all"
+                  className="glass-surface rounded-card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-border shadow-xs hover:shadow-[2px_2px_0px_0px_#1a1a1a] transition-all duration-200 ease-out"
                 >
                   <div className="space-y-1.5">
                     <div className="flex flex-wrap items-center gap-2">

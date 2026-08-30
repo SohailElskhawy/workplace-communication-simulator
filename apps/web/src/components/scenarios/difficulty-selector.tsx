@@ -64,10 +64,10 @@ export function DifficultySelector({
               type="button"
               onClick={() => onSelectDifficulty(diffKey)}
               className={cn(
-                "glass-surface rounded-card p-5 text-left border transition-all relative flex flex-col justify-between cursor-pointer",
+                "glass-surface rounded-card p-5 text-left border transition-all duration-200 ease-out relative flex flex-col justify-between cursor-pointer select-none",
                 isSelected
-                  ? "border-2 border-primary bg-primary/5 shadow-[4px_4px_0px_0px_#1a1a1a]"
-                  : "border-border shadow-xs hover:border-border/80 hover:translate-x-0.5 hover:translate-y-0.5",
+                  ? "border-2 border-primary bg-primary/5 shadow-[4px_4px_0px_0px_#1a1a1a] -translate-x-0.5 -translate-y-0.5"
+                  : "border-border shadow-xs hover:border-border/80 hover:shadow-[2px_2px_0px_0px_#1a1a1a] hover:translate-x-0.5 hover:translate-y-0.5",
               )}
             >
               <div>

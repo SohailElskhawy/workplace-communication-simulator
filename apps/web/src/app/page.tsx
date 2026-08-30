@@ -466,7 +466,7 @@ export default function LandingPage() {
               return (
                 <article
                   key={scenario.key}
-                  className="glass-surface rounded-card p-6 flex flex-col justify-between border border-border shadow-[4px_4px_0px_0px_#1a1a1a] hover:shadow-[6px_6px_0px_0px_#1a1a1a] hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all group"
+                  className="glass-surface rounded-card p-6 flex flex-col justify-between border border-border shadow-[4px_4px_0px_0px_#1a1a1a] hover:shadow-[6px_6px_0px_0px_#1a1a1a] hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all duration-200 ease-out group"
                 >
                   <div>
                     <div className="flex items-center justify-between gap-2 mb-3">
@@ -478,7 +478,7 @@ export default function LandingPage() {
                       </span>
                     </div>
 
-                    <h3 className="font-display text-lg sm:text-xl font-bold uppercase tracking-tight text-foreground group-hover:text-primary transition-colors mb-2">
+                    <h3 className="font-display text-lg sm:text-xl font-bold uppercase tracking-tight text-foreground group-hover:text-primary transition-colors duration-200 mb-2">
                       {scenario.title}
                     </h3>
 

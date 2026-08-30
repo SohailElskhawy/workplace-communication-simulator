@@ -87,7 +87,7 @@ export function HistoryItemCard({
   return (
     <div
       className={cn(
-        "glass-surface rounded-card p-6 md:p-7 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border shadow-[4px_4px_0px_0px_#1a1a1a] hover:shadow-[2px_2px_0px_0px_#1a1a1a] hover:translate-x-0.5 hover:translate-y-0.5 transition-all",
+        "glass-surface rounded-card p-6 md:p-7 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border shadow-[4px_4px_0px_0px_#1a1a1a] hover:shadow-[2px_2px_0px_0px_#1a1a1a] hover:translate-x-0.5 hover:translate-y-0.5 transition-all duration-200 ease-out",
         isFailed && "border-l-4 border-l-[#ffb3b0] bg-[#ffb3b0]/5",
         isRetry && !isFailed && "border-l-4 border-l-primary",
       )}

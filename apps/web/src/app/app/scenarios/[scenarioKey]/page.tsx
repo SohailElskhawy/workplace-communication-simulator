@@ -13,6 +13,8 @@ import { ScenarioBriefingCard } from "@/components/scenarios/scenario-briefing-c
 import { ScenarioHeroGraphic } from "@/components/scenarios/scenario-hero-graphic";
 import { ApiClientError, createApiClient } from "@/lib/api-client";
 
+import { getScenarioMeta } from "../../scenario-library-view";
+
 export default function ScenarioDetailPage() {
   const params = useParams();
   const rawKey = params?.scenarioKey;
@@ -175,7 +177,7 @@ export default function ScenarioDetailPage() {
         </Link>
         <span className="text-border/40 font-meta text-xs">/</span>
         <span className="font-meta text-xs uppercase tracking-widest text-primary font-bold">
-          {scenario.category}
+          {getScenarioMeta(scenario).categoryLabel}
         </span>
       </nav>
 

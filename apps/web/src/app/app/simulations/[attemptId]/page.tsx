@@ -231,7 +231,7 @@ export default function SimulationPage() {
         "Thanks for taking the call. We've decided we really need the analytics dashboard and multi-currency export included in this sprint before launch.",
     };
     return defaults[key] ?? null;
-  }, [attempt?.scenario]);
+  }, [attempt]);
 
   const isLimitReached = (attempt?.turns.length ?? 0) >= 20;
   const isComposerDisabled =
@@ -366,7 +366,7 @@ export default function SimulationPage() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] max-w-container-max mx-auto bg-surface-solid border-x border-border shadow-xs font-sans">
+    <div className="flex flex-col h-[calc(100vh-8.5rem)] min-h-145 w-full max-w-container-max mx-auto rounded-card border border-border bg-surface-solid shadow-[4px_4px_0px_0px_#1a1a1a] overflow-hidden font-sans">
       {/* 1. Header */}
       <SimulationHeader
         scenarioTitle={attempt.scenario.title}
