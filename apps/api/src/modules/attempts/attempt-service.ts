@@ -129,6 +129,25 @@ export type FinishAttemptRepositoryResult =
   | { kind: "not_found" }
   | { kind: "rejected"; code: AttemptErrorCode };
 
+export interface RoleplayContextTurn {
+  sequence: number;
+  userText: string;
+  assistantText: string;
+}
+
+export interface RoleplayContextRecord {
+  difficulty: Difficulty;
+  variationId: string | null;
+  scenarioDefinition: unknown;
+  previousTurns: RoleplayContextTurn[];
+}
+
+export interface FindRoleplayContextInput {
+  attemptId: string;
+  userId: string;
+  beforeSequence: number;
+}
+
 export interface AttemptRepository {
   createAttempt(
     input: CreateAttemptRepositoryInput,
@@ -137,6 +156,15 @@ export interface AttemptRepository {
     attemptId: string,
     userId: string,
   ): Promise<AttemptRecord | null>;
+  /**
+   * Loads only the data required to build the roleplay prompt for the next
+   * turn: difficulty, variation, scenario definition, and completed turns
+   * before `beforeSequence`. Avoids loading the full attempt aggregate
+   * (evaluation, comparison, every turn) on each conversation turn.
+   */
+  findRoleplayContext(
+    input: FindRoleplayContextInput,
+  ): Promise<RoleplayContextRecord | null>;
   createTurn(
     input: CreateTurnRepositoryInput,
   ): Promise<CreateTurnRepositoryResult>;
@@ -249,32 +277,23 @@ export function createAttemptService(
     attemptId: string,
     turn: ConversationTurnRecord,
   ): Promise<ConversationTurn> {
-    const attempt = await repository.findOwnedAttempt(attemptId, userId);
-    if (!attempt) throw new AttemptError("NOT_FOUND");
+    const context = await repository.findRoleplayContext({
+      attemptId,
+      userId,
+      beforeSequence: turn.sequence,
+    });
+    if (!context) throw new AttemptError("NOT_FOUND");
 
     const scenario = ScenarioDefinitionSchema.parse(
-      attempt.scenario.definition,
+      context.scenarioDefinition,
     );
-    const variation = resolveScenarioVariation(scenario, attempt.variationId);
-    const previousTurns = attempt.turns
-      .filter(
-        (previousTurn) =>
-          previousTurn.sequence < turn.sequence &&
-          previousTurn.status === "COMPLETED" &&
-          previousTurn.assistantText !== null,
-      )
-      .sort((left, right) => left.sequence - right.sequence)
-      .map((previousTurn) => ({
-        sequence: previousTurn.sequence,
-        userText: previousTurn.userText,
-        assistantText: previousTurn.assistantText as string,
-      }));
+    const variation = resolveScenarioVariation(scenario, context.variationId);
 
     try {
       const reply = await aiService.generateRoleplayReply({
         scenario,
-        difficulty: attempt.difficulty,
-        previousTurns,
+        difficulty: context.difficulty,
+        previousTurns: context.previousTurns,
         latestLearnerMessage: turn.userText,
         variation,
       });

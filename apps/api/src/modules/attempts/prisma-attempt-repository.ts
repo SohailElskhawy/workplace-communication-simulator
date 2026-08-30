@@ -181,6 +181,45 @@ export function createPrismaAttemptRepository(
       return attempt ? mapAttempt(attempt) : null;
     },
 
+    async findRoleplayContext({ attemptId, userId, beforeSequence }) {
+      const attempt = await prisma.simulationAttempt.findFirst({
+        where: { id: attemptId, userId },
+        select: {
+          difficulty: true,
+          variationId: true,
+          scenario: { select: { definition: true } },
+          conversationTurns: {
+            where: {
+              sequence: { lt: beforeSequence },
+              status: "COMPLETED",
+              assistantText: { not: null },
+            },
+            orderBy: { sequence: "asc" },
+            select: {
+              sequence: true,
+              userText: true,
+              assistantText: true,
+            },
+          },
+        },
+      });
+
+      if (!attempt) {
+        return null;
+      }
+
+      return {
+        difficulty: attempt.difficulty,
+        variationId: attempt.variationId,
+        scenarioDefinition: attempt.scenario.definition,
+        previousTurns: attempt.conversationTurns.map((turn) => ({
+          sequence: turn.sequence,
+          userText: turn.userText,
+          assistantText: turn.assistantText as string,
+        })),
+      };
+    },
+
     async createTurn(input) {
       const existing = await prisma.conversationTurn.findFirst({
         where: {
@@ -353,51 +392,48 @@ export function createPrismaAttemptRepository(
 
     finalizeRoleplayTurn(input) {
       return prisma.$transaction(async (transaction) => {
-        const owned = await lockOwnedAttempt(
-          transaction,
-          input.attemptId,
-          input.userId,
-        );
-        if (!owned) return { kind: "not_found" } as const;
+        // Single conditional UPDATE: atomically transitions the PENDING turn
+        // and verifies ownership in one round trip instead of locking the
+        // attempt row and re-reading the turn first.
+        const rows = await transaction.$queryRaw<
+          Array<PrismaTurnRecord>
+        >`
+          UPDATE "ConversationTurn" AS turn
+          SET "assistantText" = ${input.assistantText},
+              "status" = CAST(${input.turnStatus} AS "TurnStatus"),
+              "completedAt" = ${input.completedAt}
+          FROM "SimulationAttempt" AS attempt
+          WHERE turn."id" = CAST(${input.turnId} AS UUID)
+            AND turn."attemptId" = attempt."id"
+            AND attempt."userId" = CAST(${input.userId} AS UUID)
+            AND turn."status" = 'PENDING'
+          RETURNING "id", "sequence", "clientRequestId", "inputMethod",
+                    "userText", "assistantText", "status", "createdAt",
+                    "completedAt"
+        `;
 
-        const turn = await transaction.conversationTurn.findFirst({
-          where: {
-            id: input.turnId,
+        const [updatedTurn] = rows;
+        if (!updatedTurn) {
+          return { kind: "not_found" } as const;
+        }
+
+        await transaction.aiUsageEvent.create({
+          data: {
+            userId: input.userId,
             attemptId: input.attemptId,
-            status: "PENDING",
+            operation: "ROLEPLAY",
+            provider: input.usage.provider,
+            model: input.usage.model,
+            status: input.usage.status,
+            latencyMs: input.usage.latencyMs,
+            inputTokens: input.usage.inputTokens,
+            outputTokens: input.usage.outputTokens,
+            estimatedCost: input.usage.estimatedCost,
+            errorCode: input.usage.errorCode,
           },
-          select: { id: true },
         });
-        if (!turn) return { kind: "not_found" } as const;
 
-        const [updated] = await Promise.all([
-          transaction.conversationTurn.update({
-            where: { id: turn.id },
-            data: {
-              assistantText: input.assistantText,
-              status: input.turnStatus,
-              completedAt: input.completedAt,
-            },
-            select: turnSelection,
-          }),
-          transaction.aiUsageEvent.create({
-            data: {
-              userId: input.userId,
-              attemptId: input.attemptId,
-              operation: "ROLEPLAY",
-              provider: input.usage.provider,
-              model: input.usage.model,
-              status: input.usage.status,
-              latencyMs: input.usage.latencyMs,
-              inputTokens: input.usage.inputTokens,
-              outputTokens: input.usage.outputTokens,
-              estimatedCost: input.usage.estimatedCost,
-              errorCode: input.usage.errorCode,
-            },
-          }),
-        ]);
-
-        return { kind: "updated", turn: mapTurn(updated) } as const;
+        return { kind: "updated", turn: mapTurn(updatedTurn) } as const;
       });
     },
 

@@ -135,6 +135,29 @@ function createMemoryRepository(
       return { ...attempt, comparison };
     },
 
+    async findRoleplayContext({ attemptId, userId, beforeSequence }) {
+      const attempt = attempts.get(attemptId);
+      if (!attempt || attempt.userId !== userId) return null;
+      return {
+        difficulty: attempt.difficulty,
+        variationId: attempt.variationId,
+        scenarioDefinition: attempt.scenario.definition,
+        previousTurns: attempt.turns
+          .filter(
+            (candidate) =>
+              candidate.sequence < beforeSequence &&
+              candidate.status === "COMPLETED" &&
+              candidate.assistantText !== null,
+          )
+          .sort((left, right) => left.sequence - right.sequence)
+          .map((candidate) => ({
+            sequence: candidate.sequence,
+            userText: candidate.userText,
+            assistantText: candidate.assistantText as string,
+          })),
+      };
+    },
+
     async createTurn(input) {
       const attempt = attempts.get(input.attemptId);
       if (!attempt || attempt.userId !== input.userId) {

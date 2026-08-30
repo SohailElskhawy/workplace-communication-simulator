@@ -47,11 +47,72 @@ describe("OpenRouterProvider", () => {
     expect(body).toMatchObject({
       model: request.model,
       stream: false,
-      max_tokens: 2_000,
+      max_tokens: 700,
       provider: { zdr: true, data_collection: "deny" },
     });
     expect(body).not.toHaveProperty("models");
     expect(body).not.toHaveProperty("route");
+  });
+
+  it("logs safe AI request telemetry without exposing transcript content", async () => {
+    const logger = {
+      error: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+    };
+    const provider = createOpenRouterProvider({
+      apiKey: "secret-api-key",
+      logger,
+      fetchImplementation: vi.fn<typeof fetch>().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            choices: [{ message: { content: "A concise reply." } }],
+            usage: { prompt_tokens: 42, completion_tokens: 7, cost: 0.00009 },
+          }),
+          { status: 200 },
+        ),
+      ),
+    });
+
+    await provider.generateRoleplayReply(request);
+
+    expect(logger.info).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: "ai_request_completed",
+        operation: "ROLEPLAY",
+        model: request.model,
+        latencyMs: expect.any(Number),
+        inputTokens: 42,
+        outputTokens: 7,
+        estimatedCost: 0.00009,
+      }),
+    );
+
+    const failingProvider = createOpenRouterProvider({
+      apiKey: "secret-api-key",
+      logger,
+      fetchImplementation: vi
+        .fn<typeof fetch>()
+        .mockResolvedValue(new Response("upstream failure", { status: 500 })),
+    });
+
+    await expect(
+      failingProvider.generateRoleplayReply(request),
+    ).rejects.toBeInstanceOf(AiProviderError);
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: "ai_request_failed",
+        operation: "ROLEPLAY",
+        model: request.model,
+        errorCode: "AI_PROVIDER_ERROR",
+      }),
+    );
+
+    const loggedPayload = JSON.stringify([
+      ...logger.info.mock.calls,
+      ...logger.warn.mock.calls,
+    ]);
+    expect(loggedPayload).not.toContain("private learner text");
   });
 
   it.each([

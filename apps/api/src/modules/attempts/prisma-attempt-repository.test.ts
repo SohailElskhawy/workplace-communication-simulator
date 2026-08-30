@@ -66,11 +66,7 @@ describe("Prisma attempt repository race recovery", () => {
       completedAt: input.currentTime,
     };
     const transaction = {
-      $queryRaw: vi.fn().mockResolvedValue([{ id: input.attemptId }]),
-      conversationTurn: {
-        findFirst: vi.fn().mockResolvedValue({ id: existingTurn.id }),
-        update: vi.fn().mockResolvedValue(completedTurn),
-      },
+      $queryRaw: vi.fn().mockResolvedValue([completedTurn]),
       aiUsageEvent: {
         create: vi.fn().mockResolvedValue({ id: "usage-event-id" }),
       },
@@ -110,6 +106,80 @@ describe("Prisma attempt repository race recovery", () => {
         status: "SUCCESS",
         errorCode: null,
       }),
+    });
+  });
+
+  it("returns not_found without storing usage when no pending turn matches", async () => {
+    const transaction = {
+      $queryRaw: vi.fn().mockResolvedValue([]),
+      aiUsageEvent: {
+        create: vi.fn(),
+      },
+    };
+    const prisma = {
+      $transaction: vi.fn(
+        async (callback: (client: typeof transaction) => Promise<unknown>) =>
+          callback(transaction),
+      ),
+    } as unknown as PrismaClient;
+    const repository = createPrismaAttemptRepository(prisma);
+
+    await expect(
+      repository.finalizeRoleplayTurn({
+        attemptId: input.attemptId,
+        userId: input.userId,
+        turnId: existingTurn.id,
+        assistantText: "Assistant response",
+        turnStatus: "COMPLETED",
+        completedAt: input.currentTime,
+        usage: {
+          provider: "openrouter",
+          model: "deepseek/deepseek-v4-flash-0731",
+          status: "SUCCESS",
+          latencyMs: 100,
+          inputTokens: 40,
+          outputTokens: 8,
+          estimatedCost: null,
+          errorCode: null,
+        },
+      }),
+    ).resolves.toEqual({ kind: "not_found" });
+    expect(transaction.aiUsageEvent.create).not.toHaveBeenCalled();
+  });
+
+  it("loads only the roleplay context needed to build the prompt", async () => {
+    const previousTurn = {
+      sequence: 1,
+      userText: "First learner message",
+      assistantText: "First assistant reply",
+    };
+    const findFirst = vi.fn().mockResolvedValue({
+      difficulty: "MEDIUM",
+      variationId: "tight-budget",
+      scenario: { definition: { marker: "definition" } },
+      conversationTurns: [previousTurn],
+    });
+    const prisma = {
+      simulationAttempt: { findFirst },
+    } as unknown as PrismaClient;
+    const repository = createPrismaAttemptRepository(prisma);
+
+    const context = await repository.findRoleplayContext({
+      attemptId: input.attemptId,
+      userId: input.userId,
+      beforeSequence: 2,
+    });
+
+    expect(findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: input.attemptId, userId: input.userId },
+      }),
+    );
+    expect(context).toEqual({
+      difficulty: "MEDIUM",
+      variationId: "tight-budget",
+      scenarioDefinition: { marker: "definition" },
+      previousTurns: [previousTurn],
     });
   });
 

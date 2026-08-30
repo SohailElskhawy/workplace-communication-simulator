@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import type { AppLogger } from "../../infrastructure/logging/logger.js";
 import type {
   EvaluationMessage,
   RawAiEvaluation,
@@ -28,7 +29,7 @@ const OpenRouterResponseSchema = z.object({
     .optional(),
 });
 
-const ROLEPLAY_MAX_OUTPUT_TOKENS = 2_000;
+const ROLEPLAY_MAX_OUTPUT_TOKENS = 700;
 const EVALUATION_MAX_OUTPUT_TOKENS = 12_000;
 const ROLEPLAY_MAX_RESPONSE_CHARS = 1_600;
 const EVALUATION_MAX_RESPONSE_CHARS = 120_000;
@@ -125,8 +126,11 @@ export interface OpenRouterProvider {
   ): Promise<OpenRouterSpeechResult>;
 }
 
+type AiOperationName = "ROLEPLAY" | "EVALUATION" | "TRANSCRIPTION" | "TTS";
+
 interface OpenRouterProviderOptions {
   apiKey: string;
+  logger?: AppLogger;
   fetchImplementation?: typeof fetch;
   clock?: () => number;
 }
@@ -136,8 +140,47 @@ export function createOpenRouterProvider(
 ): OpenRouterProvider {
   const fetchImplementation = options.fetchImplementation ?? fetch;
   const clock = options.clock ?? Date.now;
+  const logger = options.logger;
+
+  function logAiSuccess(
+    operation: AiOperationName,
+    model: string,
+    latencyMs: number,
+    usage: {
+      inputTokens: number | null;
+      outputTokens: number | null;
+      estimatedCost: number | null;
+    },
+  ) {
+    logger?.info({
+      event: "ai_request_completed",
+      operation,
+      model,
+      latencyMs,
+      inputTokens: usage.inputTokens,
+      outputTokens: usage.outputTokens,
+      estimatedCost: usage.estimatedCost,
+    });
+  }
+
+  function logAiFailure(
+    operation: AiOperationName,
+    model: string,
+    latencyMs: number,
+    errorCode: AiErrorCode,
+  ) {
+    logger?.warn({
+      event: "ai_request_failed",
+      operation,
+      model,
+      latencyMs,
+      errorCode,
+    });
+  }
 
   async function sendChatCompletion(
+    operation: AiOperationName,
+    model: string,
     bodyPayload: Record<string, unknown>,
     timeoutMs: number,
     maxResponseChars: number,
@@ -180,19 +223,29 @@ export function createOpenRouterProvider(
         throw new AiProviderError("AI_PROVIDER_ERROR", latencyMs);
       }
 
-      return {
-        content,
-        latencyMs,
+      const usage = {
         inputTokens: parsed.data.usage?.prompt_tokens ?? null,
         outputTokens: parsed.data.usage?.completion_tokens ?? null,
         estimatedCost: parsed.data.usage?.cost ?? null,
       };
+      logAiSuccess(operation, model, latencyMs, usage);
+
+      return {
+        content,
+        latencyMs,
+        ...usage,
+      };
     } catch (error) {
+      const latencyMs = Math.max(0, clock() - startedAt);
+      const errorCode =
+        error instanceof AiProviderError
+          ? error.code
+          : timedOut
+            ? "AI_TIMEOUT"
+            : "AI_PROVIDER_ERROR";
+      logAiFailure(operation, model, latencyMs, errorCode);
       if (error instanceof AiProviderError) throw error;
-      throw new AiProviderError(
-        timedOut ? "AI_TIMEOUT" : "AI_PROVIDER_ERROR",
-        Math.max(0, clock() - startedAt),
-      );
+      throw new AiProviderError(errorCode, latencyMs);
     } finally {
       clearTimeout(timeout);
     }
@@ -201,6 +254,8 @@ export function createOpenRouterProvider(
   return {
     async generateRoleplayReply(request) {
       const result = await sendChatCompletion(
+        "ROLEPLAY",
+        request.model,
         {
           model: request.model,
           messages: request.messages,
@@ -226,6 +281,8 @@ export function createOpenRouterProvider(
 
     async evaluateSimulation(request) {
       const result = await sendChatCompletion(
+        "EVALUATION",
+        request.model,
         {
           model: request.model,
           messages: request.messages,
@@ -308,17 +365,28 @@ export function createOpenRouterProvider(
           throw new AiProviderError("AI_PROVIDER_ERROR", latencyMs);
         }
 
+        logAiSuccess("TRANSCRIPTION", request.model, latencyMs, {
+          inputTokens: null,
+          outputTokens: null,
+          estimatedCost: null,
+        });
+
         return {
           text: parsed.data.text.trim(),
           latencyMs,
           estimatedCost: null,
         };
       } catch (error) {
+        const latencyMs = Math.max(0, clock() - startedAt);
+        const errorCode =
+          error instanceof AiProviderError
+            ? error.code
+            : timedOut
+              ? "AI_TIMEOUT"
+              : "AI_PROVIDER_ERROR";
+        logAiFailure("TRANSCRIPTION", request.model, latencyMs, errorCode);
         if (error instanceof AiProviderError) throw error;
-        throw new AiProviderError(
-          timedOut ? "AI_TIMEOUT" : "AI_PROVIDER_ERROR",
-          Math.max(0, clock() - startedAt),
-        );
+        throw new AiProviderError(errorCode, latencyMs);
       } finally {
         clearTimeout(timeout);
       }
@@ -365,13 +433,23 @@ export function createOpenRouterProvider(
         if (audio.length === 0) {
           throw new AiProviderError("AI_PROVIDER_ERROR", latencyMs);
         }
+        logAiSuccess("TTS", request.model, latencyMs, {
+          inputTokens: null,
+          outputTokens: null,
+          estimatedCost: null,
+        });
         return { audio, contentType, latencyMs, estimatedCost: null };
       } catch (error) {
+        const latencyMs = Math.max(0, clock() - startedAt);
+        const errorCode =
+          error instanceof AiProviderError
+            ? error.code
+            : timedOut
+              ? "AI_TIMEOUT"
+              : "AI_PROVIDER_ERROR";
+        logAiFailure("TTS", request.model, latencyMs, errorCode);
         if (error instanceof AiProviderError) throw error;
-        throw new AiProviderError(
-          timedOut ? "AI_TIMEOUT" : "AI_PROVIDER_ERROR",
-          Math.max(0, clock() - startedAt),
-        );
+        throw new AiProviderError(errorCode, latencyMs);
       } finally {
         clearTimeout(timeout);
       }

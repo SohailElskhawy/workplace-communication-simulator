@@ -59,7 +59,10 @@ const scenarioService = createScenarioService(
 );
 
 const aiService = createAiService({
-  provider: createOpenRouterProvider({ apiKey: apiEnv.OPENROUTER_API_KEY }),
+  provider: createOpenRouterProvider({
+    apiKey: apiEnv.OPENROUTER_API_KEY,
+    logger,
+  }),
   roleplayModel: apiEnv.ROLEPLAY_MODEL,
   roleplayPromptVersion: apiEnv.ROLEPLAY_PROMPT_VERSION,
   roleplayTimeoutMs: apiEnv.ROLEPLAY_TIMEOUT_MS,

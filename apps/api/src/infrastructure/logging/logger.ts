@@ -3,10 +3,14 @@ import pino, { type DestinationStream } from "pino";
 export interface SafeLogContext {
   attemptId?: string;
   errorCode?: string;
+  estimatedCost?: number | null;
   event: string;
+  inputTokens?: number | null;
   latencyMs?: number;
   method?: string;
+  model?: string;
   operation?: string;
+  outputTokens?: number | null;
   requestId?: string;
   route?: string;
   status?: number;
