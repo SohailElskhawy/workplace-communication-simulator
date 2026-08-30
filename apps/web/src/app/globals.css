@@ -28,6 +28,7 @@
   --ui-radius-card: 1.25rem;
   --ui-shadow-brutal: 6px 6px 0 #1a1a1a;
   --ui-shadow-brutal-sm: 4px 4px 0 #1a1a1a;
+  --container-max: 80rem;
 }
 
 @theme inline {
@@ -45,6 +46,7 @@
   --font-sans: var(--font-inter); --font-display: var(--font-space-grotesk); --font-mono: var(--font-jetbrains-mono);
   --radius-control: var(--ui-radius-control); --radius-card: var(--ui-radius-card);
   --shadow-brutal: var(--ui-shadow-brutal); --shadow-brutal-sm: var(--ui-shadow-brutal-sm);
+  --container-max: var(--container-max);
 }
 
 body {

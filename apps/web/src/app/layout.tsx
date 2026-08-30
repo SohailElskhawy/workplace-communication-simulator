@@ -27,6 +27,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <body
           className={`${inter.variable} ${spaceGrotesk.variable} ${jetBrainsMono.variable}`}
         >
+          <a
+            href="#main-content"
+            className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-control focus:bg-primary focus:px-4 focus:py-2 focus:font-display focus:text-xs focus:font-bold focus:uppercase focus:text-primary-foreground focus:shadow-brutal focus:outline-none"
+          >
+            Skip to main content
+          </a>
           {children}
         </body>
       </html>

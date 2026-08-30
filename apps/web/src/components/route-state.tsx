@@ -9,24 +9,24 @@ function Frame({
   live?: boolean;
 }) {
   return (
-    <section
+    <div
       aria-live={live ? "polite" : undefined}
-      className="mx-auto max-w-2xl rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-xs"
+      className="mx-auto max-w-2xl rounded-card border border-border bg-surface-solid p-6 sm:p-8 text-center shadow-xs"
     >
       {children}
-    </section>
+    </div>
   );
 }
 
 export function LoadingState({ label = "Loading…" }: { label?: string }) {
   return (
     <Frame live>
-      <div role="status" aria-busy="true">
+      <div role="status" aria-busy="true" className="flex flex-col items-center justify-center">
         <span
-          className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-indigo-600 border-r-transparent motion-reduce:animate-none"
+          className="inline-block h-6 w-6 animate-spin rounded-full border-3 border-primary border-r-transparent motion-reduce:animate-none"
           aria-hidden="true"
         />
-        <p className="mt-3 text-sm text-slate-600">{label}</p>
+        <p className="mt-3 font-sans text-sm text-muted-foreground">{label}</p>
       </div>
     </Frame>
   );
@@ -45,11 +45,11 @@ export function EmptyState({
 }) {
   return (
     <Frame>
-      <h2 className="text-lg font-bold">{title}</h2>
-      <p className="mt-2 text-sm text-slate-600">{description}</p>
+      <h2 className="font-display text-lg sm:text-xl font-bold uppercase tracking-tight text-foreground">{title}</h2>
+      <p className="mt-2 font-sans text-sm text-muted-foreground leading-relaxed">{description}</p>
       <Link
         href={href}
-        className="mt-5 inline-flex min-h-11 items-center rounded-xl bg-indigo-600 px-5 py-3 font-semibold text-white"
+        className="mt-5 inline-flex min-h-11 items-center rounded-control bg-primary px-5 py-2.5 font-display text-xs sm:text-sm font-bold uppercase tracking-wider text-primary-foreground border border-border brutalist-interactive"
       >
         {action}
       </Link>
@@ -68,21 +68,21 @@ export function ErrorState({
 }) {
   return (
     <Frame live>
-      <div role="alert">
-        <h2 className="text-lg font-bold">{title}</h2>
-        <p className="mt-2 text-sm text-slate-600">{description}</p>
+      <div role="alert" className="flex flex-col items-center">
+        <h2 className="font-display text-lg sm:text-xl font-bold uppercase tracking-tight text-foreground">{title}</h2>
+        <p className="mt-2 font-sans text-sm text-muted-foreground leading-relaxed">{description}</p>
         {onRetry ? (
           <button
             type="button"
             onClick={onRetry}
-            className="mt-5 min-h-11 rounded-xl bg-indigo-600 px-5 py-3 font-semibold text-white"
+            className="mt-5 inline-flex min-h-11 items-center rounded-control bg-primary px-5 py-2.5 font-display text-xs sm:text-sm font-bold uppercase tracking-wider text-primary-foreground border border-border brutalist-interactive cursor-pointer"
           >
             Try again
           </button>
         ) : (
           <Link
             href="/app"
-            className="mt-5 inline-flex min-h-11 items-center rounded-xl bg-indigo-600 px-5 py-3 font-semibold text-white"
+            className="mt-5 inline-flex min-h-11 items-center rounded-control bg-primary px-5 py-2.5 font-display text-xs sm:text-sm font-bold uppercase tracking-wider text-primary-foreground border border-border brutalist-interactive"
           >
             Return to scenarios
           </Link>
