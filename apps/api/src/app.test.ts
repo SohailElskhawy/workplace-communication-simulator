@@ -136,7 +136,7 @@ describe("GET /api/v1/me", () => {
         resolveAuthProviderUserId: () => "user_clerk_123",
         scenarioService: unusedScenarioService,
         userProvisioner: {
-          ensureUser: async (authProviderUserId) => {
+          ensureUser: async (authProviderUserId: string) => {
             if (authProviderUserId !== "user_clerk_123") {
               throw new Error("Unexpected provider identity");
             }
