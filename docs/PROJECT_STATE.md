@@ -345,6 +345,7 @@ corepack pnpm prisma:generate
   - Added CSS `--container-max: 80rem;` token to fix unconstrained layouts;
   - Fixed WCAG AA accessibility: added skip to main content link, explicit `aria-label` attributes to history inputs/filters, and corrected sectioning semantics;
   - 100% clean typecheck (`tsc --noEmit`), 0 ESLint warnings/errors, and 268 tests passing across 49 test files.
+  - August 30 follow-up: refactored the simulation UI from chat-first to conversation-first. The active AI counterpart is now the focal stage; explicit turn, listening, transcription, review, thinking, and speaking states guide the learner; the microphone is primary with an accessible text fallback; and the complete turn history is available in a collapsible transcript drawer. This remains a presentation-only change: REST, attempt lifecycle, transcription review-before-send, and optional TTS behavior are unchanged.
 
 ---
 

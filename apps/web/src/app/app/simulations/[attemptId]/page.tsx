@@ -12,12 +12,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { EmptyState, ErrorState, LoadingState } from "@/components/route-state";
 import { BriefingSidebar } from "@/components/simulations/briefing-sidebar";
 import {
-  ConversationStream,
-  type PendingTurnState,
-} from "@/components/simulations/conversation-stream";
+  ConversationStage,
+  type SimulationUiState,
+} from "@/components/simulations/conversation-stage";
 import { FinishSimulationDialog } from "@/components/simulations/finish-simulation-dialog";
 import { SimulationComposer } from "@/components/simulations/simulation-composer";
 import { SimulationHeader } from "@/components/simulations/simulation-header";
+import {
+  TranscriptDrawer,
+  type PendingTurnState,
+} from "@/components/simulations/transcript-drawer";
 import { ApiClientError, createApiClient } from "@/lib/api-client";
 
 export default function SimulationPage() {
@@ -31,8 +35,11 @@ export default function SimulationPage() {
   const router = useRouter();
   const { getToken, isLoaded, isSignedIn } = useAuth();
 
-  const [attempt, setAttempt] = useState<AttemptDetailResponse["data"] | null>(null);
-  const [scenarioDetail, setScenarioDetail] = useState<PublicScenarioDetail | null>(null);
+  const [attempt, setAttempt] = useState<AttemptDetailResponse["data"] | null>(
+    null,
+  );
+  const [scenarioDetail, setScenarioDetail] =
+    useState<PublicScenarioDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [isNotFound, setIsNotFound] = useState(false);
@@ -49,13 +56,18 @@ export default function SimulationPage() {
   const [showFinishDialog, setShowFinishDialog] = useState(false);
   const [finishing, setFinishing] = useState(false);
   const [briefingOpen, setBriefingOpen] = useState(false);
+  const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [autoPlaySpeech, setAutoPlaySpeech] = useState(true);
+  const [voiceStatus, setVoiceStatus] = useState<
+    "idle" | "requesting_permission" | "recording" | "transcribing" | "error"
+  >("idle");
+  const [hasVoiceDraft, setHasVoiceDraft] = useState(false);
+  const [isCounterpartSpeaking, setIsCounterpartSpeaking] = useState(false);
 
   // Timer and Expiry state
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [isExpired, setIsExpired] = useState(false);
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
@@ -97,7 +109,9 @@ export default function SimulationPage() {
         setFetchError("Simulation attempt not found.");
       } else {
         setFetchError(
-          err instanceof Error ? err.message : "Failed to load simulation workspace.",
+          err instanceof Error
+            ? err.message
+            : "Failed to load simulation workspace.",
         );
       }
     } finally {
@@ -148,7 +162,9 @@ export default function SimulationPage() {
           setFetchError("Simulation attempt not found.");
         } else {
           setFetchError(
-            err instanceof Error ? err.message : "Failed to load simulation workspace.",
+            err instanceof Error
+              ? err.message
+              : "Failed to load simulation workspace.",
           );
         }
       } finally {
@@ -185,17 +201,13 @@ export default function SimulationPage() {
     return () => clearInterval(interval);
   }, [attempt]);
 
-  // Auto-scroll on conversation update
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [attempt?.turns, pendingTurn, sendingTurn]);
-
   const counterpartRole = useMemo(() => {
     if (scenarioDetail?.context?.aiRole) {
       return scenarioDetail.context.aiRole;
     }
     const key = attempt?.scenario?.key ?? "";
-    if (key.includes("salary") || key.includes("offer")) return "Hiring Manager";
+    if (key.includes("salary") || key.includes("offer"))
+      return "Hiring Manager";
     if (key.includes("interview")) return "Interviewer";
     if (key.includes("pushback") || key.includes("manager")) return "Manager";
     if (key.includes("feedback")) return "Colleague";
@@ -237,6 +249,32 @@ export default function SimulationPage() {
   const isComposerDisabled =
     sendingTurn || finishing || isExpired || isLimitReached;
 
+  const latestAssistantMessage = useMemo(() => {
+    const latestTurnWithReply = [...(attempt?.turns ?? [])]
+      .reverse()
+      .find((turn) => Boolean(turn.assistantText));
+    return latestTurnWithReply?.assistantText
+      ? {
+          turnId: latestTurnWithReply.id,
+          text: latestTurnWithReply.assistantText,
+        }
+      : null;
+  }, [attempt?.turns]);
+
+  const simulationUiState = useMemo<SimulationUiState>(() => {
+    if (sendingTurn) return "AI_THINKING";
+    if (isCounterpartSpeaking) return "AI_SPEAKING";
+    if (
+      voiceStatus === "recording" ||
+      voiceStatus === "requesting_permission"
+    ) {
+      return "LISTENING";
+    }
+    if (voiceStatus === "transcribing") return "TRANSCRIBING";
+    if (hasVoiceDraft) return "REVIEWING";
+    return "YOUR_TURN";
+  }, [hasVoiceDraft, isCounterpartSpeaking, sendingTurn, voiceStatus]);
+
   const handleSendTurn = async (overrideText?: string) => {
     const textToSend = (overrideText ?? composerText).trim();
     if (!textToSend || isComposerDisabled || !attemptId) return;
@@ -247,6 +285,7 @@ export default function SimulationPage() {
     setGeneralError(null);
     setSendingTurn(true);
     setComposerText("");
+    setHasVoiceDraft(false);
 
     try {
       const token = await getToken();
@@ -313,7 +352,9 @@ export default function SimulationPage() {
       });
     } catch (err: unknown) {
       setGeneralError(
-        err instanceof Error ? err.message : "Failed to retry counterpart response.",
+        err instanceof Error
+          ? err.message
+          : "Failed to retry counterpart response.",
       );
     } finally {
       setRetryingTurnId(null);
@@ -393,8 +434,11 @@ export default function SimulationPage() {
           onToggleMobile={() => setBriefingOpen((prev) => !prev)}
         />
 
-        {/* Conversation Stream & Composer */}
-        <main id="main-content" className="flex-1 flex flex-col h-full min-h-0 overflow-hidden bg-background">
+        {/* Conversation stage, response controls, and transcript drawer */}
+        <main
+          id="main-content"
+          className="relative flex-1 flex flex-col h-full min-h-0 overflow-hidden bg-background"
+        >
           {/* Slim Mobile Goal Banner (Tap to open full briefing) */}
           <div className="md:hidden shrink-0 border-b border-border/30 bg-surface px-3 py-1.5 shadow-2xs">
             <button
@@ -403,8 +447,12 @@ export default function SimulationPage() {
               className="w-full flex items-center justify-between text-left font-meta text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer py-0.5"
             >
               <span className="truncate mr-2">
-                <strong className="text-primary font-bold uppercase tracking-wider mr-1">Goal:</strong>
-                <span className="text-foreground font-medium">{userObjective}</span>
+                <strong className="text-primary font-bold uppercase tracking-wider mr-1">
+                  Goal:
+                </strong>
+                <span className="text-foreground font-medium">
+                  {userObjective}
+                </span>
               </span>
               <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full">
                 Briefing →
@@ -412,23 +460,16 @@ export default function SimulationPage() {
             </button>
           </div>
 
-          <ConversationStream
+          <ConversationStage
             attemptId={attempt.id}
-            turns={attempt.turns}
             counterpartRole={counterpartRole}
             openingMessage={openingMessage}
+            latestAssistantMessage={latestAssistantMessage}
+            turnCount={attempt.turns.length}
+            uiState={simulationUiState}
             autoPlaySpeech={autoPlaySpeech}
-            pendingTurn={pendingTurn}
-            sendingTurn={sendingTurn}
-            pendingError={pendingError}
-            retryingTurnId={retryingTurnId}
-            onRetryTurn={handleRetryTurn}
-            onRetryPending={() => {
-              if (pendingTurn) {
-                void handleSendTurn(pendingTurn.text);
-              }
-            }}
-            messagesEndRef={messagesEndRef}
+            onSpeechStatusChange={setIsCounterpartSpeaking}
+            onOpenTranscript={() => setTranscriptOpen(true)}
           />
 
           <SimulationComposer
@@ -443,6 +484,27 @@ export default function SimulationPage() {
             textareaRef={textareaRef}
             onChangeText={setComposerText}
             onSendTurn={() => void handleSendTurn()}
+            onVoiceStatusChange={setVoiceStatus}
+            onVoiceTranscriptReady={() => setHasVoiceDraft(true)}
+          />
+
+          <TranscriptDrawer
+            open={transcriptOpen}
+            attemptId={attempt.id}
+            turns={attempt.turns}
+            counterpartRole={counterpartRole}
+            openingMessage={openingMessage}
+            pendingTurn={pendingTurn}
+            sendingTurn={sendingTurn}
+            pendingError={pendingError}
+            retryingTurnId={retryingTurnId}
+            onClose={() => setTranscriptOpen(false)}
+            onRetryTurn={handleRetryTurn}
+            onRetryPending={() => {
+              if (pendingTurn) {
+                void handleSendTurn(pendingTurn.text);
+              }
+            }}
           />
         </main>
       </div>

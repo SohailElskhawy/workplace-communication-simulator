@@ -10,10 +10,12 @@ export function SpeechButton({
   attemptId,
   turnId,
   autoPlay = false,
+  onStatusChange,
 }: {
   attemptId: string;
   turnId: string;
   autoPlay?: boolean;
+  onStatusChange?: (status: "idle" | "loading" | "playing" | "error") => void;
 }) {
   const { getToken } = useAuth();
   const [status, setStatus] = useState<
@@ -28,7 +30,8 @@ export function SpeechButton({
   // Sync ref with current state in effect
   useEffect(() => {
     statusRef.current = status;
-  }, [status]);
+    onStatusChange?.(status);
+  }, [onStatusChange, status]);
 
   const cleanup = useCallback(() => {
     if (audioRef.current) {

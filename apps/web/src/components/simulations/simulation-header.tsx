@@ -95,8 +95,14 @@ export function SimulationHeader({
                 ? "bg-primary/10 border-primary text-primary font-bold shadow-2xs"
                 : "bg-surface-subtle border-border/40 text-muted-foreground hover:text-foreground",
             )}
-            title={autoPlaySpeech ? "Auto-play speech: ON" : "Auto-play speech: OFF"}
-            aria-label={autoPlaySpeech ? "Disable auto-play voice" : "Enable auto-play voice"}
+            title={
+              autoPlaySpeech ? "Auto-play speech: ON" : "Auto-play speech: OFF"
+            }
+            aria-label={
+              autoPlaySpeech
+                ? "Disable auto-play voice"
+                : "Enable auto-play voice"
+            }
           >
             {autoPlaySpeech ? (
               <VolumeIcon className="w-3.5 h-3.5 text-primary shrink-0" />
@@ -126,7 +132,9 @@ export function SimulationHeader({
             disabled={finishing}
             className={cn(
               "inline-flex items-center justify-center gap-1.5 rounded-control h-8 px-3 sm:h-auto sm:px-4 sm:py-1.5 font-display text-xs font-bold uppercase tracking-wider text-white border border-border brutalist-interactive cursor-pointer shrink-0 whitespace-nowrap min-w-fit",
-              turnCount >= 1 ? "bg-primary" : "bg-muted-foreground/80 hover:bg-muted-foreground",
+              turnCount >= 1
+                ? "bg-primary"
+                : "bg-muted-foreground/80 hover:bg-muted-foreground",
             )}
           >
             {finishing ? (
@@ -137,7 +145,7 @@ export function SimulationHeader({
             ) : (
               <>
                 <FlagIcon className="w-3.5 h-3.5 shrink-0" />
-                <span className="whitespace-nowrap">Finish</span>
+                <span className="whitespace-nowrap">End conversation</span>
               </>
             )}
           </button>
