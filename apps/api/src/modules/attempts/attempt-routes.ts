@@ -120,6 +120,17 @@ export function registerAttemptRoutes(
     "/api/v1/attempts/:attemptId/turns",
     async (request, response, next) => {
       try {
+        // TEMP-LATENCY-DIAGNOSTIC
+        console.log(
+          `PHASE_TIMING ${JSON.stringify({
+            phase: "route_entry_after_middleware",
+            requestId: response.locals.requestId,
+            elapsedMs: Math.round(
+              performance.now() -
+                (response.locals.requestStartedAt as number),
+            ),
+          })}`,
+        );
         const userId = await resolveLocalUserId(
           request,
           response,

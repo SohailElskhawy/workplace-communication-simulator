@@ -7,6 +7,9 @@ import {
   useConversationInput,
   useConversationMode,
   useConversationStatus,
+  useRawConversation,
+  type DisconnectionDetails,
+  type Status,
 } from "@elevenlabs/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -19,12 +22,15 @@ import {
 } from "@/components/icons";
 import { createApiClient } from "@/lib/api-client";
 import {
+  appendLiveTranscriptEntry,
   isLiveConversationActive,
   resolveLiveConversationUiState,
   type LiveConversationUiState,
+  type LiveTranscriptEntry,
 } from "@/lib/live-conversation-state";
 
 export type { LiveConversationUiState };
+export type { LiveTranscriptEntry };
 
 export interface LiveConversationProps {
   attemptId: string;
@@ -40,6 +46,37 @@ export interface LiveConversationProps {
   onUiStateChange: (state: LiveConversationUiState) => void;
   /** Live microphone level (0–1) while connected, for the shared orb visual. */
   onMicrophoneLevelChange: (level: number) => void;
+  /**
+   * Notifies the page of the ephemeral live transcript (finalized
+   * `user_transcript` / `agent_response` events). Never persisted.
+   */
+  onTranscriptChange: (entries: LiveTranscriptEntry[]) => void;
+}
+
+/**
+ * Privacy-safe diagnostics for the realtime spike (development builds only).
+ * Logs connection lifecycle metadata — status, SDK error message, disconnect
+ * reason — and never transcripts, tokens, prompts, or audio. Long strings are
+ * truncated so provider error text cannot flood the console.
+ */
+function logLiveConversationEvent(
+  event: string,
+  details: Record<string, unknown> = {},
+  level: "info" | "warn" = "info",
+): void {
+  if (process.env.NODE_ENV !== "development") return;
+  const payload = Object.fromEntries(
+    Object.entries(details).map(([key, value]) => [
+      key,
+      typeof value === "string" && value.length > 200
+        ? `${value.slice(0, 200)}…`
+        : value,
+    ]),
+  );
+  (level === "warn" ? console.warn : console.info)(
+    `[live-conversation] ${event}`,
+    payload,
+  );
 }
 
 /**
@@ -56,30 +93,118 @@ export interface LiveConversationProps {
  *    `secret__kalemny_context_token` — never persona, objective, variation,
  *    or difficulty internals, which stay behind the tool-protected endpoint.
  *
- * Presentation-only: no transcript persistence, no ConversationTurn, no
- * changes to evaluation, scoring, or the text/push-to-talk flow.
+ * Ending a session: every end request (End/Cancel buttons, page-disabled
+ * effect) converges on one guarded `requestEnd()` that awaits the underlying
+ * conversation's `endSession()` promise. The SDK `onDisconnect` callback is
+ * the authoritative cleanup point, and the `ConversationProvider` stays
+ * mounted until ElevenLabs reports the disconnect.
+ *
+ * Presentation-only: the live transcript is ephemeral in-memory state that is
+ * never persisted; no ConversationTurn, no changes to evaluation, scoring, or
+ * the text/push-to-talk flow.
  */
 export function LiveConversation(props: LiveConversationProps) {
   return <LiveConversationContainer {...props} />;
 }
 
 /**
- * Holds the start-in-flight flag above the provider so the SDK's own status
- * and error events can clear it (event-driven, no state-syncing effects).
+ * Holds session-lifecycle state above the provider so the SDK's own status,
+ * error, disconnect, and message events drive it (event-driven, no
+ * state-syncing effects).
  */
-function LiveConversationContainer(props: LiveConversationProps) {
+function LiveConversationContainer({
+  onTranscriptChange,
+  ...props
+}: LiveConversationProps) {
   const [awaitingStart, setAwaitingStart] = useState(false);
   const clearAwaitingStart = useCallback(() => setAwaitingStart(false), []);
 
+  /**
+   * True while an end request is in flight. Shared with the session below so
+   * the guarded end request and the SDK `onDisconnect` callback (the
+   * authoritative cleanup point) agree on the lifecycle.
+   */
+  const endingRef = useRef(false);
+
+  /** Ephemeral transcript of the current live session. Never persisted. */
+  const [liveTranscript, setLiveTranscript] = useState<LiveTranscriptEntry[]>(
+    [],
+  );
+
+  const handleStatusChange = useCallback(
+    (event: { status: Status }) => {
+      logLiveConversationEvent("status change", { status: event.status });
+      clearAwaitingStart();
+    },
+    [clearAwaitingStart],
+  );
+
+  const handleError = useCallback(
+    (errorMessage: string) => {
+      // Surfaced to the learner through useConversationStatus below; logged
+      // here for diagnosis. Never swallowed.
+      logLiveConversationEvent("sdk error", { message: errorMessage }, "warn");
+      clearAwaitingStart();
+    },
+    [clearAwaitingStart],
+  );
+
+  /**
+   * Authoritative cleanup point: the SDK fires this when the conversation has
+   * disconnected, on every path (user end, agent hangup, error). Releases the
+   * end-in-flight guard; start-in-flight state is already cleared by the
+   * status/error events that always precede a disconnect.
+   */
+  const handleDisconnect = useCallback((details: DisconnectionDetails) => {
+    logLiveConversationEvent("disconnected", {
+      reason: details.reason,
+      ...(details.reason === "user"
+        ? {}
+        : { closeCode: details.closeCode }),
+      ...(details.reason === "error" ? { message: details.message } : {}),
+    });
+    endingRef.current = false;
+  }, []);
+
+  /**
+   * Finalized transcript events only (`user_transcript` and
+   * `agent_response`); tentative/partial events arrive on other callbacks
+   * and are ignored here.
+   */
+  const handleLiveMessage = useCallback(
+    (payload: {
+      source: "user" | "ai";
+      message: string;
+      event_id?: number;
+    }) => {
+      setLiveTranscript((previous) =>
+        appendLiveTranscriptEntry(previous, payload),
+      );
+    },
+    [],
+  );
+
+  const clearLiveTranscript = useCallback(() => setLiveTranscript([]), []);
+
+  // Share the ephemeral transcript with the page (same notification pattern
+  // as the UI state below).
+  useEffect(() => {
+    onTranscriptChange(liveTranscript);
+  }, [liveTranscript, onTranscriptChange]);
+
   return (
     <ConversationProvider
-      onStatusChange={clearAwaitingStart}
-      onError={clearAwaitingStart}
+      onStatusChange={handleStatusChange}
+      onError={handleError}
+      onDisconnect={handleDisconnect}
+      onMessage={handleLiveMessage}
     >
       <LiveConversationSession
         {...props}
         awaitingStart={awaitingStart}
         onAwaitingStartChange={setAwaitingStart}
+        endingRef={endingRef}
+        onClearLiveTranscript={clearLiveTranscript}
       />
     </ConversationProvider>
   );
@@ -93,9 +218,13 @@ function LiveConversationSession({
   onMicrophoneLevelChange,
   awaitingStart,
   onAwaitingStartChange,
-}: LiveConversationProps & {
+  endingRef,
+  onClearLiveTranscript,
+}: Omit<LiveConversationProps, "onTranscriptChange"> & {
   awaitingStart: boolean;
   onAwaitingStartChange: (awaiting: boolean) => void;
+  endingRef: React.RefObject<boolean>;
+  onClearLiveTranscript: () => void;
 }) {
   const { getToken } = useAuth();
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
@@ -105,6 +234,8 @@ function LiveConversationSession({
   const { status, message } = useConversationStatus();
   const { mode } = useConversationMode();
   const { isMuted, setMuted } = useConversationInput();
+  /** Underlying SDK conversation; null while connecting or disconnected. */
+  const conversation = useRawConversation();
 
   /** Error from the permission prompt or the realtime-session request. */
   const [requestError, setRequestError] = useState<string | null>(null);
@@ -134,15 +265,51 @@ function LiveConversationSession({
     onActiveChange(isActive);
   }, [isActive, onActiveChange]);
 
+  /**
+   * The single guarded end path. Every end request — the End/Cancel buttons
+   * and the page-disabled effect below — converges here, so a session can
+   * never be ended twice and the app waits for ElevenLabs to disconnect
+   * instead of treating the end click as synchronous.
+   *
+   * With a live conversation instance, the underlying `endSession()` promise
+   * is awaited: it resolves only after the client teardown completes and the
+   * SDK has fired `onDisconnect`. Without one (start still pending or session
+   * already gone), the SDK `endSession()` handles the pending-start lock.
+   */
+  const requestEnd = useCallback(async () => {
+    if (endingRef.current) return;
+    if (conversation) {
+      endingRef.current = true;
+      try {
+        await conversation.endSession();
+      } catch (error) {
+        // The SDK fires onDisconnect even when teardown throws, so state
+        // stays consistent; the error itself is logged, never swallowed.
+        logLiveConversationEvent(
+          "end session failed",
+          { message: error instanceof Error ? error.message : String(error) },
+          "warn",
+        );
+      } finally {
+        endingRef.current = false;
+      }
+    } else {
+      endingRef.current = true;
+      endSession();
+      // Released by the SDK onDisconnect callback; a failed pending start
+      // reports onError instead, and the next start resets the lifecycle.
+    }
+  }, [conversation, endSession, endingRef]);
+
   // End cleanly whenever the page disables live mode (finish dialog, expiry,
   // turn limit). Unmount is covered by the provider's own cleanup. Any
   // in-flight start observes the cancellation at its next checkpoint.
   useEffect(() => {
     if (startDisabled && isActive) {
       cancelledRef.current = true;
-      endSession();
+      void requestEnd();
     }
-  }, [endSession, isActive, startDisabled]);
+  }, [isActive, requestEnd, startDisabled]);
 
   // Feed the shared conversation orb with the live microphone level while
   // connected. Read-only sampling of the SDK session; no extra stream.
@@ -169,6 +336,10 @@ function LiveConversationSession({
   const handleStart = useCallback(async () => {
     if (startDisabled) return;
     cancelledRef.current = false;
+    // A new session begins: reset the end-in-flight guard and start from an
+    // empty ephemeral transcript.
+    endingRef.current = false;
+    onClearLiveTranscript();
     setRequestError(null);
     onAwaitingStartChange(true);
     try {
@@ -217,8 +388,10 @@ function LiveConversationSession({
   }, [
     apiUrl,
     attemptId,
+    endingRef,
     getToken,
     onAwaitingStartChange,
+    onClearLiveTranscript,
     startDisabled,
     startSession,
   ]);
@@ -227,8 +400,8 @@ function LiveConversationSession({
     cancelledRef.current = true;
     onAwaitingStartChange(false);
     setRequestError(null);
-    endSession();
-  }, [endSession, onAwaitingStartChange]);
+    void requestEnd();
+  }, [onAwaitingStartChange, requestEnd]);
 
   const handleToggleMute = useCallback(() => {
     try {

@@ -12,6 +12,8 @@ export function requestContext(appLogger: AppLogger): RequestHandler {
         : randomUUID();
     const startedAt = performance.now();
     response.locals.requestId = requestId;
+    // TEMP-LATENCY-DIAGNOSTIC: expose request start for phase timing
+    response.locals.requestStartedAt = startedAt;
     response.setHeader("X-Request-Id", requestId);
     response.once("finish", () => {
       appLogger.info({

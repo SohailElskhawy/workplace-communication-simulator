@@ -407,9 +407,9 @@ export function createPrismaAttemptRepository(
             AND turn."attemptId" = attempt."id"
             AND attempt."userId" = CAST(${input.userId} AS UUID)
             AND turn."status" = 'PENDING'
-          RETURNING "id", "sequence", "clientRequestId", "inputMethod",
-                    "userText", "assistantText", "status", "createdAt",
-                    "completedAt"
+          RETURNING turn."id", turn."sequence", turn."clientRequestId",
+                    turn."inputMethod", turn."userText", turn."assistantText",
+                    turn."status", turn."createdAt", turn."completedAt"
         `;
 
         const [updatedTurn] = rows;

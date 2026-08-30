@@ -27,7 +27,10 @@ import {
 import { ApiClientError, createApiClient } from "@/lib/api-client";
 import { isConversationInputDisabled } from "@/lib/conversation-input-state";
 import { isRealtimeVoiceEnabled } from "@/lib/feature-flags";
-import type { LiveConversationUiState } from "@/lib/live-conversation-state";
+import type {
+  LiveConversationUiState,
+  LiveTranscriptEntry,
+} from "@/lib/live-conversation-state";
 import { isPersistedRoleplayFailure } from "@/lib/roleplay-recovery";
 import type { SpeechPlaybackStatus } from "@/lib/speech-playback-controller";
 
@@ -85,6 +88,11 @@ export default function SimulationPage() {
   const [liveActive, setLiveActive] = useState(false);
   const [liveUiState, setLiveUiState] =
     useState<LiveConversationUiState>("disconnected");
+  // Ephemeral live transcript (finalized realtime utterances). In-memory
+  // only: never sent to the API and never persisted.
+  const [liveTranscript, setLiveTranscript] = useState<LiveTranscriptEntry[]>(
+    [],
+  );
 
   // Timer and Expiry state
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -550,6 +558,7 @@ export default function SimulationPage() {
             onSpeechStatusChange={setCounterpartSpeechStatus}
             microphoneLevel={microphoneLevel}
             onOpenTranscript={() => setTranscriptOpen(true)}
+            liveTranscript={liveTranscript}
           />
 
           {realtimeVoiceEnabled && (
@@ -559,6 +568,7 @@ export default function SimulationPage() {
               onActiveChange={setLiveActive}
               onUiStateChange={setLiveUiState}
               onMicrophoneLevelChange={setMicrophoneLevel}
+              onTranscriptChange={setLiveTranscript}
             />
           )}
 
