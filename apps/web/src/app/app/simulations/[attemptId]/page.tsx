@@ -4,6 +4,7 @@ import { useAuth } from "@clerk/nextjs";
 import type {
   AttemptDetailResponse,
   ConversationTurn,
+  InputMethod,
   PublicScenarioDetail,
 } from "@kalemny/contracts";
 import { useParams, useRouter } from "next/navigation";
@@ -23,6 +24,7 @@ import {
   type PendingTurnState,
 } from "@/components/simulations/transcript-drawer";
 import { ApiClientError, createApiClient } from "@/lib/api-client";
+import { isConversationInputDisabled } from "@/lib/conversation-input-state";
 import type { SpeechPlaybackStatus } from "@/lib/speech-playback-controller";
 
 export default function SimulationPage() {
@@ -47,6 +49,8 @@ export default function SimulationPage() {
 
   // In-conversation state
   const [composerText, setComposerText] = useState("");
+  const [composerInputMethod, setComposerInputMethod] =
+    useState<InputMethod>("TEXT");
   const [sendingTurn, setSendingTurn] = useState(false);
   const [pendingTurn, setPendingTurn] = useState<PendingTurnState | null>(null);
   const [pendingError, setPendingError] = useState<string | null>(null);
@@ -249,8 +253,13 @@ export default function SimulationPage() {
   }, [attempt]);
 
   const isLimitReached = (attempt?.turns.length ?? 0) >= 20;
-  const isComposerDisabled =
-    sendingTurn || finishing || isExpired || isLimitReached;
+  const isComposerDisabled = isConversationInputDisabled({
+    counterpartSpeechStatus,
+    finishing,
+    isExpired,
+    isLimitReached,
+    sendingTurn,
+  });
 
   const latestAssistantMessage = useMemo(() => {
     const latestTurnWithReply = [...(attempt?.turns ?? [])]
@@ -283,12 +292,16 @@ export default function SimulationPage() {
     return "YOUR_TURN";
   }, [counterpartSpeechStatus, hasVoiceDraft, sendingTurn, voiceStatus]);
 
-  const handleSendTurn = async (overrideText?: string) => {
+  const handleSendTurn = async (
+    overrideText?: string,
+    overrideInputMethod?: InputMethod,
+  ) => {
     const textToSend = (overrideText ?? composerText).trim();
     if (!textToSend || isComposerDisabled || !attemptId) return;
 
+    const inputMethod = overrideInputMethod ?? composerInputMethod;
     const clientRequestId = `req_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    setPendingTurn({ clientRequestId, text: textToSend });
+    setPendingTurn({ clientRequestId, inputMethod, text: textToSend });
     setPendingError(null);
     setGeneralError(null);
     setSendingTurn(true);
@@ -303,7 +316,7 @@ export default function SimulationPage() {
       const newTurn = await client.createTurn(token, attemptId, {
         clientRequestId,
         text: textToSend,
-        inputMethod: "TEXT",
+        inputMethod,
       });
 
       setAttempt((prev) => {
@@ -316,6 +329,7 @@ export default function SimulationPage() {
       });
 
       setPendingTurn(null);
+      setComposerInputMethod("TEXT");
       setTimeout(() => {
         textareaRef.current?.focus();
       }, 50);
@@ -494,7 +508,10 @@ export default function SimulationPage() {
             onChangeText={setComposerText}
             onSendTurn={() => void handleSendTurn()}
             onVoiceStatusChange={setVoiceStatus}
-            onVoiceTranscriptReady={() => setHasVoiceDraft(true)}
+            onVoiceTranscriptReady={() => {
+              setHasVoiceDraft(true);
+              setComposerInputMethod("VOICE");
+            }}
             onMicrophoneLevelChange={setMicrophoneLevel}
           />
 
@@ -512,7 +529,7 @@ export default function SimulationPage() {
             onRetryTurn={handleRetryTurn}
             onRetryPending={() => {
               if (pendingTurn) {
-                void handleSendTurn(pendingTurn.text);
+                void handleSendTurn(pendingTurn.text, pendingTurn.inputMethod);
               }
             }}
           />

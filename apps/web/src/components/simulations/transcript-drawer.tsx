@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 
-import type { ConversationTurn } from "@kalemny/contracts";
+import type { ConversationTurn, InputMethod } from "@kalemny/contracts";
 
 import { AlertTriangleIcon, CloseIcon, RefreshIcon } from "@/components/icons";
 import { SpeechButton } from "@/components/speech-button";
@@ -10,6 +10,7 @@ import { cn } from "@/lib/cn";
 
 export interface PendingTurnState {
   clientRequestId: string;
+  inputMethod: InputMethod;
   text: string;
 }
 
