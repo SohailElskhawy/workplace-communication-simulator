@@ -49,7 +49,7 @@ describe("OpenRouterProvider", () => {
       stream: false,
       max_tokens: 700,
       reasoning: { enabled: false },
-      provider: { zdr: true, data_collection: "deny" },
+      provider: { zdr: true, data_collection: "deny", sort: "throughput" },
     });
     expect(body).not.toHaveProperty("models");
     expect(body).not.toHaveProperty("route");

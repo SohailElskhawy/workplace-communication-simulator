@@ -271,9 +271,14 @@ export function createOpenRouterProvider(
           // Roleplay replies are short in-character dialogue; hidden reasoning
           // tokens add generation latency without improving them.
           reasoning: { enabled: false },
+          // Prefer the fastest ZDR-compatible upstream for this model instead
+          // of default price-based load balancing. This is a routing
+          // preference within OpenRouter, not model routing or fallback
+          // orchestration.
           provider: {
             zdr: true,
             data_collection: "deny",
+            sort: "throughput",
           },
         },
         request.timeoutMs,
