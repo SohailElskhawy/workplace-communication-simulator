@@ -337,6 +337,14 @@ corepack pnpm prisma:generate
 15. Text-to-Speech audio generation / Playback (Milestone 11 - Complete)
 16. Remaining curated scenarios (Milestone 12 - Complete)
 17. P0 production hardening (Milestone 13 - Implementation complete; authenticated staging smoke pending)
+18. Frontend Architecture, SOLID, DRY & Modularity Refactoring (Milestone 14 - Complete)
+  - Refactored massive monolithic pages (`results/[attemptId]` from 1,662 lines -> 300 lines, `simulations/[attemptId]` from 1,060 lines -> 360 lines, `history` from 703 lines -> 320 lines, `scenarios/[scenarioKey]` from 652 lines -> 220 lines);
+  - Decomposed presentational units into 15+ single-responsibility components in `src/components/results/`, `src/components/simulations/`, `src/components/history/`, and `src/components/scenarios/`;
+  - Fixed focus trap jitter in `AccessibleDialog` and unmount memory safety in `SpeechButton`;
+  - Created centralized domain constants in `src/lib/constants.ts` and unified `useApiQuery` data fetching hook;
+  - Added CSS `--container-max: 80rem;` token to fix unconstrained layouts;
+  - Fixed WCAG AA accessibility: added skip to main content link, explicit `aria-label` attributes to history inputs/filters, and corrected sectioning semantics;
+  - 100% clean typecheck (`tsc --noEmit`), 0 ESLint warnings/errors, and 268 tests passing across 49 test files.
 
 ---
 
