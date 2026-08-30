@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 
 import { createApp } from "./app.js";
 import { parseApiEnv } from "./config/env.js";
-import { createPrismaClient } from "./infrastructure/database/prisma.js";
+import { createDatabaseConnection } from "./infrastructure/database/prisma.js";
 import { logger } from "./infrastructure/logging/logger.js";
 import { initializeApiMonitoring } from "./infrastructure/monitoring/sentry.js";
 import { createAiService } from "./modules/ai/ai-service.js";
@@ -37,18 +37,25 @@ if (existsSync(rootEnvPath)) {
 }
 
 const apiEnv = parseApiEnv(process.env);
+
 const captureException = initializeApiMonitoring({
   dsn: apiEnv.SENTRY_DSN,
   environment: apiEnv.SENTRY_ENVIRONMENT ?? apiEnv.NODE_ENV,
   release: apiEnv.SENTRY_RELEASE,
 });
-const prisma = createPrismaClient(apiEnv.DATABASE_URL);
+
+const db = createDatabaseConnection(apiEnv.DATABASE_URL);
+
+const prisma = db.prisma;
+
 const userProvisioner = createLocalUserProvisioner({
   upsert: (args) => prisma.user.upsert(args),
 });
+
 const scenarioService = createScenarioService(
   createPrismaScenarioRepository(prisma),
 );
+
 const aiService = createAiService({
   provider: createOpenRouterProvider({ apiKey: apiEnv.OPENROUTER_API_KEY }),
   roleplayModel: apiEnv.ROLEPLAY_MODEL,
@@ -62,24 +69,30 @@ const aiService = createAiService({
   ttsModel: apiEnv.TTS_MODEL,
   ttsTimeoutMs: apiEnv.TTS_TIMEOUT_MS,
 });
+
 const attemptService = createAttemptService(
   createPrismaAttemptRepository(prisma),
   aiService,
 );
+
 const evaluationService = createEvaluationService(
   createPrismaEvaluationRepository(prisma),
   aiService,
 );
+
 const historyService = createHistoryService(
   createPrismaHistoryRepository(prisma),
 );
+
 const progressService = createProgressService(
   createPrismaProgressRepository(prisma),
 );
+
 const voiceService = createVoiceService(
   createPrismaVoiceRepository(prisma),
   aiService,
 );
+
 const ttsService = createTtsService(
   createPrismaTtsRepository(prisma),
   aiService,
@@ -119,10 +132,11 @@ const server = app.listen(apiEnv.PORT, () => {
 const shutdown = (signal: string) => {
   logger.info({ event: "api_shutdown_started", operation: signal });
   server.close(async () => {
-    await prisma.$disconnect();
+    await db.disconnect();
     process.exit(0);
   });
 };
 
 process.on("SIGTERM", () => shutdown("SIGTERM"));
 process.on("SIGINT", () => shutdown("SIGINT"));
+
