@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@clerk/nextjs";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { RefreshIcon, VolumeIcon } from "@/components/icons";
 import { createApiClient } from "@/lib/api-client";
@@ -24,14 +24,14 @@ export function SpeechButton({
   const isMountedRef = useRef<boolean>(true);
   const hasAutoPlayedRef = useRef<boolean>(false);
 
-  const cleanup = () => {
+  const cleanup = useCallback(() => {
     audioRef.current?.pause();
     audioRef.current = null;
     if (urlRef.current) URL.revokeObjectURL(urlRef.current);
     urlRef.current = null;
-  };
+  }, []);
 
-  const playAudio = async () => {
+  const playAudio = useCallback(async () => {
     if (status === "playing" || status === "loading") return;
     cleanup();
     if (isMountedRef.current) setStatus("loading");
@@ -79,7 +79,7 @@ export function SpeechButton({
       cleanup();
       if (isMountedRef.current) setStatus("error");
     }
-  };
+  }, [attemptId, cleanup, getToken, status, turnId]);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -91,7 +91,7 @@ export function SpeechButton({
       isMountedRef.current = false;
       cleanup();
     };
-  }, [autoPlay, attemptId, turnId]);
+  }, [autoPlay, cleanup, playAudio]);
 
   const toggle = async () => {
     if (status === "playing") {
@@ -103,7 +103,7 @@ export function SpeechButton({
   };
 
   return (
-    <div className="mt-2 flex items-center gap-2">
+    <div className="mt-2 flex flex-wrap items-center gap-2">
       <button
         type="button"
         onClick={() => void toggle()}

@@ -306,7 +306,7 @@ export function ScenarioLibraryView({
       {/* Filter Row */}
       <section
         aria-label="Filter scenarios by category"
-        className="mb-8 sm:mb-12 flex items-center gap-2.5 sm:gap-3 overflow-x-auto pt-2 pb-4 px-1.5 -mx-1.5 scrollbar-none [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        className="mb-6 sm:mb-12 flex flex-wrap items-center gap-2 sm:gap-3 pt-1 pb-2"
       >
         {FILTER_CATEGORIES.map((category) => {
           const isActive = selectedFilter === category.key;
@@ -317,9 +317,9 @@ export function ScenarioLibraryView({
               onClick={() => setSelectedFilter(category.key)}
               aria-pressed={isActive}
               className={cn(
-                "shrink-0 px-5 sm:px-6 py-2.5 rounded-full border border-border font-meta text-xs sm:text-sm transition-all duration-200 ease-out cursor-pointer select-none",
+                "px-3.5 sm:px-6 py-2 sm:py-2.5 rounded-full border border-border font-meta text-xs sm:text-sm transition-all duration-200 ease-out cursor-pointer select-none whitespace-nowrap",
                 isActive
-                  ? "bg-primary text-primary-foreground font-bold shadow-[4px_4px_0px_0px_#1a1a1a] -translate-x-0.5 -translate-y-0.5"
+                  ? "bg-primary text-primary-foreground font-bold shadow-[2px_2px_0px_0px_#1a1a1a] sm:shadow-[4px_4px_0px_0px_#1a1a1a] -translate-x-0.5 -translate-y-0.5"
                   : "bg-surface-solid text-foreground font-medium hover:bg-surface-subtle hover:text-foreground",
               )}
             >

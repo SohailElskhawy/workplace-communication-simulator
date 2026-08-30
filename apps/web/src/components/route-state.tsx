@@ -9,11 +9,13 @@ function Frame({
   live?: boolean;
 }) {
   return (
-    <div
-      aria-live={live ? "polite" : undefined}
-      className="mx-auto max-w-2xl rounded-card border border-border bg-surface-solid p-6 sm:p-8 text-center shadow-xs"
-    >
-      {children}
+    <div className="flex flex-1 items-center justify-center p-4 w-full h-full">
+      <div
+        aria-live={live ? "polite" : undefined}
+        className="mx-auto w-full max-w-2xl rounded-card border border-border bg-surface-solid p-6 sm:p-8 text-center shadow-xs"
+      >
+        {children}
+      </div>
     </div>
   );
 }

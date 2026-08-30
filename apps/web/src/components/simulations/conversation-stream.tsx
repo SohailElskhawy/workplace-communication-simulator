@@ -41,17 +41,17 @@ export function ConversationStream({
   messagesEndRef,
 }: ConversationStreamProps) {
   return (
-    <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+    <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
       {/* Welcome / Scenario Start Pill */}
-      <div className="text-center py-2">
-        <span className="inline-block px-3 py-1 rounded-full border border-border/30 bg-surface-subtle font-meta text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">
+      <div className="text-center py-1 sm:py-2">
+        <span className="inline-block px-3 py-1 rounded-full border border-border/30 bg-surface-subtle font-meta text-[10px] sm:text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">
           Simulation Started · Respond naturally
         </span>
       </div>
 
       {/* Opening Counterpart Message (First speaker in scenario) */}
       {openingMessage && (
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           <div className="flex flex-col items-start">
             <div className="flex items-center gap-2 mb-1">
               <span className="font-meta text-[10px] uppercase font-bold text-primary">
@@ -62,7 +62,7 @@ export function ConversationStream({
               </span>
             </div>
 
-            <div className="max-w-xl rounded-card rounded-tl-none bg-surface-solid p-4 text-foreground border border-border shadow-[4px_4px_0px_0px_#1a1a1a]">
+            <div className="max-w-[88%] sm:max-w-xl rounded-card rounded-tl-none bg-surface-solid p-3.5 sm:p-4 text-foreground border border-border shadow-[2px_2px_0px_0px_#1a1a1a] sm:shadow-[4px_4px_0px_0px_#1a1a1a]">
               <p className="font-sans text-xs sm:text-sm leading-relaxed whitespace-pre-wrap">
                 {openingMessage}
               </p>
@@ -84,7 +84,7 @@ export function ConversationStream({
         const isLatestTurn = index === turns.length - 1;
 
         return (
-          <div key={turn.id} className="space-y-4">
+          <div key={turn.id} className="space-y-3 sm:space-y-4">
             {/* 1. Learner Message (Right Aligned) */}
             <div className="flex flex-col items-end">
               <div className="flex items-center gap-2 mb-1">
@@ -99,7 +99,7 @@ export function ConversationStream({
                 </span>
               </div>
 
-              <div className="max-w-xl rounded-card rounded-tr-none bg-primary p-4 text-primary-foreground border border-border shadow-[4px_4px_0px_0px_#1a1a1a]">
+              <div className="max-w-[88%] sm:max-w-xl rounded-card rounded-tr-none bg-primary p-3.5 sm:p-4 text-primary-foreground border border-border shadow-[2px_2px_0px_0px_#1a1a1a] sm:shadow-[4px_4px_0px_0px_#1a1a1a]">
                 <p className="font-sans text-xs sm:text-sm leading-relaxed whitespace-pre-wrap">
                   {turn.userText}
                 </p>
@@ -123,7 +123,7 @@ export function ConversationStream({
                   )}
                 </div>
 
-                <div className="max-w-xl rounded-card rounded-tl-none bg-surface-solid p-4 text-foreground border border-border shadow-[4px_4px_0px_0px_#1a1a1a]">
+                <div className="max-w-[88%] sm:max-w-xl rounded-card rounded-tl-none bg-surface-solid p-3.5 sm:p-4 text-foreground border border-border shadow-[2px_2px_0px_0px_#1a1a1a] sm:shadow-[4px_4px_0px_0px_#1a1a1a]">
                   <p className="font-sans text-xs sm:text-sm leading-relaxed whitespace-pre-wrap">
                     {turn.assistantText}
                   </p>
@@ -138,8 +138,8 @@ export function ConversationStream({
 
             {/* 3. Turn Level Error & Recovery */}
             {isTurnFailed && (
-              <div className="flex flex-col items-start max-w-xl">
-                <div className="rounded-card border-2 border-alert bg-alert/10 p-4 text-alert shadow-xs space-y-2">
+              <div className="flex flex-col items-start max-w-[88%] sm:max-w-xl">
+                <div className="rounded-card border-2 border-alert bg-alert/10 p-3.5 sm:p-4 text-alert shadow-xs space-y-2">
                   <div className="flex items-center gap-2">
                     <AlertTriangleIcon className="w-4 h-4 shrink-0" />
                     <span className="font-display text-xs font-bold uppercase tracking-wide">
@@ -167,7 +167,7 @@ export function ConversationStream({
 
       {/* 4. Optimistic Pending User Turn Bubble */}
       {pendingTurn && sendingTurn && (
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           <div className="flex flex-col items-end">
             <div className="flex items-center gap-2 mb-1">
               <span className="font-meta text-[10px] uppercase font-bold text-muted-foreground">
@@ -177,7 +177,7 @@ export function ConversationStream({
                 Sending…
               </span>
             </div>
-            <div className="max-w-xl rounded-card rounded-tr-none bg-primary/90 p-4 text-primary-foreground border border-border shadow-xs opacity-90">
+            <div className="max-w-[88%] sm:max-w-xl rounded-card rounded-tr-none bg-primary/90 p-3.5 sm:p-4 text-primary-foreground border border-border shadow-xs opacity-90">
               <p className="font-sans text-xs sm:text-sm leading-relaxed whitespace-pre-wrap">
                 {pendingTurn.text}
               </p>
@@ -191,7 +191,7 @@ export function ConversationStream({
                 {counterpartRole}
               </span>
             </div>
-            <div className="rounded-card rounded-tl-none bg-surface-subtle p-3 border border-border/30 flex items-center gap-1.5 shadow-2xs">
+            <div className="rounded-card rounded-tl-none bg-surface-subtle p-2.5 sm:p-3 border border-border/30 flex items-center gap-1.5 shadow-2xs">
               <span className="h-2 w-2 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]" />
               <span className="h-2 w-2 rounded-full bg-primary animate-bounce [animation-delay:-0.15s]" />
               <span className="h-2 w-2 rounded-full bg-primary animate-bounce" />
@@ -205,7 +205,7 @@ export function ConversationStream({
 
       {/* 5. Pending Error Retry Bubble */}
       {pendingError && pendingTurn && !sendingTurn && (
-        <div className="rounded-card border-2 border-alert bg-alert/10 p-4 text-alert shadow-xs space-y-2 max-w-xl">
+        <div className="rounded-card border-2 border-alert bg-alert/10 p-3.5 sm:p-4 text-alert shadow-xs space-y-2 max-w-[88%] sm:max-w-xl">
           <div className="flex items-center gap-2">
             <AlertTriangleIcon className="w-4 h-4 shrink-0" />
             <span className="font-display text-xs font-bold uppercase tracking-wide">

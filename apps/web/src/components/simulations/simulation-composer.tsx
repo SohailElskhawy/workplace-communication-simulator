@@ -102,12 +102,12 @@ export function SimulationComposer({
   const isNearLimit = composerText.length >= MAX_TURN_TEXT_LENGTH * 0.9;
 
   return (
-    <footer className="border-t border-border bg-surface-solid p-4 sm:p-5 shadow-xs shrink-0">
+    <footer className="border-t border-border bg-surface-solid p-3 sm:p-5 shadow-xs shrink-0">
       {/* General / Rate Limit Errors */}
       {generalError && (
         <div
           role="alert"
-          className="mb-3 rounded-control border border-alert/30 bg-alert/10 p-2.5 font-sans text-xs text-alert flex items-center justify-between"
+          className="mb-2.5 sm:mb-3 rounded-control border border-alert/30 bg-alert/10 p-2 sm:p-2.5 font-sans text-xs text-alert flex items-center justify-between"
         >
           <span>{generalError}</span>
         </div>
@@ -117,13 +117,13 @@ export function SimulationComposer({
       {voiceError && (
         <div
           role="alert"
-          className="mb-3 rounded-control border border-alert/40 bg-alert/10 p-2.5 font-sans text-xs text-alert flex items-center justify-between gap-2"
+          className="mb-2.5 sm:mb-3 rounded-control border border-alert/40 bg-alert/10 p-2 sm:p-2.5 font-sans text-xs text-alert flex items-center justify-between gap-2"
         >
-          <span>{voiceError}</span>
+          <span className="truncate">{voiceError}</span>
           <button
             type="button"
             onClick={clearError}
-            className="p-1 rounded-control hover:bg-alert/20 cursor-pointer"
+            className="p-1 rounded-control hover:bg-alert/20 cursor-pointer shrink-0"
             aria-label="Dismiss voice error"
           >
             <CloseIcon className="w-3.5 h-3.5" />
@@ -133,24 +133,24 @@ export function SimulationComposer({
 
       {/* Active Voice Recording Status Banner */}
       {isRecording && (
-        <div className="mb-3 rounded-control border-2 border-alert/60 bg-alert/5 p-3 flex items-center justify-between gap-3 animate-fadeIn">
+        <div className="mb-2.5 sm:mb-3 rounded-control border-2 border-alert/60 bg-alert/5 p-2.5 sm:p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 animate-fadeIn">
           <div className="flex items-center gap-2.5">
-            <span className="relative flex h-3 w-3">
+            <span className="relative flex h-3 w-3 shrink-0">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-alert opacity-75" />
               <span className="relative inline-flex rounded-full h-3 w-3 bg-alert" />
             </span>
-            <div className="flex flex-col">
+            <div className="flex flex-col min-w-0">
               <span className="font-display font-bold text-xs uppercase tracking-wider text-alert">
                 Recording Speech…
               </span>
-              <span className="font-meta text-[11px] text-muted-foreground">
+              <span className="font-meta text-[10px] sm:text-[11px] text-muted-foreground truncate">
                 {formatRecordDuration(durationSeconds)} /{" "}
                 {formatRecordDuration(MAX_RECORDING_DURATION_SECONDS)} · Speak clearly in English
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
             <button
               type="button"
               onClick={cancelRecording}
@@ -171,9 +171,9 @@ export function SimulationComposer({
 
       {/* Transcribing Voice Banner */}
       {isTranscribing && (
-        <div className="mb-3 rounded-control border border-primary/30 bg-primary/5 p-3 flex items-center gap-2.5 text-primary">
+        <div className="mb-2.5 sm:mb-3 rounded-control border border-primary/30 bg-primary/5 p-2.5 sm:p-3 flex items-center gap-2.5 text-primary">
           <RefreshIcon className="w-4 h-4 animate-spin shrink-0" />
-          <span className="font-meta text-xs font-semibold">
+          <span className="font-meta text-xs font-semibold truncate">
             Transcribing your voice with Whisper AI…
           </span>
         </div>
@@ -181,14 +181,14 @@ export function SimulationComposer({
 
       {/* Expiry Alert */}
       {isExpired && (
-        <div className="mb-3 rounded-control border border-amber-300 bg-amber-50 p-2.5 font-meta text-xs text-amber-900">
+        <div className="mb-2.5 sm:mb-3 rounded-control border border-amber-300 bg-amber-50 p-2 sm:p-2.5 font-meta text-xs text-amber-900">
           This simulation has reached its time limit. You can finish your rehearsal to view your evaluation.
         </div>
       )}
 
       {/* Turn Limit Warning */}
       {isLimitReached && (
-        <div className="mb-3 rounded-control border border-border bg-surface-subtle p-2.5 font-meta text-xs text-foreground">
+        <div className="mb-2.5 sm:mb-3 rounded-control border border-border bg-surface-subtle p-2 sm:p-2.5 font-meta text-xs text-foreground">
           Maximum turns (20) reached. Please click <strong>Finish Rehearsal</strong> above to review your score.
         </div>
       )}
@@ -200,7 +200,7 @@ export function SimulationComposer({
             onSendTurn();
           }
         }}
-        className="flex flex-col gap-2"
+        className="flex flex-col gap-1.5 sm:gap-2"
       >
         <div className="relative">
           <label htmlFor="simulation-response-input" className="sr-only">
@@ -227,10 +227,10 @@ export function SimulationComposer({
                       ? "Transcribing your audio..."
                       : "Type your response here or click the microphone to speak..."
             }
-            className="w-full resize-none rounded-control border border-border bg-surface-subtle p-3.5 pr-24 font-sans text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus:bg-white focus:outline-none disabled:opacity-60"
+            className="w-full min-h-[56px] sm:min-h-[64px] resize-none rounded-control border border-border bg-surface-subtle p-2.5 sm:p-3.5 pr-20 sm:pr-24 font-sans text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus:bg-white focus:outline-none disabled:opacity-60"
           />
 
-          <div className="absolute right-3 bottom-3.5 flex items-center gap-2">
+          <div className="absolute right-2 sm:right-3 bottom-2 sm:bottom-3 flex items-center gap-1.5 sm:gap-2">
             {/* Push to Talk / Voice Recording Button */}
             <button
               type="button"
@@ -250,7 +250,7 @@ export function SimulationComposer({
                     : "Speak your response (Microphone)"
               }
               className={cn(
-                "p-1.5 rounded-control border transition-all cursor-pointer",
+                "flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-control border transition-all cursor-pointer",
                 isRecording
                   ? "bg-alert text-white border-alert animate-pulse shadow-sm"
                   : isRequestingMic
@@ -279,7 +279,7 @@ export function SimulationComposer({
                 isVoiceBusy ||
                 !composerText.trim()
               }
-              className="flex h-8 w-8 items-center justify-center rounded-control bg-primary text-primary-foreground border border-border disabled:opacity-40 cursor-pointer brutalist-shadow-sm"
+              className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-control bg-primary text-primary-foreground border border-border disabled:opacity-40 cursor-pointer brutalist-shadow-sm"
               aria-label="Send message"
             >
               {sendingTurn ? (
@@ -291,13 +291,13 @@ export function SimulationComposer({
           </div>
         </div>
 
-        <div className="flex items-center justify-between font-meta text-[11px] text-muted-foreground px-1">
-          <span>
+        <div className="flex items-center justify-between font-meta text-[10px] sm:text-[11px] text-muted-foreground px-0.5 sm:px-1">
+          <span className="truncate">
             {turnCount >= 1
               ? `${turnCount} turns exchanged`
-              : "Send your first message to begin dialogue"}
+              : "Send first message to start"}
           </span>
-          <span className={cn(isNearLimit && "text-alert font-bold")}>
+          <span className={cn("shrink-0 ml-2", isNearLimit && "text-alert font-bold")}>
             {composerText.length} / {MAX_TURN_TEXT_LENGTH}
           </span>
         </div>

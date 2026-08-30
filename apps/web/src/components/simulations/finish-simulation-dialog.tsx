@@ -43,12 +43,12 @@ export function FinishSimulationDialog({
           </div>
         )}
 
-        <div className="flex items-center justify-end gap-3 pt-2">
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3 pt-2">
           <button
             type="button"
             onClick={onClose}
             disabled={finishing}
-            className="rounded-control border border-border bg-surface-solid px-4 py-2 font-display text-xs font-bold uppercase tracking-wider text-foreground hover:bg-surface-subtle disabled:opacity-50 cursor-pointer"
+            className="rounded-control border border-border bg-surface-solid px-4 py-2.5 sm:py-2 font-display text-xs font-bold uppercase tracking-wider text-foreground hover:bg-surface-subtle disabled:opacity-50 cursor-pointer text-center"
           >
             Continue Practice
           </button>
@@ -56,7 +56,7 @@ export function FinishSimulationDialog({
             type="button"
             onClick={onConfirm}
             disabled={finishing}
-            className="rounded-control bg-primary px-5 py-2 font-display text-xs font-bold uppercase tracking-wider text-primary-foreground border border-border brutalist-shadow-sm hover:opacity-90 disabled:opacity-50 cursor-pointer"
+            className="rounded-control bg-primary px-5 py-2.5 sm:py-2 font-display text-xs font-bold uppercase tracking-wider text-primary-foreground border border-border brutalist-shadow-sm hover:opacity-90 disabled:opacity-50 cursor-pointer text-center"
           >
             {finishing ? "Evaluating..." : "Finish & Evaluate"}
           </button>

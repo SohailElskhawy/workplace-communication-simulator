@@ -366,7 +366,7 @@ export default function SimulationPage() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8.5rem)] min-h-145 w-full max-w-container-max mx-auto rounded-card border border-border bg-surface-solid shadow-[4px_4px_0px_0px_#1a1a1a] overflow-hidden font-sans">
+    <div className="flex flex-col h-full w-full max-w-container-max mx-auto overflow-hidden font-sans bg-surface-solid sm:border-x sm:border-border">
       {/* 1. Header */}
       <SimulationHeader
         scenarioTitle={attempt.scenario.title}
@@ -378,22 +378,40 @@ export default function SimulationPage() {
         autoPlaySpeech={autoPlaySpeech}
         onToggleAutoPlay={() => setAutoPlaySpeech((prev) => !prev)}
         onOpenFinishDialog={() => setShowFinishDialog(true)}
+        onOpenBriefing={() => setBriefingOpen(true)}
       />
 
       {/* 2. Main Workspace Layout */}
-      <div className="flex flex-1 overflow-hidden relative">
-        {/* Briefing Sidebar (Desktop + Mobile accordion) */}
+      <div className="flex flex-1 overflow-hidden relative min-h-0">
+        {/* Briefing Sidebar (Desktop Sidebar + Mobile Modal) */}
         <BriefingSidebar
           scenarioDetail={scenarioDetail}
           scenarioTitle={attempt.scenario.title}
           counterpartRole={counterpartRole}
           userObjective={userObjective}
           isOpenMobile={briefingOpen}
-          onToggleMobile={() => setBriefingOpen(!briefingOpen)}
+          onToggleMobile={() => setBriefingOpen((prev) => !prev)}
         />
 
         {/* Conversation Stream & Composer */}
-        <main id="main-content" className="flex-1 flex flex-col h-full overflow-hidden bg-background">
+        <main id="main-content" className="flex-1 flex flex-col h-full min-h-0 overflow-hidden bg-background">
+          {/* Slim Mobile Goal Banner (Tap to open full briefing) */}
+          <div className="md:hidden shrink-0 border-b border-border/30 bg-surface px-3 py-1.5 shadow-2xs">
+            <button
+              type="button"
+              onClick={() => setBriefingOpen(true)}
+              className="w-full flex items-center justify-between text-left font-meta text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer py-0.5"
+            >
+              <span className="truncate mr-2">
+                <strong className="text-primary font-bold uppercase tracking-wider mr-1">Goal:</strong>
+                <span className="text-foreground font-medium">{userObjective}</span>
+              </span>
+              <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full">
+                Briefing →
+              </span>
+            </button>
+          </div>
+
           <ConversationStream
             attemptId={attempt.id}
             turns={attempt.turns}

@@ -2,8 +2,7 @@
 
 import type { PublicScenarioDetail } from "@kalemny/contracts";
 
-import { ChevronDownIcon } from "@/components/icons";
-import { cn } from "@/lib/cn";
+import { AccessibleDialog } from "@/components/accessible-dialog";
 
 export interface BriefingSidebarProps {
   scenarioDetail: PublicScenarioDetail | null;
@@ -26,9 +25,9 @@ export function BriefingSidebar({
   const stakes = scenarioDetail?.context?.stakes;
 
   const briefingContent = (
-    <div className="space-y-4 font-sans text-xs">
+    <div className="space-y-3 sm:space-y-4 font-sans text-xs">
       {/* 1. Counterpart Info */}
-      <div className="rounded-control bg-surface-subtle p-3.5 border border-border/30 space-y-1">
+      <div className="rounded-control bg-surface-subtle p-3 sm:p-3.5 border border-border/30 space-y-1">
         <span className="font-meta text-[10px] font-bold uppercase tracking-widest text-muted-foreground block">
           Counterpart
         </span>
@@ -38,7 +37,7 @@ export function BriefingSidebar({
       </div>
 
       {/* 2. Your Role & Objective */}
-      <div className="rounded-control bg-primary/5 p-3.5 border border-primary/20 space-y-1.5">
+      <div className="rounded-control bg-primary/5 p-3 sm:p-3.5 border border-primary/20 space-y-1">
         <span className="font-meta text-[10px] font-bold uppercase tracking-widest text-primary block">
           Your Objective
         </span>
@@ -47,9 +46,9 @@ export function BriefingSidebar({
         </p>
       </div>
 
-      {/* 3. Scenario Context / Background */}
+      {/* 3. Situation Context / Background */}
       {contextDesc && (
-        <div className="rounded-control bg-surface-subtle p-3.5 border border-border/30 space-y-1">
+        <div className="rounded-control bg-surface-subtle p-3 sm:p-3.5 border border-border/30 space-y-1">
           <span className="font-meta text-[10px] font-bold uppercase tracking-widest text-muted-foreground block">
             Situation Context
           </span>
@@ -61,7 +60,7 @@ export function BriefingSidebar({
 
       {/* 4. Stakes (if present) */}
       {stakes && (
-        <div className="rounded-control bg-surface-subtle p-3.5 border border-border/30 space-y-1">
+        <div className="rounded-control bg-surface-subtle p-3 sm:p-3.5 border border-border/30 space-y-1">
           <span className="font-meta text-[10px] font-bold uppercase tracking-widest text-muted-foreground block">
             Key Stakes
           </span>
@@ -72,7 +71,7 @@ export function BriefingSidebar({
       )}
 
       {/* 5. Tips for success */}
-      <div className="rounded-control bg-surface-subtle p-3.5 border border-border/30 space-y-1.5">
+      <div className="rounded-control bg-surface-subtle p-3 sm:p-3.5 border border-border/30 space-y-1.5">
         <span className="font-meta text-[10px] font-bold uppercase tracking-widest text-muted-foreground block">
           Practice Tips
         </span>
@@ -87,25 +86,28 @@ export function BriefingSidebar({
 
   return (
     <>
-      {/* Mobile Collapsible Briefing Accordion */}
-      <div className="md:hidden border-b border-border/30 bg-surface px-4 py-2.5">
-        <button
-          type="button"
-          onClick={onToggleMobile}
-          className="flex w-full items-center justify-between font-display text-xs font-bold uppercase tracking-wider text-foreground cursor-pointer"
-        >
-          <span>Scenario Briefing & Objectives</span>
-          <ChevronDownIcon
-            className={cn(
-              "w-4 h-4 transition-transform duration-200",
-              isOpenMobile && "rotate-180",
-            )}
-          />
-        </button>
-        {isOpenMobile && <div className="mt-3 pt-3 border-t border-border/20">{briefingContent}</div>}
-      </div>
+      {/* Mobile Modal Dialog (Never pushes or squishes chat stream) */}
+      <AccessibleDialog
+        open={isOpenMobile}
+        title="Rehearsal Briefing"
+        description={scenarioTitle}
+        onClose={onToggleMobile}
+      >
+        <div className="flex flex-col gap-3">
+          <div className="max-h-[60dvh] overflow-y-auto pr-1">
+            {briefingContent}
+          </div>
+          <button
+            type="button"
+            onClick={onToggleMobile}
+            className="w-full mt-2 rounded-control bg-primary py-2.5 font-display text-xs font-bold uppercase tracking-wider text-primary-foreground border border-border brutalist-shadow-sm cursor-pointer hover:opacity-90"
+          >
+            Return to Rehearsal
+          </button>
+        </div>
+      </AccessibleDialog>
 
-      {/* Desktop Sticky Sidebar */}
+      {/* Desktop Sticky Sidebar (Visible ONLY on md+ screens) */}
       <aside className="hidden md:flex flex-col w-72 lg:w-80 border-r border-border bg-surface-solid/50 p-5 overflow-y-auto shrink-0 space-y-4">
         <div className="border-b border-border/20 pb-3">
           <span className="font-meta text-[10px] uppercase tracking-widest text-muted-foreground font-bold block">
