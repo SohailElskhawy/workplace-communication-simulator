@@ -9,7 +9,7 @@ import type {
   EvaluationData,
 } from "@kalemny/contracts";
 import { useParams, useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { AttemptComparisonSection } from "@/components/results/attempt-comparison-section";
 import { CoachingMomentsSection } from "@/components/results/coaching-moments-section";
@@ -35,16 +35,20 @@ export default function ResultsPage() {
     return (Array.isArray(raw) ? raw[0] : (raw as string | undefined)) ?? "";
   }, [params.attemptId]);
 
-  const [attempt, setAttempt] = useState<AttemptDetailResponse["data"] | null>(null);
+  const [attempt, setAttempt] = useState<AttemptDetailResponse["data"] | null>(
+    null,
+  );
   const [evaluation, setEvaluation] = useState<EvaluationData | null>(null);
   const [comparison, setComparison] = useState<AttemptComparison | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [evalFailed, setEvalFailed] = useState(false);
+  const evaluationRequestInFlight = useRef(false);
 
   // Modals
   const [showRetryModal, setShowRetryModal] = useState(false);
-  const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>("MEDIUM");
+  const [selectedDifficulty, setSelectedDifficulty] =
+    useState<Difficulty>("MEDIUM");
   const [retrying, setRetrying] = useState(false);
   const [retryError, setRetryError] = useState<string | null>(null);
 
@@ -65,6 +69,56 @@ export default function ResultsPage() {
     return map;
   }, [turns]);
 
+  const requestEvaluation = useCallback(async () => {
+    if (!attemptId || evaluationRequestInFlight.current) return;
+
+    evaluationRequestInFlight.current = true;
+    try {
+      const token = await getToken();
+      if (!token) throw new Error("Authentication token not available.");
+
+      const evaluationData = await createApiClient(apiUrl).evaluateAttempt(
+        token,
+        attemptId,
+      );
+      setEvaluation(evaluationData);
+      setAttempt((current) =>
+        current
+          ? {
+              ...current,
+              status: "COMPLETED",
+              evaluation: evaluationData,
+            }
+          : current,
+      );
+      setEvalFailed(false);
+    } catch (requestError: unknown) {
+      if (
+        requestError instanceof ApiClientError &&
+        requestError.code === "EVALUATION_IN_PROGRESS"
+      ) {
+        return;
+      }
+
+      if (
+        requestError instanceof ApiClientError &&
+        (requestError.code === "EVALUATION_FAILED" ||
+          requestError.code === "EVALUATION_NOT_FOUND")
+      ) {
+        setEvalFailed(true);
+        return;
+      }
+
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Failed to generate the simulation evaluation.",
+      );
+    } finally {
+      evaluationRequestInFlight.current = false;
+    }
+  }, [apiUrl, attemptId, getToken]);
+
   const reloadData = useCallback(async () => {
     if (!attemptId) return;
     try {
@@ -80,8 +134,14 @@ export default function ResultsPage() {
       setAttempt(attemptData);
       setSelectedDifficulty(attemptData.difficulty);
 
-      if (attemptData.status === "EVALUATING" || attemptData.status === "ACTIVE") {
+      if (
+        attemptData.status === "EVALUATING" ||
+        attemptData.status === "ACTIVE"
+      ) {
         setLoading(false);
+        if (attemptData.status === "EVALUATING" && !attemptData.evaluation) {
+          void requestEvaluation();
+        }
         return;
       }
 
@@ -96,27 +156,40 @@ export default function ResultsPage() {
       } else {
         const evalData = await client.evaluateAttempt(token, attemptId);
         setEvaluation(evalData);
-        setAttempt((prev) => (prev ? { ...prev, status: "COMPLETED", evaluation: evalData } : prev));
+        setAttempt((prev) =>
+          prev ? { ...prev, status: "COMPLETED", evaluation: evalData } : prev,
+        );
       }
 
       if (attemptData.comparison) {
         setComparison(attemptData.comparison);
       } else if (attemptData.retryOfAttemptId) {
         try {
-          const compData = await client.fetchAttemptComparison(token, attemptId);
+          const compData = await client.fetchAttemptComparison(
+            token,
+            attemptId,
+          );
           setComparison(compData);
         } catch {}
       }
     } catch (err: unknown) {
-      if (err instanceof ApiClientError && (err.code === "EVALUATION_NOT_FOUND" || err.code === "EVALUATION_FAILED")) {
+      if (
+        err instanceof ApiClientError &&
+        (err.code === "EVALUATION_NOT_FOUND" ||
+          err.code === "EVALUATION_FAILED")
+      ) {
         setEvalFailed(true);
       } else {
-        setError(err instanceof Error ? err.message : "Failed to load simulation results.");
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Failed to load simulation results.",
+        );
       }
     } finally {
       setLoading(false);
     }
-  }, [apiUrl, attemptId, getToken]);
+  }, [apiUrl, attemptId, getToken, requestEvaluation]);
 
   useEffect(() => {
     let isMounted = true;
@@ -144,32 +217,22 @@ export default function ResultsPage() {
 
         if (attemptData.evaluation) {
           setEvaluation(attemptData.evaluation);
+        } else if (attemptData.status === "EVALUATING") {
+          void requestEvaluation();
         } else {
-          try {
-            const evalData = await client.evaluateAttempt(token, attemptId);
-            if (isMounted) {
-              setEvaluation(evalData);
-              setAttempt((prev) =>
-                prev ? { ...prev, status: "COMPLETED", evaluation: evalData } : prev,
-              );
-            }
-          } catch (evalErr: unknown) {
-            if (
-              evalErr instanceof ApiClientError &&
-              evalErr.code === "EVALUATION_IN_PROGRESS"
-            ) {
-              // Evaluation is being processed in parallel, polling effect will pick it up
-            } else {
-              if (isMounted) setEvalFailed(true);
-            }
-          }
+          setError(
+            "This simulation must be finished before it can be evaluated.",
+          );
         }
 
         if (attemptData.comparison) {
           setComparison(attemptData.comparison);
         } else if (attemptData.retryOfAttemptId) {
           try {
-            const compData = await client.fetchAttemptComparison(token, attemptId);
+            const compData = await client.fetchAttemptComparison(
+              token,
+              attemptId,
+            );
             if (isMounted) setComparison(compData);
           } catch {}
         }
@@ -177,12 +240,15 @@ export default function ResultsPage() {
         if (!isMounted) return;
         if (
           err instanceof ApiClientError &&
-          (err.code === "EVALUATION_NOT_FOUND" || err.code === "EVALUATION_FAILED")
+          (err.code === "EVALUATION_NOT_FOUND" ||
+            err.code === "EVALUATION_FAILED")
         ) {
           setEvalFailed(true);
         } else {
           setError(
-            err instanceof Error ? err.message : "Failed to load simulation results.",
+            err instanceof Error
+              ? err.message
+              : "Failed to load simulation results.",
           );
         }
       } finally {
@@ -195,34 +261,39 @@ export default function ResultsPage() {
     return () => {
       isMounted = false;
     };
-  }, [apiUrl, attemptId, getToken, isLoaded, isSignedIn]);
+  }, [apiUrl, attemptId, getToken, isLoaded, isSignedIn, requestEvaluation]);
 
   // Polling for EVALUATING status
   useEffect(() => {
-    if (!attempt || attempt.status !== "EVALUATING" || !attemptId) return;
+    if (attempt?.status !== "EVALUATING" || !attemptId) return;
 
-    const interval = setInterval(async () => {
+    const poll = async () => {
       try {
         const token = await getToken();
         if (!token) return;
         const client = createApiClient(apiUrl);
         const updated = await client.fetchAttempt(token, attemptId);
 
+        setAttempt(updated);
+
+        if (updated.status === "EVALUATING" && !updated.evaluation) {
+          void requestEvaluation();
+          return;
+        }
+
         if (updated.status !== "EVALUATING") {
-          setAttempt(updated);
-          clearInterval(interval);
           if (updated.status === "COMPLETED") {
             if (updated.evaluation) {
               setEvaluation(updated.evaluation);
-            } else {
-              const evalData = await client.evaluateAttempt(token, attemptId);
-              setEvaluation(evalData);
             }
             if (updated.comparison) {
               setComparison(updated.comparison);
             } else if (updated.retryOfAttemptId) {
               try {
-                const compData = await client.fetchAttemptComparison(token, attemptId);
+                const compData = await client.fetchAttemptComparison(
+                  token,
+                  attemptId,
+                );
                 setComparison(compData);
               } catch {}
             }
@@ -231,10 +302,13 @@ export default function ResultsPage() {
           }
         }
       } catch {}
-    }, 2500);
+    };
+
+    void poll();
+    const interval = setInterval(() => void poll(), 2500);
 
     return () => clearInterval(interval);
-  }, [apiUrl, attempt, attemptId, getToken]);
+  }, [apiUrl, attempt?.status, attemptId, getToken, requestEvaluation]);
 
   const handleStartRetry = async () => {
     if (!attempt || !attemptId) return;
@@ -254,7 +328,9 @@ export default function ResultsPage() {
 
       router.push(`/app/simulations/${encodeURIComponent(newAttempt.id)}`);
     } catch (err: unknown) {
-      setRetryError(err instanceof Error ? err.message : "Failed to start retry rehearsal.");
+      setRetryError(
+        err instanceof Error ? err.message : "Failed to start retry rehearsal.",
+      );
       setRetrying(false);
     }
   };
@@ -272,7 +348,9 @@ export default function ResultsPage() {
       await client.deleteAttempt(token, attemptId);
       router.push("/app/history");
     } catch (err: unknown) {
-      setDeleteError(err instanceof Error ? err.message : "Failed to delete attempt.");
+      setDeleteError(
+        err instanceof Error ? err.message : "Failed to delete attempt.",
+      );
       setDeleteLoading(false);
     }
   };
@@ -282,15 +360,28 @@ export default function ResultsPage() {
   }
 
   if (error) {
-    return <ErrorState title="Unable to load results" description={error} onRetry={reloadData} />;
+    return (
+      <ErrorState
+        title="Unable to load results"
+        description={error}
+        onRetry={reloadData}
+      />
+    );
   }
 
   if (!attempt) {
-    return <ErrorState title="Session not found" description="The requested rehearsal session could not be located." />;
+    return (
+      <ErrorState
+        title="Session not found"
+        description="The requested rehearsal session could not be located."
+      />
+    );
   }
 
   if (attempt.status === "EVALUATING") {
-    const latestUserTurn = attempt.turns.filter((t: ConversationTurn) => Boolean(t.userText)).slice(-1)[0];
+    const latestUserTurn = attempt.turns
+      .filter((t: ConversationTurn) => Boolean(t.userText))
+      .slice(-1)[0];
     return (
       <EvaluationProcessingView
         scenarioTitle={attempt.scenario.title}
@@ -312,7 +403,13 @@ export default function ResultsPage() {
   }
 
   if (!evaluation) {
-    return <ErrorState title="Evaluation Unavailable" description="Evaluation data is not ready yet." onRetry={reloadData} />;
+    return (
+      <ErrorState
+        title="Evaluation Unavailable"
+        description="Evaluation data is not ready yet."
+        onRetry={reloadData}
+      />
+    );
   }
 
   return (
@@ -340,7 +437,10 @@ export default function ResultsPage() {
       <CoachingMomentsSection moments={evaluation.moments} turnMap={turnMap} />
 
       {/* 5. Scenario Specific Objectives Outcome */}
-      <ObjectivesOutcomeSection objectives={evaluation.objectives} turnMap={turnMap} />
+      <ObjectivesOutcomeSection
+        objectives={evaluation.objectives}
+        turnMap={turnMap}
+      />
 
       {/* 6. Key Strengths & Areas for Improvement */}
       <StrengthsImprovementsSection

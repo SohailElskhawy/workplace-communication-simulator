@@ -25,6 +25,7 @@ import {
 } from "@/components/simulations/transcript-drawer";
 import { ApiClientError, createApiClient } from "@/lib/api-client";
 import { isConversationInputDisabled } from "@/lib/conversation-input-state";
+import { isPersistedRoleplayFailure } from "@/lib/roleplay-recovery";
 import type { SpeechPlaybackStatus } from "@/lib/speech-playback-controller";
 
 export default function SimulationPage() {
@@ -308,11 +309,13 @@ export default function SimulationPage() {
     setComposerText("");
     setHasVoiceDraft(false);
 
+    const client = createApiClient(apiUrl);
+    let token: string | null = null;
+
     try {
-      const token = await getToken();
+      token = await getToken();
       if (!token) throw new Error("Authentication token not available.");
 
-      const client = createApiClient(apiUrl);
       const newTurn = await client.createTurn(token, attemptId, {
         clientRequestId,
         text: textToSend,
@@ -334,6 +337,29 @@ export default function SimulationPage() {
         textareaRef.current?.focus();
       }, 50);
     } catch (err: unknown) {
+      if (isPersistedRoleplayFailure(err) && token) {
+        try {
+          const recoveryToken = await getToken({ skipCache: true });
+          if (!recoveryToken)
+            throw new Error("Authentication token not available.");
+
+          const recoveredAttempt = await client.fetchAttempt(
+            recoveryToken,
+            attemptId,
+          );
+          setAttempt(recoveredAttempt);
+          setPendingTurn(null);
+          setPendingError(null);
+          setGeneralError(
+            "Your response was saved. Retry the counterpart response from the transcript.",
+          );
+          setTranscriptOpen(true);
+          return;
+        } catch {
+          // Preserve the original provider error when recovery cannot load the stored turn.
+        }
+      }
+
       if (err instanceof ApiClientError && err.code === "RATE_LIMIT_EXCEEDED") {
         setGeneralError(
           "Rate limit reached. Please wait a moment before sending your next message.",
@@ -489,7 +515,8 @@ export default function SimulationPage() {
             latestAssistantMessage={latestAssistantMessage}
             turnCount={attempt.turns.length}
             uiState={simulationUiState}
-            autoPlaySpeech={autoPlaySpeech}
+            autoPlaySpeech={autoPlaySpeech && !finishing}
+            cancelSpeechPlayback={finishing}
             onSpeechStatusChange={setCounterpartSpeechStatus}
             microphoneLevel={microphoneLevel}
             onOpenTranscript={() => setTranscriptOpen(true)}

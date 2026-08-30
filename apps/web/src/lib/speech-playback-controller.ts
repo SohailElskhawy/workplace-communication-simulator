@@ -8,7 +8,7 @@ export interface SpeechAudio {
 }
 
 export interface SpeechPlaybackControllerOptions {
-  requestAudio: () => Promise<Blob>;
+  requestAudio: (signal: AbortSignal) => Promise<Blob>;
   createObjectUrl: (audio: Blob) => string;
   revokeObjectUrl: (url: string) => void;
   createAudio: (url: string) => SpeechAudio;
@@ -21,6 +21,7 @@ export class SpeechPlaybackController {
   private readonly id = Symbol("speech-playback");
   private audio: SpeechAudio | null = null;
   private objectUrl: string | null = null;
+  private requestAbortController: AbortController | null = null;
   private requestVersion = 0;
   private status: SpeechPlaybackStatus = "idle";
 
@@ -36,11 +37,17 @@ export class SpeechPlaybackController {
     this.cleanupAudio();
 
     const requestVersion = ++this.requestVersion;
+    const requestAbortController = new AbortController();
+    this.requestAbortController = requestAbortController;
     this.setStatus("loading");
 
     try {
-      const blob = await this.options.requestAudio();
+      const blob = await this.options.requestAudio(
+        requestAbortController.signal,
+      );
       if (!this.isCurrent(requestVersion)) return false;
+
+      this.releaseRequestAbortController(requestAbortController);
 
       const objectUrl = this.options.createObjectUrl(blob);
       const audio = this.options.createAudio(objectUrl);
@@ -56,6 +63,7 @@ export class SpeechPlaybackController {
       this.setStatus("playing");
       return true;
     } catch {
+      this.releaseRequestAbortController(requestAbortController);
       if (this.isCurrent(requestVersion)) {
         this.cleanupAudio();
         this.releaseActiveController();
@@ -67,6 +75,8 @@ export class SpeechPlaybackController {
 
   stop(): void {
     ++this.requestVersion;
+    this.requestAbortController?.abort();
+    this.requestAbortController = null;
     this.cleanupAudio();
     this.releaseActiveController();
     this.setStatus("idle");
@@ -106,6 +116,14 @@ export class SpeechPlaybackController {
 
   private releaseActiveController(): void {
     if (activePlayback?.id === this.id) activePlayback = null;
+  }
+
+  private releaseRequestAbortController(
+    requestAbortController: AbortController,
+  ): void {
+    if (this.requestAbortController === requestAbortController) {
+      this.requestAbortController = null;
+    }
   }
 
   private setStatus(status: SpeechPlaybackStatus): void {

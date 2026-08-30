@@ -398,6 +398,7 @@ export function createApiClient(baseUrl: string) {
       token: string,
       attemptId: string,
       turnId: string,
+      signal?: AbortSignal,
     ): Promise<Blob> {
       let response: Response;
       try {
@@ -406,6 +407,7 @@ export function createApiClient(baseUrl: string) {
           {
             method: "POST",
             headers: { Authorization: `Bearer ${token}` },
+            ...(signal ? { signal } : {}),
           },
         );
       } catch {

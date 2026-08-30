@@ -14,11 +14,13 @@ export function SpeechButton({
   attemptId,
   turnId,
   autoPlay = false,
+  cancelPlayback = false,
   onStatusChange,
 }: {
   attemptId: string;
   turnId: string;
   autoPlay?: boolean;
+  cancelPlayback?: boolean;
   onStatusChange?: (status: SpeechPlaybackStatus) => void;
 }) {
   const { getToken } = useAuth();
@@ -41,7 +43,7 @@ export function SpeechButton({
   useEffect(() => {
     isMountedRef.current = true;
     const controller = new SpeechPlaybackController({
-      requestAudio: async () => {
+      requestAudio: async (signal) => {
         const request = playbackRequestRef.current;
         const token = await request.getToken();
         if (!token) throw new Error("Authentication token not available.");
@@ -51,6 +53,7 @@ export function SpeechButton({
           token,
           request.attemptId,
           request.turnId,
+          signal,
         );
       },
       createObjectUrl: (audio) => URL.createObjectURL(audio),
@@ -80,12 +83,21 @@ export function SpeechButton({
     hasAutoPlayedRef.current = false;
   }, [attemptId, turnId]);
 
+  useEffect(() => {
+    if (cancelPlayback) controllerRef.current?.stop();
+  }, [cancelPlayback]);
+
   // Handle Autoplay on mount
   useEffect(() => {
-    if (autoPlay && !hasAutoPlayedRef.current) {
+    if (!autoPlay || hasAutoPlayedRef.current) return;
+
+    const timer = window.setTimeout(() => {
+      if (hasAutoPlayedRef.current) return;
       hasAutoPlayedRef.current = true;
       void playAudio();
-    }
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [autoPlay, playAudio]);
 
   const toggle = async () => {

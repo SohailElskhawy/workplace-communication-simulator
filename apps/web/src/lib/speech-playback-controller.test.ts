@@ -84,6 +84,29 @@ describe("SpeechPlaybackController", () => {
     expect(requestAudio).toHaveBeenCalledTimes(1);
   });
 
+  it("aborts an in-flight speech request when playback stops", async () => {
+    const deferred = createDeferred<Blob>();
+    const requestAudio = vi.fn((signal: AbortSignal) => {
+      void signal;
+      return deferred.promise;
+    });
+    const controller = new SpeechPlaybackController({
+      requestAudio,
+      createObjectUrl: vi.fn(),
+      revokeObjectUrl: vi.fn(),
+      createAudio: vi.fn(),
+      onStatusChange: vi.fn(),
+    });
+
+    const playback = controller.play();
+    controller.stop();
+    deferred.resolve(new Blob(["audio"]));
+
+    const requestSignal = requestAudio.mock.calls[0]?.[0];
+    expect(requestSignal?.aborted).toBe(true);
+    await expect(playback).resolves.toBe(false);
+  });
+
   it("reports an audio failure without leaving playback active", async () => {
     const states: string[] = [];
     const controller = new SpeechPlaybackController({

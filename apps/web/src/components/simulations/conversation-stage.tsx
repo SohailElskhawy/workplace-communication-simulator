@@ -56,6 +56,7 @@ export interface ConversationStageProps {
   turnCount: number;
   uiState: SimulationUiState;
   autoPlaySpeech: boolean;
+  cancelSpeechPlayback: boolean;
   onSpeechStatusChange: (status: SpeechPlaybackStatus) => void;
   microphoneLevel: number;
   onOpenTranscript: () => void;
@@ -69,6 +70,7 @@ export function ConversationStage({
   turnCount,
   uiState,
   autoPlaySpeech,
+  cancelSpeechPlayback,
   onSpeechStatusChange,
   microphoneLevel,
   onOpenTranscript,
@@ -134,6 +136,7 @@ export function ConversationStage({
                 attemptId={attemptId}
                 turnId={message.turnId}
                 autoPlay={autoPlaySpeech && uiState !== "AI_THINKING"}
+                cancelPlayback={cancelSpeechPlayback}
                 onStatusChange={onSpeechStatusChange}
               />
             </div>
