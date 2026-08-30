@@ -2,6 +2,7 @@ import type { PrismaClient } from "../../generated/prisma/client.js";
 import type { TtsRepository } from "./tts-repository.js";
 
 import { ScenarioDefinitionSchema } from "../scenarios/scenario-definition.js";
+import { resolveScenarioVariation } from "../scenarios/scenario-variation.js";
 
 export function createPrismaTtsRepository(prisma: PrismaClient): TtsRepository {
   return {
@@ -11,6 +12,7 @@ export function createPrismaTtsRepository(prisma: PrismaClient): TtsRepository {
           where: { id: attemptId, userId },
           select: {
             status: true,
+            variationId: true,
             scenario: { select: { definition: true } },
           },
         });
@@ -19,8 +21,15 @@ export function createPrismaTtsRepository(prisma: PrismaClient): TtsRepository {
           const definition = ScenarioDefinitionSchema.parse(
             attempt.scenario.definition,
           );
+          // The attempt's persisted variation is authoritative: speak the
+          // opening message the learner actually saw, never re-selecting.
+          const variation = resolveScenarioVariation(
+            definition,
+            attempt.variationId,
+          );
           return {
-            assistantText: definition.openingMessage,
+            assistantText:
+              variation?.openingMessage ?? definition.openingMessage,
             attemptStatus: attempt.status,
           };
         } catch {
