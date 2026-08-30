@@ -85,9 +85,9 @@ describe("syncScenarioDefinitions", () => {
 
     expect(records.size).toBe(6);
     for (const definition of scenarioDefinitions) {
-      expect(records.get(scenarioIdentity(definition.key, 1))).toMatchObject({
+      expect(records.get(scenarioIdentity(definition.key, 2))).toMatchObject({
         key: definition.key,
-        version: 1,
+        version: 2,
         isActive: true,
       });
     }

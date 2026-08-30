@@ -1,16 +1,16 @@
 import type { ScenarioDefinition } from "../scenario-definition.js";
-import { behavioralInterviewV1 } from "./behavioral-interview.js";
-import { difficultFeedbackV1 } from "./difficult-feedback.js";
-import { managerPushbackV1 } from "./manager-pushback.js";
-import { promotionRequestV1 } from "./promotion-request.js";
-import { salaryNegotiationV1 } from "./salary-negotiation.js";
-import { scopeCreepV1 } from "./scope-creep.js";
+import { behavioralInterviewV2 } from "./behavioral-interview-v2.js";
+import { difficultFeedbackV2 } from "./difficult-feedback-v2.js";
+import { managerPushbackV2 } from "./manager-pushback-v2.js";
+import { promotionRequestV2 } from "./promotion-request-v2.js";
+import { salaryNegotiationV2 } from "./salary-negotiation-v2.js";
+import { scopeCreepV2 } from "./scope-creep-v2.js";
 
 export const scenarioDefinitions: readonly ScenarioDefinition[] = [
-  salaryNegotiationV1,
-  behavioralInterviewV1,
-  promotionRequestV1,
-  managerPushbackV1,
-  difficultFeedbackV1,
-  scopeCreepV1,
+  salaryNegotiationV2,
+  behavioralInterviewV2,
+  promotionRequestV2,
+  managerPushbackV2,
+  difficultFeedbackV2,
+  scopeCreepV2,
 ];

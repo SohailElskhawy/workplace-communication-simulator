@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import { scenarioDefinitions } from "./definitions/index.js";
+import { behavioralInterviewV1 } from "./definitions/behavioral-interview.js";
+import { difficultFeedbackV1 } from "./definitions/difficult-feedback.js";
+import { managerPushbackV1 } from "./definitions/manager-pushback.js";
+import { promotionRequestV1 } from "./definitions/promotion-request.js";
 import { salaryNegotiationV1 } from "./definitions/salary-negotiation.js";
+import { scopeCreepV1 } from "./definitions/scope-creep.js";
 import { ScenarioDefinitionSchema } from "./scenario-definition.js";
 
 describe("ScenarioDefinitionSchema", () => {
@@ -21,7 +26,7 @@ describe("ScenarioDefinitionSchema", () => {
     ]);
   });
 
-  it("validates all six unique Release 1 scenario definitions", () => {
+  it("validates all six unique active Release 1 scenario definitions", () => {
     const definitions = scenarioDefinitions.map((definition) =>
       ScenarioDefinitionSchema.parse(definition),
     );
@@ -38,7 +43,7 @@ describe("ScenarioDefinitionSchema", () => {
     ]);
 
     for (const definition of definitions) {
-      expect(definition.version).toBe(1);
+      expect(definition.version).toBe(2);
       expect(Object.keys(definition.difficulties)).toEqual([
         "EASY",
         "MEDIUM",
@@ -250,5 +255,74 @@ describe("ScenarioDefinitionSchema variations", () => {
         ],
       }),
     ).toThrow();
+  });
+});
+
+describe("v1 preservation and v2 variation pools", () => {
+  it("preserves all six v1 definitions for historical attempts", () => {
+    const v1Definitions = [
+      salaryNegotiationV1,
+      behavioralInterviewV1,
+      promotionRequestV1,
+      managerPushbackV1,
+      difficultFeedbackV1,
+      scopeCreepV1,
+    ];
+
+    expect(v1Definitions).toHaveLength(6);
+    for (const definition of v1Definitions) {
+      const parsed = ScenarioDefinitionSchema.parse(definition);
+      expect(parsed.version).toBe(1);
+      expect(parsed.variations).toBeUndefined();
+    }
+  });
+
+  it("gives every active scenario a curated variation pool", () => {
+    for (const definition of scenarioDefinitions) {
+      const variations = definition.variations ?? [];
+      const minimum = definition.key === "behavioral-interview" ? 4 : 3;
+
+      expect(variations.length).toBeGreaterThanOrEqual(minimum);
+      expect(new Set(variations.map(({ id }) => id)).size).toBe(
+        variations.length,
+      );
+      expect(
+        new Set(variations.map(({ openingMessage }) => openingMessage)).size,
+      ).toBe(variations.length);
+      for (const variation of variations) {
+        expect(variation.counterpartBrief).toBeTruthy();
+      }
+    }
+  });
+
+  it("covers every interview category across the behavioral interview tracks", () => {
+    const interview = scenarioDefinitions.find(
+      ({ key }) => key === "behavioral-interview",
+    );
+    if (!interview?.variations) {
+      throw new Error("Expected behavioral interview variations");
+    }
+
+    const categories = new Set(
+      interview.variations.flatMap(
+        ({ interviewTrack }) =>
+          interviewTrack?.questions.map(({ category }) => category) ?? [],
+      ),
+    );
+    expect([...categories].sort()).toEqual([
+      "ADAPTABILITY",
+      "EXPERIENCE",
+      "FAILURE_LEARNING",
+      "INTRODUCTION",
+      "OWNERSHIP",
+      "PROBLEM_SOLVING",
+      "REFLECTION",
+      "TEAMWORK_CONFLICT",
+    ]);
+
+    for (const { interviewTrack } of interview.variations) {
+      expect(interviewTrack?.questions.length).toBeGreaterThanOrEqual(3);
+      expect(interviewTrack?.questions.length).toBeLessThanOrEqual(5);
+    }
   });
 });

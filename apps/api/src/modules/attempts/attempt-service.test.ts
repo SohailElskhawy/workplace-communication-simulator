@@ -269,7 +269,12 @@ describe("attempt service", () => {
     async ({ scenario, difficulty }) => {
       const { repository } = createMemoryRepository();
       const aiService = createSuccessfulAiService();
-      const service = createAttemptService(repository, aiService, () => now);
+      const service = createAttemptService(
+        repository,
+        aiService,
+        () => now,
+        () => 0,
+      );
       const attempt = await service.create(ownerId, {
         scenarioKey: scenario.key,
         difficulty,
@@ -279,8 +284,8 @@ describe("attempt service", () => {
       expect(attempt).toMatchObject({
         status: "ACTIVE",
         difficulty,
-        scenario: { key: scenario.key, version: 1 },
-        openingMessage: scenario.openingMessage,
+        scenario: { key: scenario.key, version: 2 },
+        openingMessage: scenario.variations?.[0]?.openingMessage,
       });
 
       const turn = await service.createTurn(ownerId, attempt.id, {
@@ -299,8 +304,8 @@ describe("attempt service", () => {
     },
   );
 
-  it("creates an active attempt with a 15-minute expiry and opening message", async () => {
-    const { repository } = createMemoryRepository();
+  it("creates an active attempt with a 15-minute expiry and base opening for a scenario without variations", async () => {
+    const { repository } = createMemoryRepository([salaryNegotiationV1]);
     const service = createAttemptService(
       repository,
       createSuccessfulAiService(),
