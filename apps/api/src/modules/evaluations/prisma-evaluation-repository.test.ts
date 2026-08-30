@@ -207,4 +207,78 @@ describe("PrismaEvaluationRepository", () => {
       data: { status: "EVALUATING", evaluationClaimedAt: claimedAt },
     });
   });
+
+  it("rejects claiming when evaluation is already actively claimed within lease window", async () => {
+    const recentClaimedAt = new Date("2026-08-29T12:00:00.000Z");
+    const newRequestTime = new Date("2026-08-29T12:01:00.000Z"); // 1 minute later (< 3 min lease)
+    const transaction = {
+      simulationAttempt: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: attemptId,
+          userId,
+          status: "EVALUATING",
+          difficulty: "MEDIUM",
+          endedAt: recentClaimedAt,
+          evaluationClaimedAt: recentClaimedAt,
+          scenario: { id: "scenario-1", key: "salary-negotiation", version: 1, title: "Salary", definition: {} },
+          conversationTurns: [],
+          evaluation: null,
+        }),
+        updateMany: vi.fn(),
+      },
+    };
+    const prisma = {
+      $transaction: vi.fn(async (cb: (client: typeof transaction) => Promise<unknown>) => cb(transaction)),
+    } as unknown as PrismaClient;
+
+    const result = await createPrismaEvaluationRepository(prisma).claimEvaluation(
+      attemptId,
+      userId,
+      newRequestTime,
+    );
+
+    expect(result.kind).toBe("in_progress");
+    expect(transaction.simulationAttempt.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("re-claims evaluation when prior claim has exceeded lease window (stale lock recovery)", async () => {
+    const staleClaimedAt = new Date("2026-08-29T12:00:00.000Z");
+    const newRequestTime = new Date("2026-08-29T12:05:00.000Z"); // 5 minutes later (> 3 min lease)
+    const transaction = {
+      simulationAttempt: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: attemptId,
+          userId,
+          status: "EVALUATING",
+          difficulty: "MEDIUM",
+          endedAt: staleClaimedAt,
+          evaluationClaimedAt: staleClaimedAt,
+          scenario: { id: "scenario-1", key: "salary-negotiation", version: 1, title: "Salary", definition: {} },
+          conversationTurns: [],
+          evaluation: null,
+        }),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      },
+    };
+    const prisma = {
+      $transaction: vi.fn(async (cb: (client: typeof transaction) => Promise<unknown>) => cb(transaction)),
+    } as unknown as PrismaClient;
+
+    const result = await createPrismaEvaluationRepository(prisma).claimEvaluation(
+      attemptId,
+      userId,
+      newRequestTime,
+    );
+
+    expect(result.kind).toBe("claimed");
+    expect(transaction.simulationAttempt.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: attemptId,
+        userId,
+        status: "EVALUATING",
+        evaluationClaimedAt: staleClaimedAt,
+      },
+      data: { status: "EVALUATING", evaluationClaimedAt: newRequestTime },
+    });
+  });
 });

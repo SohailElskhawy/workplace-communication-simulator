@@ -87,12 +87,22 @@ export function createPrismaEvaluationRepository(
           });
           return existing
             ? ({
-                kind: "existing",
-                evaluation: mapEvaluation(existing),
-              } as const)
+              kind: "existing",
+              evaluation: mapEvaluation(existing),
+            } as const)
             : ({ kind: "rejected" } as const);
         }
-        if (attempt.status === "EVALUATING" && attempt.evaluationClaimedAt) {
+        const EVALUATION_CLAIM_LEASE_MS = 3 * 60 * 1000;
+        const isClaimStale =
+          attempt.evaluationClaimedAt !== null &&
+          claimedAt.getTime() - attempt.evaluationClaimedAt.getTime() >=
+          EVALUATION_CLAIM_LEASE_MS;
+
+        if (
+          attempt.status === "EVALUATING" &&
+          attempt.evaluationClaimedAt &&
+          !isClaimStale
+        ) {
           return { kind: "in_progress" } as const;
         }
         if (
@@ -106,7 +116,12 @@ export function createPrismaEvaluationRepository(
             id: attemptId,
             userId,
             ...(attempt.status === "EVALUATING"
-              ? { status: "EVALUATING", evaluationClaimedAt: null }
+              ? isClaimStale
+                ? {
+                  status: "EVALUATING",
+                  evaluationClaimedAt: attempt.evaluationClaimedAt,
+                }
+                : { status: "EVALUATING", evaluationClaimedAt: null }
               : { status: "EVALUATION_FAILED" }),
           },
           data: { status: "EVALUATING", evaluationClaimedAt: claimedAt },
