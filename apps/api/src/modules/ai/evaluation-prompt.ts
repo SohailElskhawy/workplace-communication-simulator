@@ -31,84 +31,99 @@ export interface EvaluationMessage {
   content: string;
 }
 
-export const RawAiEvaluationSchema = z.strictObject({
-  skills: z.strictObject({
-    clarity: z.strictObject({
-      score: z.int().min(0).max(100),
-      explanation: z.string().min(1).max(MAX_EXPLANATION_LENGTH),
-    }),
-    assertiveness: z.strictObject({
-      score: z.int().min(0).max(100),
-      explanation: z.string().min(1).max(MAX_EXPLANATION_LENGTH),
-    }),
-    empathy: z.strictObject({
-      score: z.int().min(0).max(100),
-      explanation: z.string().min(1).max(MAX_EXPLANATION_LENGTH),
-    }),
-    structure: z.strictObject({
-      score: z.int().min(0).max(100),
-      explanation: z.string().min(1).max(MAX_EXPLANATION_LENGTH),
-    }),
-    conciseness: z.strictObject({
-      score: z.int().min(0).max(100),
-      explanation: z.string().min(1).max(MAX_EXPLANATION_LENGTH),
-    }),
-  }),
-  objectives: z
-    .array(
-      z.strictObject({
-        objectiveId: z.string().min(1),
-        status: z.enum(["ACHIEVED", "PARTIALLY_ACHIEVED", "MISSED"]),
-        explanation: z.string().min(1).max(MAX_EXPLANATION_LENGTH),
-        evidenceTurnIds: z.array(z.string().min(1)).max(MAX_EVIDENCE_TURN_IDS),
-      }),
-    )
-    .max(MAX_FEEDBACK_ITEMS),
-  strengths: z
-    .array(
-      z.strictObject({
-        title: z.string().min(1).max(MAX_TITLE_LENGTH),
-        explanation: z.string().min(1).max(MAX_EXPLANATION_LENGTH),
-        turnIds: z.array(z.string().min(1)).max(MAX_EVIDENCE_TURN_IDS),
-      }),
-    )
-    .max(MAX_FEEDBACK_ITEMS),
-  improvements: z
-    .array(
-      z.strictObject({
-        title: z.string().min(1).max(MAX_TITLE_LENGTH),
-        explanation: z.string().min(1).max(MAX_EXPLANATION_LENGTH),
-        turnIds: z.array(z.string().min(1)).max(MAX_EVIDENCE_TURN_IDS),
-      }),
-    )
-    .max(MAX_FEEDBACK_ITEMS),
-  moments: z
-    .array(
-      z.strictObject({
-        turnId: z.string().min(1),
-        type: z.enum(["STRENGTH", "IMPROVEMENT", "MISSED_OPPORTUNITY"]),
-        explanation: z.string().min(1).max(MAX_EXPLANATION_LENGTH),
-        betterResponse: z
-          .string()
-          .max(MAX_BETTER_RESPONSE_LENGTH)
-          .nullable()
-          .optional()
-          .default(null),
-      }),
-    )
-    .max(MAX_FEEDBACK_ITEMS),
-  summary: z.string().min(1).max(MAX_SUMMARY_LENGTH),
-  nextFocus: z.strictObject({
-    skill: z.enum([
-      "CLARITY",
-      "ASSERTIVENESS",
-      "EMPATHY",
-      "STRUCTURE",
-      "CONCISENESS",
-    ]),
-    reason: z.string().min(1).max(MAX_EXPLANATION_LENGTH),
-  }),
+const SkillDetailSchema = z.object({
+  score: z.coerce.number().int().min(0).max(100),
+  explanation: z.string().min(1).max(MAX_EXPLANATION_LENGTH),
 });
+
+export const RawAiEvaluationSchema = z.preprocess(
+  (raw: unknown) => {
+    if (typeof raw !== "object" || raw === null) return raw;
+    const obj = { ...(raw as Record<string, unknown>) };
+    if (!obj.skills && obj.scores && typeof obj.scores === "object") {
+      obj.skills = obj.scores;
+    }
+    if (!obj.summary && typeof obj.overallSummary === "string") {
+      obj.summary = obj.overallSummary;
+    }
+    return obj;
+  },
+  z.object({
+    skills: z.object({
+      clarity: SkillDetailSchema,
+      assertiveness: SkillDetailSchema,
+      empathy: SkillDetailSchema,
+      structure: SkillDetailSchema,
+      conciseness: SkillDetailSchema,
+    }),
+    objectives: z
+      .array(
+        z.object({
+          objectiveId: z.string().min(1),
+          status: z.enum(["ACHIEVED", "PARTIALLY_ACHIEVED", "MISSED"]),
+          explanation: z.string().min(1).max(MAX_EXPLANATION_LENGTH),
+          evidenceTurnIds: z
+            .array(z.string().min(1))
+            .max(MAX_EVIDENCE_TURN_IDS)
+            .optional()
+            .default([]),
+        }),
+      )
+      .max(MAX_FEEDBACK_ITEMS),
+    strengths: z
+      .array(
+        z.object({
+          title: z.string().min(1).max(MAX_TITLE_LENGTH),
+          explanation: z.string().min(1).max(MAX_EXPLANATION_LENGTH),
+          turnIds: z
+            .array(z.string().min(1))
+            .max(MAX_EVIDENCE_TURN_IDS)
+            .optional()
+            .default([]),
+        }),
+      )
+      .max(MAX_FEEDBACK_ITEMS),
+    improvements: z
+      .array(
+        z.object({
+          title: z.string().min(1).max(MAX_TITLE_LENGTH),
+          explanation: z.string().min(1).max(MAX_EXPLANATION_LENGTH),
+          turnIds: z
+            .array(z.string().min(1))
+            .max(MAX_EVIDENCE_TURN_IDS)
+            .optional()
+            .default([]),
+        }),
+      )
+      .max(MAX_FEEDBACK_ITEMS),
+    moments: z
+      .array(
+        z.object({
+          turnId: z.string().min(1),
+          type: z.enum(["STRENGTH", "IMPROVEMENT", "MISSED_OPPORTUNITY"]),
+          explanation: z.string().min(1).max(MAX_EXPLANATION_LENGTH),
+          betterResponse: z
+            .string()
+            .max(MAX_BETTER_RESPONSE_LENGTH)
+            .nullable()
+            .optional()
+            .default(null),
+        }),
+      )
+      .max(MAX_FEEDBACK_ITEMS),
+    summary: z.string().min(1).max(MAX_SUMMARY_LENGTH),
+    nextFocus: z.object({
+      skill: z.enum([
+        "CLARITY",
+        "ASSERTIVENESS",
+        "EMPATHY",
+        "STRUCTURE",
+        "CONCISENESS",
+      ]),
+      reason: z.string().min(1).max(MAX_EXPLANATION_LENGTH),
+    }),
+  }),
+);
 
 export type RawAiEvaluation = z.infer<typeof RawAiEvaluationSchema>;
 
@@ -163,7 +178,53 @@ export function buildEvaluationMessages(
     "5. betterResponse MUST preserve the learner's intent, stay realistic, and NEVER fabricate achievements, credentials, numbers, or personal facts not established in the conversation.",
     "6. Identify the primary nextFocus skill from the 5 universal skills (CLARITY, ASSERTIVENESS, EMPATHY, STRUCTURE, CONCISENESS) with a clear actionable reason.",
     "7. Do NOT include an overall score; overall score is deterministically calculated by the backend.",
-    "8. Return ONLY valid JSON adhering strictly to the required schema.",
+    "8. Return ONLY valid JSON adhering strictly to the required schema below.",
+    "",
+    "REQUIRED JSON STRUCTURE:",
+    `{
+  "skills": {
+    "clarity": { "score": 80, "explanation": "..." },
+    "assertiveness": { "score": 75, "explanation": "..." },
+    "empathy": { "score": 70, "explanation": "..." },
+    "structure": { "score": 85, "explanation": "..." },
+    "conciseness": { "score": 80, "explanation": "..." }
+  },
+  "objectives": [
+    {
+      "objectiveId": "<exact objective ID from above>",
+      "status": "ACHIEVED" | "PARTIALLY_ACHIEVED" | "MISSED",
+      "explanation": "...",
+      "evidenceTurnIds": ["<exact turn id from transcript>"]
+    }
+  ],
+  "strengths": [
+    {
+      "title": "...",
+      "explanation": "...",
+      "turnIds": ["<exact turn id from transcript>"]
+    }
+  ],
+  "improvements": [
+    {
+      "title": "...",
+      "explanation": "...",
+      "turnIds": ["<exact turn id from transcript>"]
+    }
+  ],
+  "moments": [
+    {
+      "turnId": "<exact turn id from transcript>",
+      "type": "STRENGTH" | "IMPROVEMENT" | "MISSED_OPPORTUNITY",
+      "explanation": "...",
+      "betterResponse": "..." (or null if type is STRENGTH)
+    }
+  ],
+  "summary": "...",
+  "nextFocus": {
+    "skill": "CLARITY" | "ASSERTIVENESS" | "EMPATHY" | "STRUCTURE" | "CONCISENESS",
+    "reason": "..."
+  }
+}`,
   ].join("\n");
 
   const transcriptLines = turns.map((turn) => {
@@ -179,7 +240,7 @@ export function buildEvaluationMessages(
     "",
     ...transcriptLines,
     "",
-    "Provide your complete structured evaluation in JSON format.",
+    "Provide your complete structured evaluation in the required JSON format.",
   ].join("\n");
 
   return [

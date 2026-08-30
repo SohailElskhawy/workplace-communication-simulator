@@ -96,6 +96,7 @@ export default function ResultsPage() {
       } else {
         const evalData = await client.evaluateAttempt(token, attemptId);
         setEvaluation(evalData);
+        setAttempt((prev) => (prev ? { ...prev, status: "COMPLETED", evaluation: evalData } : prev));
       }
 
       if (attemptData.comparison) {
@@ -107,7 +108,7 @@ export default function ResultsPage() {
         } catch {}
       }
     } catch (err: unknown) {
-      if (err instanceof ApiClientError && err.code === "EVALUATION_NOT_FOUND") {
+      if (err instanceof ApiClientError && (err.code === "EVALUATION_NOT_FOUND" || err.code === "EVALUATION_FAILED")) {
         setEvalFailed(true);
       } else {
         setError(err instanceof Error ? err.message : "Failed to load simulation results.");
@@ -136,10 +137,6 @@ export default function ResultsPage() {
         setAttempt(attemptData);
         setSelectedDifficulty(attemptData.difficulty);
 
-        if (attemptData.status === "EVALUATING" || attemptData.status === "ACTIVE") {
-          return;
-        }
-
         if (attemptData.status === "EVALUATION_FAILED") {
           setEvalFailed(true);
           return;
@@ -148,8 +145,24 @@ export default function ResultsPage() {
         if (attemptData.evaluation) {
           setEvaluation(attemptData.evaluation);
         } else {
-          const evalData = await client.evaluateAttempt(token, attemptId);
-          if (isMounted) setEvaluation(evalData);
+          try {
+            const evalData = await client.evaluateAttempt(token, attemptId);
+            if (isMounted) {
+              setEvaluation(evalData);
+              setAttempt((prev) =>
+                prev ? { ...prev, status: "COMPLETED", evaluation: evalData } : prev,
+              );
+            }
+          } catch (evalErr: unknown) {
+            if (
+              evalErr instanceof ApiClientError &&
+              evalErr.code === "EVALUATION_IN_PROGRESS"
+            ) {
+              // Evaluation is being processed in parallel, polling effect will pick it up
+            } else {
+              if (isMounted) setEvalFailed(true);
+            }
+          }
         }
 
         if (attemptData.comparison) {
@@ -162,10 +175,15 @@ export default function ResultsPage() {
         }
       } catch (err: unknown) {
         if (!isMounted) return;
-        if (err instanceof ApiClientError && err.code === "EVALUATION_NOT_FOUND") {
+        if (
+          err instanceof ApiClientError &&
+          (err.code === "EVALUATION_NOT_FOUND" || err.code === "EVALUATION_FAILED")
+        ) {
           setEvalFailed(true);
         } else {
-          setError(err instanceof Error ? err.message : "Failed to load simulation results.");
+          setError(
+            err instanceof Error ? err.message : "Failed to load simulation results.",
+          );
         }
       } finally {
         if (isMounted) setLoading(false);

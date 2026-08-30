@@ -235,7 +235,7 @@ describe("OpenRouterProvider", () => {
     expect(body).toMatchObject({
       model: "openai/gpt-5.6-luna-pro",
       response_format: { type: "json_object" },
-      max_tokens: 6_000,
+      max_tokens: 12_000,
       provider: { zdr: true, data_collection: "deny" },
     });
   });

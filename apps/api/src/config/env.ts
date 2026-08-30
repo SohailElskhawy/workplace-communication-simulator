@@ -37,9 +37,9 @@ const ApiEnvSchema = z.object({
     .default("evaluation-v1"),
   TRANSCRIPTION_MODEL: ExplicitOpenRouterModelSchema,
   TTS_MODEL: ExplicitOpenRouterModelSchema,
-  ROLEPLAY_TIMEOUT_MS: TimeoutSchema.default(15_000),
-  EVALUATION_TIMEOUT_MS: TimeoutSchema.default(30_000),
-  TRANSCRIPTION_TIMEOUT_MS: TimeoutSchema.default(20_000),
+  ROLEPLAY_TIMEOUT_MS: TimeoutSchema.default(25_000),
+  EVALUATION_TIMEOUT_MS: TimeoutSchema.default(60_000),
+  TRANSCRIPTION_TIMEOUT_MS: TimeoutSchema.default(25_000),
   TTS_TIMEOUT_MS: TimeoutSchema.default(15_000),
   GENERAL_RATE_LIMIT_WINDOW_MS: z.coerce
     .number()
