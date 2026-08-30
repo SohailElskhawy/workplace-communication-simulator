@@ -1,6 +1,9 @@
 import type { Difficulty } from "@kalemny/contracts";
 
-import type { ScenarioDefinition } from "../scenarios/scenario-definition.js";
+import type {
+  ScenarioDefinition,
+  ScenarioVariation,
+} from "../scenarios/scenario-definition.js";
 import {
   buildEvaluationMessages,
   EVALUATION_PROMPT_VERSION,
@@ -23,12 +26,14 @@ export interface GenerateRoleplayReplyInput {
   difficulty: Difficulty;
   previousTurns: RoleplayTranscriptTurn[];
   latestLearnerMessage: string;
+  variation?: ScenarioVariation | null;
 }
 
 export interface EvaluateSimulationInput {
   scenario: ScenarioDefinition;
   difficulty: Difficulty;
   turns: EvaluationTranscriptTurn[];
+  variation?: ScenarioVariation | null;
 }
 
 export interface TranscribeAudioInput {

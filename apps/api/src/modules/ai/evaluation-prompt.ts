@@ -2,9 +2,12 @@ import { z } from "zod";
 
 import type { Difficulty } from "@kalemny/contracts";
 
-import type { ScenarioDefinition } from "../scenarios/scenario-definition.js";
+import type {
+  ScenarioDefinition,
+  ScenarioVariation,
+} from "../scenarios/scenario-definition.js";
 
-export const EVALUATION_PROMPT_VERSION = "evaluation-v1" as const;
+export const EVALUATION_PROMPT_VERSION = "evaluation-v2" as const;
 
 const MAX_FEEDBACK_ITEMS = 8;
 const MAX_EVIDENCE_TURN_IDS = 4;
@@ -24,6 +27,7 @@ export interface EvaluationPromptInput {
   scenario: ScenarioDefinition;
   difficulty: Difficulty;
   turns: EvaluationTranscriptTurn[];
+  variation?: ScenarioVariation | null;
 }
 
 export interface EvaluationMessage {
@@ -135,6 +139,7 @@ export function buildEvaluationMessages(
   input: EvaluationPromptInput,
 ): EvaluationMessage[] {
   const { scenario, difficulty, turns } = input;
+  const variation = input.variation ?? null;
 
   const systemMessage = [
     `Workplace simulation evaluation prompt version: ${EVALUATION_PROMPT_VERSION}`,
@@ -155,8 +160,11 @@ export function buildEvaluationMessages(
     `Title: ${scenario.title}`,
     `Learner Role: ${scenario.publicContext.userRole}`,
     `Counterpart Role: ${scenario.persona.role}`,
-    `Situation: ${scenario.publicContext.description}`,
+    `Situation: ${variation?.situation ?? scenario.publicContext.description}`,
     `Learner Objective: ${scenario.publicContext.userObjective}`,
+    ...(variation
+      ? [`Counterpart opening message: ${variation.openingMessage}`]
+      : []),
     `Difficulty: ${difficulty}`,
     "",
     "SCENARIO OBJECTIVES TO EVALUATE",

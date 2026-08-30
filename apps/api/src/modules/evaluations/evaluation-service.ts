@@ -5,6 +5,7 @@ import type { AiService } from "../ai/ai-service.js";
 import { AiProviderError } from "../ai/openrouter-provider.js";
 import { AttemptError } from "../attempts/attempt-errors.js";
 import { ScenarioDefinitionSchema } from "../scenarios/scenario-definition.js";
+import { resolveScenarioVariation } from "../scenarios/scenario-variation.js";
 import type {
   EvaluationRecord,
   EvaluationRepository,
@@ -76,6 +77,7 @@ export function createEvaluationService(
       const scenario = ScenarioDefinitionSchema.parse(
         attempt.scenario.definition,
       );
+      const variation = resolveScenarioVariation(scenario, attempt.variationId);
       const completedTurns = attempt.turns
         .filter((turn) => turn.status === "COMPLETED")
         .sort((a, b) => a.sequence - b.sequence);
@@ -93,6 +95,7 @@ export function createEvaluationService(
         scenario,
         difficulty: attempt.difficulty,
         turns: completedTurns,
+        variation,
       };
 
       let aiResult;

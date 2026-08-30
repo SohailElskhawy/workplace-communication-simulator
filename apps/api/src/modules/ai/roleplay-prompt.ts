@@ -1,8 +1,11 @@
 import type { Difficulty } from "@kalemny/contracts";
 
-import type { ScenarioDefinition } from "../scenarios/scenario-definition.js";
+import type {
+  ScenarioDefinition,
+  ScenarioVariation,
+} from "../scenarios/scenario-definition.js";
 
-export const ROLEPLAY_PROMPT_VERSION = "roleplay-v1" as const;
+export const ROLEPLAY_PROMPT_VERSION = "roleplay-v2" as const;
 
 export interface RoleplayTranscriptTurn {
   sequence: number;
@@ -15,6 +18,7 @@ export interface RoleplayPromptInput {
   difficulty: Difficulty;
   previousTurns: RoleplayTranscriptTurn[];
   latestLearnerMessage: string;
+  variation?: ScenarioVariation | null;
 }
 
 export interface RoleplayMessage {
@@ -26,10 +30,45 @@ function bullets(values: string[]): string {
   return values.map((value) => `- ${value}`).join("\n");
 }
 
+const INTERVIEW_CONDUCT_RULES = [
+  "- Open with the first planned question.",
+  "- Ask natural follow-ups based on the learner's actual answer before moving on.",
+  "- Move to the next planned question or category once the current one is sufficiently explored.",
+  "- Treat the plan as flexible guidance, not a script: skip questions when the flow or remaining time dictates; never ask every question mechanically.",
+  "- Never repeat an already-answered question except to clarify.",
+  "- Difficulty controls follow-up pressure and challenge; the plan itself does not change with difficulty.",
+];
+
+function sessionPlanLines(variation: ScenarioVariation): string[] {
+  const track = variation.interviewTrack;
+  if (!track) {
+    return [];
+  }
+  return [
+    "",
+    "Session plan",
+    "Curated interview track (flexible guide, not a script):",
+    ...track.questions.map(
+      (question, index) =>
+        `${index + 1}. [${question.category}] ${question.question}`,
+    ),
+    "Interview conduct:",
+    ...INTERVIEW_CONDUCT_RULES,
+  ];
+}
+
+function conversationBriefLines(variation: ScenarioVariation): string[] {
+  if (!variation.counterpartBrief) {
+    return [];
+  }
+  return ["", "This conversation", variation.counterpartBrief];
+}
+
 export function buildRoleplayMessages(
   input: RoleplayPromptInput,
 ): RoleplayMessage[] {
   const { scenario } = input;
+  const variation = input.variation ?? null;
   const difficulty = scenario.difficulties[input.difficulty];
   const systemMessage = [
     `Workplace roleplay prompt version: ${ROLEPLAY_PROMPT_VERSION}`,
@@ -40,7 +79,7 @@ export function buildRoleplayMessages(
     `Communication style: ${scenario.persona.communicationStyle}`,
     "",
     "Situation",
-    scenario.publicContext.description,
+    variation?.situation ?? scenario.publicContext.description,
     `Stakes: ${scenario.publicContext.stakes}`,
     "",
     "Learner role",
@@ -51,6 +90,8 @@ export function buildRoleplayMessages(
     "",
     `Motivations:\n${bullets(scenario.motivations)}`,
     `Constraints:\n${bullets(scenario.constraints)}`,
+    ...(variation ? sessionPlanLines(variation) : []),
+    ...(variation ? conversationBriefLines(variation) : []),
     "",
     `Difficulty: ${input.difficulty}`,
     `Behavior guidance: ${difficulty.behaviorGuidance}`,
@@ -73,7 +114,10 @@ export function buildRoleplayMessages(
 
   const messages: RoleplayMessage[] = [
     { role: "system", content: systemMessage },
-    { role: "assistant", content: scenario.openingMessage },
+    {
+      role: "assistant",
+      content: variation?.openingMessage ?? scenario.openingMessage,
+    },
   ];
 
   for (const turn of [...input.previousTurns].sort(

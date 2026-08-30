@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { AiService } from "../ai/ai-service.js";
 import { AiProviderError } from "../ai/openrouter-provider.js";
 import { salaryNegotiationV1 } from "../scenarios/definitions/salary-negotiation.js";
+import { ScenarioDefinitionSchema } from "../scenarios/scenario-definition.js";
 import type {
   AttemptForEvaluationRecord,
   EvaluationRecord,
@@ -22,6 +23,7 @@ describe("EvaluationService", () => {
     userId,
     status: "EVALUATING",
     difficulty: "MEDIUM",
+    variationId: null,
     endedAt: new Date("2026-08-29T12:10:00.000Z"),
     scenario: {
       id: "scenario-1",
@@ -256,6 +258,9 @@ describe("EvaluationService", () => {
     expect(result.overallScore).toBe(86);
     expect(result.universalScore).toBe(80);
     expect(result.scenarioScore).toBe(100);
+    expect(aiService.evaluateSimulation).toHaveBeenCalledWith(
+      expect.objectContaining({ variation: null }),
+    );
     expect(repository.saveEvaluation).toHaveBeenCalledWith(
       expect.objectContaining({
         attemptId,
@@ -264,6 +269,85 @@ describe("EvaluationService", () => {
         universalScore: 80,
         scenarioScore: 100,
         overallScore: 86,
+      }),
+    );
+  });
+
+  it("passes the attempt's stored variation to the evaluator", async () => {
+    const variedDefinition = ScenarioDefinitionSchema.parse({
+      ...salaryNegotiationV1,
+      variations: [
+        {
+          id: "tight-budget",
+          category: "TIGHT_BUDGET",
+          openingMessage: "Tight budget opening.",
+        },
+      ],
+    });
+    const savedRecord: EvaluationRecord = {
+      id: "eval-variation",
+      attemptId,
+      clarity: 85,
+      assertiveness: 75,
+      empathy: 70,
+      structure: 90,
+      conciseness: 80,
+      universalScore: 80,
+      scenarioScore: 100,
+      overallScore: 86,
+      objectiveResults: validRawEvaluation.objectives,
+      strengths: validRawEvaluation.strengths,
+      improvements: validRawEvaluation.improvements,
+      moments: validRawEvaluation.moments.map((m) => ({
+        ...m,
+        betterResponse: m.betterResponse ?? null,
+      })),
+      nextFocusSkill: "EMPATHY",
+      nextFocusReason: "Validate budget pressures further.",
+      summary: "Solid negotiation attempt.",
+      model: "openai/gpt-5.6-luna-pro",
+      promptVersion: "evaluation-v2",
+      createdAt: new Date("2026-08-29T12:15:00.000Z"),
+    };
+
+    const repository: EvaluationRepository = {
+      claimEvaluation: vi.fn().mockResolvedValue({
+        kind: "claimed",
+        attempt: {
+          ...baseAttempt,
+          variationId: "tight-budget",
+          scenario: { ...baseAttempt.scenario, definition: variedDefinition },
+        },
+      }),
+      findAttemptForEvaluation: vi.fn().mockResolvedValue(baseAttempt),
+      findExistingEvaluation: vi.fn().mockResolvedValue(null),
+      saveEvaluation: vi.fn().mockResolvedValue(savedRecord),
+      markEvaluationFailed: vi.fn(),
+    };
+
+    const aiService: AiService = {
+      roleplayModel: "deepseek/deepseek-v4-flash-0731",
+      evaluationModel: "openai/gpt-5.6-luna-pro",
+      transcriptionModel: "openai/whisper-large-v3-turbo",
+      ttsModel: "hexgrad/kokoro-82m",
+      generateSpeech: vi.fn(),
+      generateRoleplayReply: vi.fn(),
+      evaluateSimulation: vi.fn().mockResolvedValue({
+        evaluation: validRawEvaluation,
+        latencyMs: 500,
+        inputTokens: 200,
+        outputTokens: 100,
+        estimatedCost: 0.002,
+      }),
+      transcribeAudio: vi.fn(),
+    };
+
+    const service = createEvaluationService(repository, aiService);
+    await service.evaluate(userId, attemptId);
+
+    expect(aiService.evaluateSimulation).toHaveBeenCalledWith(
+      expect.objectContaining({
+        variation: expect.objectContaining({ id: "tight-budget" }),
       }),
     );
   });

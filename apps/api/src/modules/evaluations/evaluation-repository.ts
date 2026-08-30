@@ -23,6 +23,7 @@ export interface AttemptForEvaluationRecord {
   userId: string;
   status: AttemptStatus;
   difficulty: Difficulty;
+  variationId: string | null;
   endedAt: Date | null;
   scenario: {
     id: string;

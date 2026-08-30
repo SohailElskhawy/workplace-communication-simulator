@@ -10,9 +10,9 @@ describe("parseApiEnv", () => {
     CLERK_SECRET_KEY: "sk_test_example",
     OPENROUTER_API_KEY: "sk-or-v1-example",
     ROLEPLAY_MODEL: "provider/roleplay-model",
-    ROLEPLAY_PROMPT_VERSION: "roleplay-v1",
+    ROLEPLAY_PROMPT_VERSION: "roleplay-v2",
     EVALUATION_MODEL: "provider/evaluation-model",
-    EVALUATION_PROMPT_VERSION: "evaluation-v1",
+    EVALUATION_PROMPT_VERSION: "evaluation-v2",
     TRANSCRIPTION_MODEL: "provider/transcription-model",
     TTS_MODEL: "hexgrad/kokoro-82m",
   };
@@ -94,7 +94,7 @@ describe("parseApiEnv", () => {
     expect(() =>
       parseApiEnv({
         ...requiredEnvironment,
-        ROLEPLAY_PROMPT_VERSION: "roleplay-v2",
+        ROLEPLAY_PROMPT_VERSION: "roleplay-v1",
       }),
     ).toThrow();
   });

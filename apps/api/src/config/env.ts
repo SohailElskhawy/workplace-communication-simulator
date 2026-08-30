@@ -30,11 +30,11 @@ const ApiEnvSchema = z.object({
   CLERK_SECRET_KEY: z.string().min(1),
   OPENROUTER_API_KEY: z.string().min(1),
   ROLEPLAY_MODEL: ExplicitOpenRouterModelSchema,
-  ROLEPLAY_PROMPT_VERSION: z.literal("roleplay-v1"),
+  ROLEPLAY_PROMPT_VERSION: z.literal("roleplay-v2"),
   EVALUATION_MODEL: ExplicitOpenRouterModelSchema,
   EVALUATION_PROMPT_VERSION: z
-    .literal("evaluation-v1")
-    .default("evaluation-v1"),
+    .literal("evaluation-v2")
+    .default("evaluation-v2"),
   TRANSCRIPTION_MODEL: ExplicitOpenRouterModelSchema,
   TTS_MODEL: ExplicitOpenRouterModelSchema,
   ROLEPLAY_TIMEOUT_MS: TimeoutSchema.default(25_000),

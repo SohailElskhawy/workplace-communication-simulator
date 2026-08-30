@@ -252,6 +252,7 @@ export function createAttemptService(
     const scenario = ScenarioDefinitionSchema.parse(
       attempt.scenario.definition,
     );
+    const variation = resolveScenarioVariation(scenario, attempt.variationId);
     const previousTurns = attempt.turns
       .filter(
         (previousTurn) =>
@@ -272,6 +273,7 @@ export function createAttemptService(
         difficulty: attempt.difficulty,
         previousTurns,
         latestLearnerMessage: turn.userText,
+        variation,
       });
       const finalized = await repository.finalizeRoleplayTurn({
         attemptId,

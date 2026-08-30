@@ -341,9 +341,10 @@ describe("attempt service", () => {
       ],
     });
     const { attempts, repository } = createMemoryRepository([variedDefinition]);
+    const aiService = createSuccessfulAiService();
     const service = createAttemptService(
       repository,
-      createSuccessfulAiService(),
+      aiService,
       () => now,
       () => 0,
     );
@@ -358,6 +359,17 @@ describe("attempt service", () => {
         openingMessage: "Standard offer opening.",
       },
     });
+
+    await service.createTurn(ownerId, attempt.id, {
+      clientRequestId: "variation-turn-1",
+      text: "Here is my position and a proposed next step.",
+      inputMethod: "TEXT",
+    });
+    expect(aiService.generateRoleplayReply).toHaveBeenCalledWith(
+      expect.objectContaining({
+        variation: expect.objectContaining({ id: "standard-offer" }),
+      }),
+    );
   });
 
   it("retries with a different variation when the pool allows", async () => {
@@ -409,9 +421,10 @@ describe("attempt service", () => {
       ],
     });
     const { attempts, repository } = createMemoryRepository([variedDefinition]);
+    const aiService = createSuccessfulAiService();
     const service = createAttemptService(
       repository,
-      createSuccessfulAiService(),
+      aiService,
       () => now,
       () => 0,
     );
@@ -424,6 +437,15 @@ describe("attempt service", () => {
     await expect(service.getOwned(ownerId, attempt.id)).resolves.toMatchObject({
       scenario: { openingMessage: salaryNegotiationV1.openingMessage },
     });
+
+    await service.createTurn(ownerId, attempt.id, {
+      clientRequestId: "fallback-turn-1",
+      text: "Here is my position and a proposed next step.",
+      inputMethod: "TEXT",
+    });
+    expect(aiService.generateRoleplayReply).toHaveBeenCalledWith(
+      expect.objectContaining({ variation: null }),
+    );
   });
 
   it("hides non-owned and scenario-mismatched retry sources", async () => {
