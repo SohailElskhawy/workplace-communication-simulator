@@ -84,7 +84,12 @@ export {
   type RecommendedScenario,
 } from "./progress.js";
 export {
+  BindRealtimeConversationRequestSchema,
+  BindRealtimeConversationResponseSchema,
+  MAX_REALTIME_CONVERSATION_ID_LENGTH,
   RealtimeSessionResponseSchema,
+  type BindRealtimeConversationRequest,
+  type BindRealtimeConversationResponse,
   type RealtimeSessionResponse,
 } from "./realtime.js";
 export {

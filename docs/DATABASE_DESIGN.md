@@ -244,6 +244,34 @@ sequence >= 1
 
 ---
 
+## 8a. RealtimeConversation
+
+```text
+RealtimeConversation
+- id               UUID PK
+- conversationId   string UNIQUE
+- attemptId        UUID FK → SimulationAttempt
+- transcriptImportedAt timestamp nullable
+- createdAt        timestamp
+- updatedAt        timestamp
+```
+
+This is the minimal server-side binding for an ElevenLabs realtime
+`conversation_id`. It is created through the owner-authenticated bind endpoint
+after the browser receives the provider-created ID. The post-call webhook
+resolves attempts only through this mapping; it never trusts provider
+`user_id` metadata or browser-supplied scenario/variation/difficulty fields.
+One provider conversation belongs to exactly one attempt; an attempt can have
+multiple restarted realtime conversations. Raw webhook payloads and audio are
+not stored.
+
+`transcriptImportedAt` is set in the same transaction that imports the
+normalized turns. Finish rejects an attempt while any of its bound realtime
+conversations lack this marker, preventing a late webhook from changing a
+frozen evaluation transcript.
+
+---
+
 ## 9. Evaluation
 
 Each attempt has at most one canonical evaluation.
@@ -447,6 +475,7 @@ Scenario
 
 SimulationAttempt
   ├── ConversationTurn[]
+  ├── RealtimeConversation[]
   ├── Evaluation?            (1:0..1)
   ├── AiUsageEvent[]
   └── retryOfAttempt?        (self-reference)
@@ -511,6 +540,8 @@ SimulationAttempt(userId, status)
 SimulationAttempt(retryOfAttemptId)
 
 ConversationTurn(attemptId, sequence)
+RealtimeConversation(conversationId)
+RealtimeConversation(attemptId)
 
 Evaluation(attemptId)
 
@@ -528,6 +559,7 @@ Deleting a `SimulationAttempt` should cascade to:
 
 ```text
 ConversationTurn
+RealtimeConversation
 Evaluation
 attempt-linked AiUsageEvent
 ```

@@ -156,6 +156,12 @@ export interface AttemptRepository {
     attemptId: string,
     userId: string,
   ): Promise<AttemptRecord | null>;
+  bindRealtimeConversation(
+    attemptId: string,
+    userId: string,
+    conversationId: string,
+    currentTime: Date,
+  ): Promise<"bound" | "not_found" | "invalid_state" | "expired">;
   /**
    * Loads only the data required to build the roleplay prompt for the next
    * turn: difficulty, variation, scenario definition, and completed turns
@@ -284,9 +290,7 @@ export function createAttemptService(
     });
     if (!context) throw new AttemptError("NOT_FOUND");
 
-    const scenario = ScenarioDefinitionSchema.parse(
-      context.scenarioDefinition,
-    );
+    const scenario = ScenarioDefinitionSchema.parse(context.scenarioDefinition);
     const variation = resolveScenarioVariation(scenario, context.variationId);
 
     try {

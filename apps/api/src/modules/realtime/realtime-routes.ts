@@ -1,4 +1,8 @@
-import type { RealtimeSessionResponse } from "@kalemny/contracts";
+import {
+  BindRealtimeConversationRequestSchema,
+  type BindRealtimeConversationResponse,
+  type RealtimeSessionResponse,
+} from "@kalemny/contracts";
 import type { Express, Request, Response } from "express";
 import { z } from "zod";
 
@@ -9,7 +13,12 @@ import {
 } from "../common/route-helpers.js";
 import type { LocalUserProvisioner } from "../users/provision-local-user.js";
 import { secretsMatch } from "./realtime-context-token.js";
+import {
+  ElevenLabsPostCallTranscriptionSchema,
+  verifyElevenLabsWebhookSignature,
+} from "./elevenlabs-webhook.js";
 import type { RealtimeVoiceService } from "./realtime-service.js";
+import type { RealtimeTranscriptService } from "./realtime-transcript-service.js";
 
 const AttemptParamsSchema = z.strictObject({ attemptId: z.uuid() });
 
@@ -22,6 +31,66 @@ export interface RealtimeRouteDependencies {
   elevenLabsToolSecret: string;
   resolveAuthProviderUserId(request: Request): string | null;
   userProvisioner: LocalUserProvisioner;
+}
+
+export interface ElevenLabsWebhookRouteDependencies {
+  agentId: string;
+  transcriptService: RealtimeTranscriptService;
+  webhookSecret: string;
+  clock?: () => Date;
+}
+
+/**
+ * Public provider callback. This is registered before the app's JSON parser
+ * and Clerk middleware so HMAC validation sees the untouched raw bytes.
+ */
+export function registerElevenLabsWebhookRoute(
+  app: Express,
+  dependencies: ElevenLabsWebhookRouteDependencies,
+): void {
+  const clock = dependencies.clock ?? (() => new Date());
+  app.post("/api/v1/webhooks/elevenlabs", async (request, response, next) => {
+    try {
+      const rawBody = request.body;
+      if (
+        !Buffer.isBuffer(rawBody) ||
+        !verifyElevenLabsWebhookSignature({
+          rawBody,
+          signatureHeader: request.header("ElevenLabs-Signature") ?? undefined,
+          secret: dependencies.webhookSecret,
+          currentTime: clock(),
+        })
+      ) {
+        response.status(401).json({ error: "Invalid webhook signature." });
+        return;
+      }
+
+      let parsedJson: unknown;
+      try {
+        parsedJson = JSON.parse(rawBody.toString("utf8"));
+      } catch {
+        response.status(400).json({ error: "Invalid webhook payload." });
+        return;
+      }
+      const parsed =
+        ElevenLabsPostCallTranscriptionSchema.safeParse(parsedJson);
+      if (!parsed.success) {
+        response.status(400).json({ error: "Invalid webhook payload." });
+        return;
+      }
+      if (parsed.data.data.agent_id !== dependencies.agentId) {
+        response.status(204).end();
+        return;
+      }
+
+      await dependencies.transcriptService.importPostCallTranscription(
+        parsed.data,
+      );
+      response.status(204).end();
+    } catch (error) {
+      next(error);
+    }
+  });
 }
 
 export function registerRealtimeVoiceRoutes(
@@ -55,6 +124,44 @@ export function registerRealtimeVoiceRoutes(
           parsed.data.attemptId,
         );
         const body: RealtimeSessionResponse = { data: session };
+        response.status(200).json(body);
+      } catch (error) {
+        if (!handleAttemptError(response, error)) next(error);
+      }
+    },
+  );
+
+  app.post(
+    "/api/v1/attempts/:attemptId/realtime-conversation",
+    async (request: Request, response: Response, next) => {
+      try {
+        const userId = await resolveLocalUserId(
+          request,
+          response,
+          dependencies,
+        );
+        if (!userId) return;
+
+        const parsedParams = AttemptParamsSchema.safeParse(request.params);
+        const parsedBody = BindRealtimeConversationRequestSchema.safeParse(
+          request.body,
+        );
+        if (!parsedParams.success || !parsedBody.success) {
+          sendError(response, 400, "VALIDATION_FAILED", "Request is invalid.");
+          return;
+        }
+
+        await dependencies.realtimeVoiceService.bindConversation(
+          userId,
+          parsedParams.data.attemptId,
+          parsedBody.data.conversationId,
+        );
+        const body: BindRealtimeConversationResponse = {
+          data: {
+            attemptId: parsedParams.data.attemptId,
+            conversationId: parsedBody.data.conversationId,
+          },
+        };
         response.status(200).json(body);
       } catch (error) {
         if (!handleAttemptError(response, error)) next(error);

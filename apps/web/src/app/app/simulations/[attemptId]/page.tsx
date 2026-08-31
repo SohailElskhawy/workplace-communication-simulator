@@ -86,6 +86,7 @@ export default function SimulationPage() {
 
   // Feature-flagged live conversation (ElevenLabs realtime spike).
   const [liveActive, setLiveActive] = useState(false);
+  const [liveBindingPending, setLiveBindingPending] = useState(false);
   const [liveUiState, setLiveUiState] =
     useState<LiveConversationUiState>("disconnected");
   // Ephemeral live transcript (finalized realtime utterances). In-memory
@@ -501,7 +502,7 @@ export default function SimulationPage() {
         counterpartRole={counterpartRole}
         turnCount={attempt.turns.length}
         elapsedSeconds={elapsedSeconds}
-        finishing={finishing}
+        finishing={finishing || liveActive || liveBindingPending}
         autoPlaySpeech={autoPlaySpeech}
         onToggleAutoPlay={() => setAutoPlaySpeech((prev) => !prev)}
         onOpenFinishDialog={() => setShowFinishDialog(true)}
@@ -566,6 +567,7 @@ export default function SimulationPage() {
               attemptId={attempt.id}
               startDisabled={isComposerDisabled || finishing}
               onActiveChange={setLiveActive}
+              onBindingPendingChange={setLiveBindingPending}
               onUiStateChange={setLiveUiState}
               onMicrophoneLevelChange={setMicrophoneLevel}
               onTranscriptChange={setLiveTranscript}

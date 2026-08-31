@@ -34,3 +34,44 @@ export const RealtimeSessionResponseSchema = z.strictObject({
 export type RealtimeSessionResponse = z.infer<
   typeof RealtimeSessionResponseSchema
 >;
+
+/**
+ * Upper bound for an ElevenLabs realtime conversation ID accepted by the
+ * bind endpoint. Real ElevenLabs IDs (`conv_…`) are far shorter; the bound
+ * keeps the deterministic webhook `clientRequestId` (`realtime:<id>:<index>`)
+ * safely inside the 128-character `ConversationTurn.clientRequestId` column.
+ */
+export const MAX_REALTIME_CONVERSATION_ID_LENGTH = 64;
+
+const RealtimeConversationIdSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(MAX_REALTIME_CONVERSATION_ID_LENGTH);
+
+/**
+ * Request for `POST /api/v1/attempts/:attemptId/realtime-conversation`.
+ *
+ * Binds the ElevenLabs `conversationId` returned by a successful
+ * `startSession()` to the authenticated attempt so the post-call
+ * transcription webhook can resolve the attempt server-side. The attempt is
+ * identified by the authenticated user and the path parameter only — the
+ * browser never supplies user, scenario, variation, or difficulty.
+ */
+export const BindRealtimeConversationRequestSchema = z.strictObject({
+  conversationId: RealtimeConversationIdSchema,
+});
+
+export const BindRealtimeConversationResponseSchema = z.strictObject({
+  data: z.strictObject({
+    attemptId: ResourceIdSchema,
+    conversationId: RealtimeConversationIdSchema,
+  }),
+});
+
+export type BindRealtimeConversationRequest = z.infer<
+  typeof BindRealtimeConversationRequestSchema
+>;
+export type BindRealtimeConversationResponse = z.infer<
+  typeof BindRealtimeConversationResponseSchema
+>;

@@ -42,6 +42,8 @@ export interface LiveConversationProps {
   startDisabled: boolean;
   /** Notifies the page whether a live session is starting or connected. */
   onActiveChange: (active: boolean) => void;
+  /** Blocks Finish until the SDK-created ID has been durably bound. */
+  onBindingPendingChange: (pending: boolean) => void;
   /** Notifies the page of the live UI state for the shared conversation orb. */
   onUiStateChange: (state: LiveConversationUiState) => void;
   /** Live microphone level (0–1) while connected, for the shared orb visual. */
@@ -158,9 +160,7 @@ function LiveConversationContainer({
   const handleDisconnect = useCallback((details: DisconnectionDetails) => {
     logLiveConversationEvent("disconnected", {
       reason: details.reason,
-      ...(details.reason === "user"
-        ? {}
-        : { closeCode: details.closeCode }),
+      ...(details.reason === "user" ? {} : { closeCode: details.closeCode }),
       ...(details.reason === "error" ? { message: details.message } : {}),
     });
     endingRef.current = false;
@@ -214,6 +214,7 @@ function LiveConversationSession({
   attemptId,
   startDisabled,
   onActiveChange,
+  onBindingPendingChange,
   onUiStateChange,
   onMicrophoneLevelChange,
   awaitingStart,
@@ -374,6 +375,25 @@ function LiveConversationSession({
           opening_message: session.openingMessage,
           secret__kalemny_context_token: session.contextToken,
         },
+        // The installed React SDK exposes the provider-created conversation
+        // through this callback (its hook `startSession` is typed `void`).
+        // Bind its authoritative ID immediately; no browser identity or
+        // scenario data is included in this request.
+        onConversationCreated: (createdConversation) => {
+          const conversationId = createdConversation.getId();
+          onBindingPendingChange(true);
+          void createApiClient(apiUrl)
+            .bindRealtimeConversation(authToken, attemptId, conversationId)
+            .catch((error: unknown) => {
+              void createdConversation.endSession();
+              setRequestError(
+                error instanceof Error
+                  ? error.message
+                  : "Failed to secure the live conversation.",
+              );
+            })
+            .finally(() => onBindingPendingChange(false));
+        },
       });
     } catch (error) {
       onAwaitingStartChange(false);
@@ -391,6 +411,7 @@ function LiveConversationSession({
     endingRef,
     getToken,
     onAwaitingStartChange,
+    onBindingPendingChange,
     onClearLiveTranscript,
     startDisabled,
     startSession,
@@ -501,7 +522,7 @@ function LiveConversationSession({
                     : "Listening — speak naturally"}
                 </span>
                 <span className="font-meta text-[10px] sm:text-[11px] text-muted-foreground truncate">
-                  Live voice session · not recorded or scored
+                  Live voice session · finalized after the call
                 </span>
               </div>
             </div>

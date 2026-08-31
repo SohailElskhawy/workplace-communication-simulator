@@ -36,6 +36,41 @@ function createRacePrisma(findFirstResults: unknown[]): PrismaClient {
 }
 
 describe("Prisma attempt repository race recovery", () => {
+  it("does not finish while a bound realtime conversation awaits its canonical transcript", async () => {
+    const transaction = {
+      $queryRaw: vi.fn().mockResolvedValue([{ id: input.attemptId }]),
+      simulationAttempt: {
+        findUniqueOrThrow: vi.fn().mockResolvedValue({
+          id: input.attemptId,
+          status: "ACTIVE",
+          _count: { conversationTurns: 1 },
+        }),
+      },
+      conversationTurn: { findFirst: vi.fn().mockResolvedValue(null) },
+      realtimeConversation: {
+        findFirst: vi.fn().mockResolvedValue({ id: "mapping" }),
+      },
+    };
+    const prisma = {
+      $transaction: vi.fn(
+        async (callback: (client: typeof transaction) => Promise<unknown>) =>
+          callback(transaction),
+      ),
+    } as unknown as PrismaClient;
+    const repository = createPrismaAttemptRepository(prisma);
+
+    await expect(
+      repository.finishAttempt(
+        input.attemptId,
+        input.userId,
+        input.currentTime,
+      ),
+    ).resolves.toEqual({
+      kind: "rejected",
+      code: "REALTIME_TRANSCRIPT_PENDING",
+    });
+  });
+
   it("returns the existing logical turn after an idempotency constraint race", async () => {
     const repository = createPrismaAttemptRepository(
       createRacePrisma([null, existingTurn]),

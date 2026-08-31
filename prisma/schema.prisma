@@ -103,6 +103,7 @@ model SimulationAttempt {
   conversationTurns ConversationTurn[]
   aiUsageEvents     AiUsageEvent[]
   evaluation        Evaluation?
+  realtimeConversations RealtimeConversation[]
 
   @@index([userId, createdAt])
   @@index([userId, status])
@@ -128,6 +129,27 @@ model ConversationTurn {
   @@unique([attemptId, sequence])
   @@unique([attemptId, clientRequestId])
   @@index([attemptId, status])
+}
+
+/**
+ * Maps an ElevenLabs realtime `conversation_id` to exactly one
+ * SimulationAttempt. Created by the owner-authenticated bind endpoint right
+ * after a live session starts; consumed by the post-call transcription
+ * webhook to resolve the attempt without trusting any browser-supplied
+ * identity. One attempt may have several live conversations (restarted
+ * calls); one ElevenLabs conversation ever belongs to one attempt.
+ */
+model RealtimeConversation {
+  id             String   @id @default(uuid()) @db.Uuid
+  conversationId String   @unique @db.VarChar(128)
+  attemptId      String   @db.Uuid
+  transcriptImportedAt DateTime? @db.Timestamptz(3)
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(3)
+
+  attempt SimulationAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  @@index([attemptId])
 }
 
 model Evaluation {

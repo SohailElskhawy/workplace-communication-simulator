@@ -43,6 +43,8 @@ import { registerVoiceRoutes } from "./modules/voice/voice-routes.js";
 import type { VoiceService } from "./modules/voice/voice-service.js";
 import { registerRealtimeVoiceRoutes } from "./modules/realtime/realtime-routes.js";
 import type { RealtimeVoiceService } from "./modules/realtime/realtime-service.js";
+import type { RealtimeTranscriptService } from "./modules/realtime/realtime-transcript-service.js";
+import { registerElevenLabsWebhookRoute } from "./modules/realtime/realtime-routes.js";
 
 export interface AuthenticatedAppDependencies {
   attemptService: AttemptService;
@@ -57,6 +59,9 @@ export interface AuthenticatedAppDependencies {
   ttsService?: TtsService;
   realtimeVoiceService?: RealtimeVoiceService;
   elevenLabsToolSecret?: string;
+  elevenLabsAgentId?: string;
+  elevenLabsWebhookSecret?: string;
+  realtimeTranscriptService?: RealtimeTranscriptService;
   webOrigin: string;
   logger?: AppLogger;
   captureException?: (
@@ -93,6 +98,22 @@ export function createApp(dependencies: AuthenticatedAppDependencies): Express {
       allowedHeaders: ["Authorization", "Content-Type"],
     }),
   );
+
+  if (
+    dependencies.elevenLabsAgentId &&
+    dependencies.elevenLabsWebhookSecret &&
+    dependencies.realtimeTranscriptService
+  ) {
+    app.post(
+      "/api/v1/webhooks/elevenlabs",
+      express.raw({ type: "application/json", limit: "256kb" }),
+    );
+    registerElevenLabsWebhookRoute(app, {
+      agentId: dependencies.elevenLabsAgentId,
+      webhookSecret: dependencies.elevenLabsWebhookSecret,
+      transcriptService: dependencies.realtimeTranscriptService,
+    });
+  }
 
   app.use(express.json({ limit: "64kb" }));
 

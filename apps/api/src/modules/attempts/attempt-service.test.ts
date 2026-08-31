@@ -255,6 +255,11 @@ function createMemoryRepository(
       return { kind: "finished", id: attempt.id, status: attempt.status };
     },
 
+    async bindRealtimeConversation(attemptId, userId) {
+      const attempt = attempts.get(attemptId);
+      return attempt && attempt.userId === userId ? "bound" : "not_found";
+    },
+
     async deleteAttempt(attemptId, userId) {
       const attempt = attempts.get(attemptId);
       if (!attempt || attempt.userId !== userId) {

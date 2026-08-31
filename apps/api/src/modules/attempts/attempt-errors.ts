@@ -3,6 +3,7 @@ export type AttemptErrorCode =
   | "INVALID_ATTEMPT_STATE"
   | "SESSION_LIMIT_REACHED"
   | "TURN_ALREADY_PENDING"
+  | "REALTIME_TRANSCRIPT_PENDING"
   | "AI_TIMEOUT"
   | "AI_PROVIDER_ERROR"
   | "TRANSCRIPTION_FAILED"
@@ -26,6 +27,11 @@ const errorDetails: Record<
   TURN_ALREADY_PENDING: {
     status: 409,
     message: "Another turn is already pending.",
+  },
+  REALTIME_TRANSCRIPT_PENDING: {
+    status: 409,
+    message:
+      "Your live conversation transcript is still being finalized. Please try again shortly.",
   },
   AI_TIMEOUT: {
     status: 504,

@@ -46,6 +46,15 @@ function createAttempt(overrides: Partial<AttemptRecord> = {}): AttemptRecord {
 function createRepository(attempt: AttemptRecord | null) {
   return {
     findOwnedAttempt: vi.fn(async () => attempt),
+    bindRealtimeConversation: vi
+      .fn<
+        (
+          attemptId: string,
+          userId: string,
+          conversationId: string,
+        ) => Promise<"bound" | "not_found">
+      >()
+      .mockResolvedValue("bound"),
   };
 }
 
@@ -202,6 +211,32 @@ describe("createRealtimeVoiceService.createSession", () => {
 
     const session = await service.createSession(ownerId, attemptId);
     expect(session.openingMessage).toBe(salaryNegotiationV2.openingMessage);
+  });
+});
+
+describe("createRealtimeVoiceService.bindConversation", () => {
+  it("delegates an owner-scoped binding and is idempotent at the repository", async () => {
+    const repository = createRepository(createAttempt());
+    const service = createService(repository);
+
+    await service.bindConversation(ownerId, attemptId, "conv_example");
+
+    expect(repository.bindRealtimeConversation).toHaveBeenCalledWith(
+      attemptId,
+      ownerId,
+      "conv_example",
+      now,
+    );
+  });
+
+  it("does not reveal a missing, foreign, or conflicting mapping", async () => {
+    const repository = createRepository(createAttempt());
+    repository.bindRealtimeConversation.mockResolvedValueOnce("not_found");
+    const service = createService(repository);
+
+    await expect(
+      service.bindConversation(ownerId, attemptId, "conv_foreign"),
+    ).rejects.toMatchObject({ code: "NOT_FOUND", status: 404 });
   });
 });
 

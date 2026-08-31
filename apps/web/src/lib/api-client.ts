@@ -1,6 +1,7 @@
 import {
   ApiErrorResponseSchema,
   AttemptComparisonResponseSchema,
+  BindRealtimeConversationResponseSchema,
   AttemptDetailResponseSchema,
   CreateAttemptResponseSchema,
   EvaluationResponseSchema,
@@ -13,6 +14,7 @@ import {
   TranscriptionResponseSchema,
   TurnResponseSchema,
   type AttemptComparison,
+  type BindRealtimeConversationResponse,
   type AttemptDetailResponse,
   type CreateAttemptRequest,
   type CreateAttemptResponse,
@@ -307,6 +309,20 @@ export function createApiClient(baseUrl: string) {
         token,
         { method: "POST" },
         RealtimeSessionResponseSchema,
+      );
+    },
+
+    async bindRealtimeConversation(
+      token: string,
+      attemptId: string,
+      conversationId: string,
+    ): Promise<BindRealtimeConversationResponse["data"]> {
+      return request(
+        baseUrl,
+        `/api/v1/attempts/${encodeURIComponent(attemptId)}/realtime-conversation`,
+        token,
+        { method: "POST", body: JSON.stringify({ conversationId }) },
+        BindRealtimeConversationResponseSchema,
       );
     },
 

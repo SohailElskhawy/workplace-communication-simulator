@@ -30,6 +30,8 @@ import { createPrismaTtsRepository } from "./modules/tts/prisma-tts-repository.j
 import { createTtsService } from "./modules/tts/tts-service.js";
 import { createElevenLabsProvider } from "./modules/realtime/elevenlabs-provider.js";
 import { createRealtimeVoiceService } from "./modules/realtime/realtime-service.js";
+import { createPrismaRealtimeTranscriptRepository } from "./modules/realtime/prisma-realtime-transcript-repository.js";
+import { createRealtimeTranscriptService } from "./modules/realtime/realtime-transcript-service.js";
 
 const rootEnvPath = resolve(process.cwd(), "../../.env");
 if (existsSync(rootEnvPath)) {
@@ -121,6 +123,13 @@ const realtimeVoiceService =
       })
     : undefined;
 
+const realtimeTranscriptService =
+  apiEnv.ELEVENLABS_AGENT_ID && apiEnv.ELEVENLABS_WEBHOOK_SECRET
+    ? createRealtimeTranscriptService(
+        createPrismaRealtimeTranscriptRepository(prisma),
+      )
+    : undefined;
+
 const app = createApp({
   attemptService,
   authenticationMiddleware: createClerkAuthenticationMiddleware({
@@ -137,6 +146,15 @@ const app = createApp({
   ttsService,
   ...(realtimeVoiceService && elevenLabsToolSecret
     ? { realtimeVoiceService, elevenLabsToolSecret }
+    : {}),
+  ...(realtimeTranscriptService &&
+  apiEnv.ELEVENLABS_AGENT_ID &&
+  apiEnv.ELEVENLABS_WEBHOOK_SECRET
+    ? {
+        realtimeTranscriptService,
+        elevenLabsAgentId: apiEnv.ELEVENLABS_AGENT_ID,
+        elevenLabsWebhookSecret: apiEnv.ELEVENLABS_WEBHOOK_SECRET,
+      }
     : {}),
   webOrigin: apiEnv.WEB_ORIGIN,
   logger,

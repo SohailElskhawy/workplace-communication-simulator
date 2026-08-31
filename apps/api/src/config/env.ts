@@ -68,6 +68,10 @@ const ApiEnvSchema = z.object({
   ELEVENLABS_API_KEY: OptionalStringSchema,
   ELEVENLABS_AGENT_ID: OptionalStringSchema,
   ELEVENLABS_TOOL_SECRET: OptionalStringSchema,
+  // Server-only shared secret for verifying the ElevenLabs post-call
+  // transcription webhook signature. Optional; the public webhook endpoint
+  // is registered only when configured.
+  ELEVENLABS_WEBHOOK_SECRET: OptionalStringSchema,
 });
 
 export function parseApiEnv(input: Record<string, string | undefined>) {

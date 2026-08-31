@@ -181,6 +181,55 @@ export function createPrismaAttemptRepository(
       return attempt ? mapAttempt(attempt) : null;
     },
 
+    async bindRealtimeConversation(
+      attemptId,
+      userId,
+      conversationId,
+      currentTime,
+    ) {
+      try {
+        return await prisma.$transaction(async (transaction) => {
+          const owned = await lockOwnedAttempt(transaction, attemptId, userId);
+          if (!owned) return "not_found" as const;
+
+          const existing = await transaction.realtimeConversation.findUnique({
+            where: { conversationId },
+            select: { attemptId: true },
+          });
+          if (existing) {
+            return existing.attemptId === attemptId
+              ? ("bound" as const)
+              : ("not_found" as const);
+          }
+
+          const attempt = await transaction.simulationAttempt.findUniqueOrThrow(
+            {
+              where: { id: attemptId },
+              select: { status: true, expiresAt: true },
+            },
+          );
+          if (attempt.status !== "ACTIVE") return "invalid_state" as const;
+          if (currentTime.getTime() >= attempt.expiresAt.getTime()) {
+            return "expired" as const;
+          }
+
+          await transaction.realtimeConversation.create({
+            data: { attemptId, conversationId },
+          });
+          return "bound" as const;
+        });
+      } catch (error) {
+        if (!isUniqueConstraintViolation(error)) throw error;
+        const existing = await prisma.realtimeConversation.findUnique({
+          where: { conversationId },
+          select: { attemptId: true },
+        });
+        return existing?.attemptId === attemptId
+          ? ("bound" as const)
+          : ("not_found" as const);
+      }
+    },
+
     async findRoleplayContext({ attemptId, userId, beforeSequence }) {
       const attempt = await prisma.simulationAttempt.findFirst({
         where: { id: attemptId, userId },
@@ -395,9 +444,7 @@ export function createPrismaAttemptRepository(
         // Single conditional UPDATE: atomically transitions the PENDING turn
         // and verifies ownership in one round trip instead of locking the
         // attempt row and re-reading the turn first.
-        const rows = await transaction.$queryRaw<
-          Array<PrismaTurnRecord>
-        >`
+        const rows = await transaction.$queryRaw<Array<PrismaTurnRecord>>`
           UPDATE "ConversationTurn" AS turn
           SET "assistantText" = ${input.assistantText},
               "status" = CAST(${input.turnStatus} AS "TurnStatus"),
@@ -445,22 +492,33 @@ export function createPrismaAttemptRepository(
           return { kind: "not_found" } as const;
         }
 
-        const [attempt, pendingTurn] = await Promise.all([
-          transaction.simulationAttempt.findUniqueOrThrow({
-            where: { id: attemptId },
-            select: {
-              id: true,
-              status: true,
-              _count: { select: { conversationTurns: true } },
-            },
-          }),
-          transaction.conversationTurn.findFirst({
-            where: { attemptId, status: "PENDING" },
-            select: { id: true },
-          }),
-        ]);
+        const [attempt, pendingTurn, pendingRealtimeTranscript] =
+          await Promise.all([
+            transaction.simulationAttempt.findUniqueOrThrow({
+              where: { id: attemptId },
+              select: {
+                id: true,
+                status: true,
+                _count: { select: { conversationTurns: true } },
+              },
+            }),
+            transaction.conversationTurn.findFirst({
+              where: { attemptId, status: "PENDING" },
+              select: { id: true },
+            }),
+            transaction.realtimeConversation.findFirst({
+              where: { attemptId, transcriptImportedAt: null },
+              select: { id: true },
+            }),
+          ]);
         if (pendingTurn) {
           return { kind: "rejected", code: "TURN_ALREADY_PENDING" } as const;
+        }
+        if (pendingRealtimeTranscript) {
+          return {
+            kind: "rejected",
+            code: "REALTIME_TRANSCRIPT_PENDING",
+          } as const;
         }
         const status = getFinishStatus(
           attempt.status,

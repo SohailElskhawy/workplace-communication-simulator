@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { RealtimeSessionResponseSchema } from "./realtime.js";
+import {
+  BindRealtimeConversationRequestSchema,
+  BindRealtimeConversationResponseSchema,
+  RealtimeSessionResponseSchema,
+} from "./realtime.js";
 
 describe("Realtime contracts", () => {
   const validResponse = {
@@ -45,5 +49,26 @@ describe("Realtime contracts", () => {
         data: { ...validResponse.data, difficulty: "IMPOSSIBLE" },
       }).success,
     ).toBe(false);
+  });
+
+  it("validates only a bounded conversation ID for binding", () => {
+    expect(
+      BindRealtimeConversationRequestSchema.safeParse({
+        conversationId: "conv_example",
+      }).success,
+    ).toBe(true);
+    expect(
+      BindRealtimeConversationRequestSchema.safeParse({
+        conversationId: " ",
+      }).success,
+    ).toBe(false);
+    expect(
+      BindRealtimeConversationResponseSchema.safeParse({
+        data: {
+          attemptId: validResponse.data.attemptId,
+          conversationId: "conv_example",
+        },
+      }).success,
+    ).toBe(true);
   });
 });

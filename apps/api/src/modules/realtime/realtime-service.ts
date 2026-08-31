@@ -58,13 +58,21 @@ export interface RealtimeVoiceService {
     userId: string,
     attemptId: string,
   ): Promise<RealtimeSessionData>;
+  bindConversation(
+    userId: string,
+    attemptId: string,
+    conversationId: string,
+  ): Promise<void>;
   resolveScenarioContext(
     contextToken: string,
   ): Promise<RealtimeScenarioContext | null>;
 }
 
 export interface RealtimeVoiceServiceOptions {
-  repository: Pick<AttemptRepository, "findOwnedAttempt">;
+  repository: Pick<
+    AttemptRepository,
+    "findOwnedAttempt" | "bindRealtimeConversation"
+  >;
   elevenLabsProvider: ElevenLabsProvider;
   /** Server-only secret used to sign context tokens. */
   contextTokenSecret: string;
@@ -160,6 +168,20 @@ export function createRealtimeVoiceService(
         openingMessage: context.openingMessage,
         expiresAt: attempt.expiresAt.toISOString(),
       };
+    },
+
+    async bindConversation(userId, attemptId, conversationId) {
+      const result = await options.repository.bindRealtimeConversation(
+        attemptId,
+        userId,
+        conversationId,
+        clock(),
+      );
+      if (result === "not_found") throw new AttemptError("NOT_FOUND");
+      if (result === "invalid_state") {
+        throw new AttemptError("INVALID_ATTEMPT_STATE");
+      }
+      if (result === "expired") throw new AttemptError("SESSION_LIMIT_REACHED");
     },
 
     async resolveScenarioContext(contextToken) {

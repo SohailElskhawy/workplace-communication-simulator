@@ -887,20 +887,22 @@ Add voice, history, progress, comparison, and deletion after this slice works en
 
 ---
 
-## 27. Realtime Voice (backend bootstrap + frontend spike)
+## 27. Realtime Voice and Canonical Transcript Import
 
-Bootstrap for ElevenLabs realtime voice. The API side is enabled only when the
-server-only settings `ELEVENLABS_API_KEY`, `ELEVENLABS_AGENT_ID`, and
-`ELEVENLABS_TOOL_SECRET` are all configured; otherwise the endpoints are not
-registered.
+ElevenLabs realtime voice is enabled only when the server-only settings
+`ELEVENLABS_API_KEY`, `ELEVENLABS_AGENT_ID`, and `ELEVENLABS_TOOL_SECRET` are
+configured. Canonical post-call import is enabled only when
+`ELEVENLABS_AGENT_ID` and server-only `ELEVENLABS_WEBHOOK_SECRET` are
+configured.
 
 A feature-flagged frontend spike (`NEXT_PUBLIC_ENABLE_REALTIME_VOICE=true`)
 consumes the session endpoint from the simulation screen: it requests
 microphone permission, calls `realtime-session`, and starts the ElevenLabs
 WebRTC session with the returned `conversationToken` plus the public dynamic
-variables `opening_message` and `secret__kalemny_context_token`. The spike is
-presentation-only: no transcript persistence, no `ConversationTurn` creation,
-and no changes to text, STT, TTS, evaluation, or scoring flows.
+variables `opening_message` and `secret__kalemny_context_token`. After the SDK
+creates the conversation, the browser immediately binds its provider-issued ID
+to the owner-authenticated attempt. The browser never supplies user identity,
+scenario key, variation, difficulty, or transcript content.
 
 Existing text, STT, TTS, and evaluation flows are unchanged. No variation is
 selected by these endpoints: the attempt's persisted `variationId` is
@@ -942,6 +944,47 @@ counterpart, or prompt configuration):
 ```
 
 Provider failures map to `AI_TIMEOUT` (504) / `AI_PROVIDER_ERROR` (502).
+
+### `POST /api/v1/attempts/:attemptId/realtime-conversation`
+
+Clerk-authenticated and owner-only. The request contains only the
+ElevenLabs-created conversation ID:
+
+```json
+{ "conversationId": "conv_..." }
+```
+
+It creates the unique `conversationId → SimulationAttempt` mapping. Repeating
+the same mapping is idempotent. A conversation ID already bound to another
+attempt is returned as `404 NOT_FOUND`, without exposing that attempt.
+
+### `POST /api/v1/webhooks/elevenlabs`
+
+Public ElevenLabs callback; it is not Clerk-authenticated. It accepts only
+`post_call_transcription` and reads the raw JSON body before parsing. The
+`ElevenLabs-Signature` header must be `t=<unix>,v0=<hex hmac>` where the HMAC
+SHA-256 input is `<timestamp>.<raw body>`. Timestamps more than 30 minutes
+from server time and signatures that do not match in constant time return 401.
+
+After signature verification, backend-only Zod validation requires the
+configured `agent_id` and a stored conversation mapping. Agent mismatches,
+unknown conversations, already-imported conversations, and frozen attempts
+return safe 2xx responses without resource details. Webhook payloads,
+transcripts, signatures, prompts, context tokens, and audio are never logged.
+
+Only finalized `data.transcript` is canonical. Empty/tool-only entries and the
+initial agent opening are omitted. Each learner message becomes a `VOICE`
+`ConversationTurn` paired with the following agent message. A final learner
+message without a response is persisted as `FAILED` with a null assistant text,
+matching the existing evaluation rule that evaluates only completed turns.
+Deterministic IDs derived from conversation ID and transcript position make all
+provider retries transactionally idempotent. The webhook does not start
+evaluation and does not consume `post_call_audio`.
+
+An attempt with a bound conversation cannot finish until its canonical
+post-call transcript has imported (including an empty normalized transcript).
+This prevents an asynchronous provider delivery from being omitted from the
+frozen evaluation transcript.
 
 ### `POST /api/v1/realtime/scenario-context`
 
