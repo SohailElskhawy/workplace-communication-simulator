@@ -82,11 +82,67 @@ describe("api-client", () => {
   });
 
   it("handles network failure cleanly", async () => {
-    vi.mocked(fetch).mockRejectedValueOnce(new Error("Failed to fetch"));
+    vi.mocked(fetch).mockRejectedValue(new Error("Failed to fetch"));
 
     await expect(client.fetchScenarios(token)).rejects.toThrow(
       "Network connection failure",
     );
+    expect(fetch).toHaveBeenCalledTimes(3);
+  });
+
+  it("retries transient scenario-read failures before returning data", async () => {
+    const mockData = {
+      data: [
+        {
+          key: "salary-negotiation",
+          version: 1,
+          title: "Salary Negotiation",
+          category: "NEGOTIATION",
+          summary: "Practice compensation negotiation.",
+        },
+      ],
+    };
+
+    vi.mocked(fetch)
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        json: async () => ({
+          error: {
+            code: "INTERNAL_ERROR",
+            message: "An unexpected error occurred.",
+            requestId: "req-500",
+          },
+        }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => mockData,
+      } as Response);
+
+    await expect(client.fetchScenarios(token)).resolves.toEqual(mockData.data);
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not retry a scenario not-found response", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: false,
+      status: 404,
+      json: async () => ({
+        error: {
+          code: "NOT_FOUND",
+          message: "Scenario not found.",
+          requestId: "req-404",
+        },
+      }),
+    } as Response);
+
+    await expect(client.fetchScenarios(token)).rejects.toMatchObject({
+      code: "NOT_FOUND",
+      status: 404,
+    });
+    expect(fetch).toHaveBeenCalledTimes(1);
   });
 
   it("fetches attempt comparison", async () => {

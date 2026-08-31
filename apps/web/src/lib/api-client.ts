@@ -49,6 +49,36 @@ export class ApiClientError extends Error {
   }
 }
 
+const TRANSIENT_READ_RETRY_DELAYS_MS = [250, 500] as const;
+
+function shouldRetryReadRequest(error: unknown): boolean {
+  return (
+    error instanceof ApiClientError &&
+    (error.code === "NETWORK_ERROR" || error.status >= 500)
+  );
+}
+
+function waitForRetry(delayMs: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, delayMs);
+  });
+}
+
+async function retryTransientRead<T>(operation: () => Promise<T>): Promise<T> {
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      return await operation();
+    } catch (error) {
+      const delayMs = TRANSIENT_READ_RETRY_DELAYS_MS[attempt];
+      if (delayMs === undefined || !shouldRetryReadRequest(error)) {
+        throw error;
+      }
+
+      await waitForRetry(delayMs);
+    }
+  }
+}
+
 async function request<T>(
   baseUrl: string,
   path: string,
@@ -209,12 +239,14 @@ async function requestVoid(
 export function createApiClient(baseUrl: string) {
   return {
     async fetchScenarios(token: string): Promise<PublicScenarioSummary[]> {
-      return request(
-        baseUrl,
-        "/api/v1/scenarios",
-        token,
-        { method: "GET" },
-        ScenarioListResponseSchema,
+      return retryTransientRead(() =>
+        request(
+          baseUrl,
+          "/api/v1/scenarios",
+          token,
+          { method: "GET" },
+          ScenarioListResponseSchema,
+        ),
       );
     },
 
@@ -222,12 +254,14 @@ export function createApiClient(baseUrl: string) {
       token: string,
       scenarioKey: string,
     ): Promise<PublicScenarioDetail> {
-      return request(
-        baseUrl,
-        `/api/v1/scenarios/${encodeURIComponent(scenarioKey)}`,
-        token,
-        { method: "GET" },
-        ScenarioDetailResponseSchema,
+      return retryTransientRead(() =>
+        request(
+          baseUrl,
+          `/api/v1/scenarios/${encodeURIComponent(scenarioKey)}`,
+          token,
+          { method: "GET" },
+          ScenarioDetailResponseSchema,
+        ),
       );
     },
 
@@ -379,22 +413,26 @@ export function createApiClient(baseUrl: string) {
       const queryString = params.toString();
       const path = `/api/v1/history${queryString ? `?${queryString}` : ""}`;
 
-      return requestFull(
-        baseUrl,
-        path,
-        token,
-        { method: "GET" },
-        HistoryResponseSchema,
+      return retryTransientRead(() =>
+        requestFull(
+          baseUrl,
+          path,
+          token,
+          { method: "GET" },
+          HistoryResponseSchema,
+        ),
       );
     },
 
     async fetchProgress(token: string): Promise<ProgressData> {
-      return request(
-        baseUrl,
-        "/api/v1/progress",
-        token,
-        { method: "GET" },
-        ProgressResponseSchema,
+      return retryTransientRead(() =>
+        request(
+          baseUrl,
+          "/api/v1/progress",
+          token,
+          { method: "GET" },
+          ProgressResponseSchema,
+        ),
       );
     },
 
