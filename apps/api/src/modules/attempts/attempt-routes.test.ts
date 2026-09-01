@@ -20,6 +20,7 @@ const createdAttempt = {
   id: attemptId,
   status: "ACTIVE" as const,
   difficulty: "MEDIUM" as const,
+  interactionMode: "PUSH_TO_TALK" as const,
   scenario: {
     key: "salary-negotiation",
     version: 1,
@@ -54,6 +55,7 @@ function createAttemptApp(
         id: attemptId,
         status: "ACTIVE",
         difficulty: "MEDIUM",
+        interactionMode: "PUSH_TO_TALK",
         scenario: createdAttempt.scenario,
         retryOfAttemptId: null,
         turns: [],
@@ -139,6 +141,25 @@ describe("attempt endpoints", () => {
       scenarioKey: "salary-negotiation",
       difficulty: "MEDIUM",
       retryOfAttemptId: null,
+      interactionMode: "PUSH_TO_TALK",
+    });
+  });
+
+  it("persists the requested realtime interaction mode", async () => {
+    const { app, attemptService } = createAttemptApp();
+
+    const response = await request(app).post("/api/v1/attempts").send({
+      scenarioKey: "salary-negotiation",
+      difficulty: "MEDIUM",
+      interactionMode: "REALTIME",
+    });
+
+    expect(response.status).toBe(201);
+    expect(attemptService.create).toHaveBeenCalledWith(ownerId, {
+      scenarioKey: "salary-negotiation",
+      difficulty: "MEDIUM",
+      retryOfAttemptId: null,
+      interactionMode: "REALTIME",
     });
   });
 

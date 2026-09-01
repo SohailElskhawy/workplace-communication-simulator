@@ -128,12 +128,14 @@ SimulationAttempt
 - retryOfAttemptId    UUID FK → SimulationAttempt nullable
 - variationId         string nullable
 - difficulty          enum
+- interactionMode     enum (default PUSH_TO_TALK)
 - status              enum
 - startedAt           timestamp
 - endedAt             timestamp nullable
 - expiresAt           timestamp
 - progressEligible    boolean
 - evaluationStartedAt timestamp nullable
+- evaluationClaimedAt timestamp nullable
 - createdAt           timestamp
 - updatedAt           timestamp
 ```
@@ -156,6 +158,13 @@ EVALUATION_FAILED
 ABANDONED
 ```
 
+### InteractionMode enum
+
+```text
+PUSH_TO_TALK
+REALTIME
+```
+
 ### Rules
 
 - a retry creates a new attempt;
@@ -165,6 +174,10 @@ ABANDONED
   start (references configuration inside the scenario version's JSONB
   definition, not a relational row); it is stable for the attempt, and retries
   exclude the previous variation when the pool allows;
+- `interactionMode` records the voice interaction mode chosen at simulation
+  start (`PUSH_TO_TALK` default, or the feature-flagged `REALTIME` live
+  conversation); it is stable for the attempt, never changed afterwards, and
+  retries carry the source attempt's mode;
 - only `ACTIVE` attempts accept new turns;
 - completed transcripts are immutable;
 - progress eligibility is determined by backend logic.

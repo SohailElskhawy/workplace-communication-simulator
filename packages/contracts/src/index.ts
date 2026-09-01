@@ -23,6 +23,7 @@ export {
   CreateTurnRequestSchema,
   FinishAttemptResponseSchema,
   InputMethodSchema,
+  InteractionModeSchema,
   MAX_TURN_TEXT_LENGTH,
   TurnResponseSchema,
   TurnStatusSchema,
@@ -34,6 +35,7 @@ export {
   type CreateTurnRequest,
   type FinishAttemptResponse,
   type InputMethod,
+  type InteractionMode,
   type TurnResponse,
   type TurnStatus,
 } from "./attempt.js";

@@ -25,6 +25,7 @@ function createAttempt(overrides: Partial<AttemptRecord> = {}): AttemptRecord {
     status: "ACTIVE",
     retryOfAttemptId: null,
     variationId: "budget-cap",
+    interactionMode: "PUSH_TO_TALK",
     startedAt: now,
     endedAt: null,
     expiresAt: new Date(now.getTime() + 15 * 60 * 1000),

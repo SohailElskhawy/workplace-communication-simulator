@@ -5,6 +5,7 @@ import type {
   AttemptDetailResponse,
   ConversationTurn,
   InputMethod,
+  InteractionMode,
   PublicScenarioDetail,
 } from "@kalemny/contracts";
 import { useParams, useRouter } from "next/navigation";
@@ -27,6 +28,7 @@ import {
 import { ApiClientError, createApiClient } from "@/lib/api-client";
 import { isConversationInputDisabled } from "@/lib/conversation-input-state";
 import { isRealtimeVoiceEnabled } from "@/lib/feature-flags";
+import { resolveEffectiveInteractionMode } from "@/lib/interaction-mode";
 import type {
   LiveConversationUiState,
   LiveTranscriptEntry,
@@ -289,6 +291,24 @@ export default function SimulationPage() {
   // text flow itself is unchanged.
   const composerDisabled = isComposerDisabled || liveActive;
 
+  // The interaction mode chosen at simulation start and persisted on the
+  // attempt decides which voice path this screen initializes: push-to-talk
+  // (opening TTS + record/transcribe composer) or the realtime live
+  // conversation. Only the chosen mode is rendered.
+  const effectiveInteractionMode = useMemo<InteractionMode>(
+    () =>
+      resolveEffectiveInteractionMode({
+        persistedMode: attempt?.interactionMode ?? "PUSH_TO_TALK",
+        realtimeVoiceEnabled,
+      }),
+    [attempt?.interactionMode],
+  );
+  const isRealtimeMode = effectiveInteractionMode === "REALTIME";
+  // In realtime mode the live agent speaks the opening message when the
+  // session connects, so stored-turn TTS must never auto-play it a second
+  // time. Manual replay from the transcript remains available.
+  const autoPlayStageSpeech = autoPlaySpeech && !finishing && !isRealtimeMode;
+
   const latestAssistantMessage = useMemo(() => {
     const latestTurnWithReply = [...(attempt?.turns ?? [])]
       .reverse()
@@ -504,6 +524,7 @@ export default function SimulationPage() {
         elapsedSeconds={elapsedSeconds}
         finishing={finishing || liveActive || liveBindingPending}
         autoPlaySpeech={autoPlaySpeech}
+        showAutoPlayToggle={!isRealtimeMode}
         onToggleAutoPlay={() => setAutoPlaySpeech((prev) => !prev)}
         onOpenFinishDialog={() => setShowFinishDialog(true)}
         onOpenBriefing={() => setBriefingOpen(true)}
@@ -554,7 +575,7 @@ export default function SimulationPage() {
             latestAssistantMessage={latestAssistantMessage}
             turnCount={attempt.turns.length}
             uiState={simulationUiState}
-            autoPlaySpeech={autoPlaySpeech && !finishing}
+            autoPlaySpeech={autoPlayStageSpeech}
             cancelSpeechPlayback={finishing || liveActive}
             onSpeechStatusChange={setCounterpartSpeechStatus}
             microphoneLevel={microphoneLevel}
@@ -562,7 +583,8 @@ export default function SimulationPage() {
             liveTranscript={liveTranscript}
           />
 
-          {realtimeVoiceEnabled && (
+          {/* Only the mode chosen at simulation start is initialized. */}
+          {isRealtimeMode && (
             <LiveConversation
               attemptId={attempt.id}
               startDisabled={isComposerDisabled || finishing}

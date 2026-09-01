@@ -24,6 +24,12 @@ import { TranscriptViewerModal } from "@/components/results/transcript-viewer-mo
 import { UniversalSkillsSection } from "@/components/results/universal-skills-section";
 import { ErrorState, LoadingState } from "@/components/route-state";
 import { ApiClientError, createApiClient } from "@/lib/api-client";
+import { isRealtimeVoiceEnabled } from "@/lib/feature-flags";
+import { resolveEffectiveInteractionMode } from "@/lib/interaction-mode";
+
+// Build-time UI gate only; the backend endpoints remain separately gated by
+// the server-only ELEVENLABS_* settings.
+const realtimeVoiceEnabled = isRealtimeVoiceEnabled();
 
 export default function ResultsPage() {
   const params = useParams();
@@ -324,6 +330,12 @@ export default function ResultsPage() {
         scenarioKey: attempt.scenario.key,
         difficulty: selectedDifficulty,
         retryOfAttemptId: attempt.id,
+        // A retry reproduces the same practice conditions, including the
+        // interaction mode chosen for the source attempt.
+        interactionMode: resolveEffectiveInteractionMode({
+          persistedMode: attempt.interactionMode,
+          realtimeVoiceEnabled: realtimeVoiceEnabled,
+        }),
       });
 
       router.push(`/app/simulations/${encodeURIComponent(newAttempt.id)}`);

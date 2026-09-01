@@ -191,15 +191,28 @@ Request:
 {
   "scenarioKey": "salary-negotiation",
   "difficulty": "MEDIUM",
-  "retryOfAttemptId": null
+  "retryOfAttemptId": null,
+  "interactionMode": "PUSH_TO_TALK"
 }
+```
+
+`interactionMode` values:
+
+```text
+PUSH_TO_TALK
+REALTIME
 ```
 
 Rules:
 - scenario must be active;
 - retry source, if provided, must belong to current user;
 - retry source must reference the same scenario;
-- default retry difficulty is handled by frontend or supplied explicitly.
+- default retry difficulty is handled by frontend or supplied explicitly;
+- `interactionMode` is optional and defaults to `PUSH_TO_TALK`; it is chosen
+  once at simulation start, persisted on the attempt, and never changed
+  afterwards. `REALTIME` is only meaningful when the realtime voice feature
+  is enabled; the simulation screen falls back to push-to-talk for a
+  persisted `REALTIME` attempt when the frontend flag is disabled.
 
 Response:
 
@@ -209,6 +222,7 @@ Response:
     "id": "attempt-uuid",
     "status": "ACTIVE",
     "difficulty": "MEDIUM",
+    "interactionMode": "PUSH_TO_TALK",
     "scenario": {
       "key": "salary-negotiation",
       "version": 1,
@@ -237,6 +251,7 @@ Response conceptually:
     "id": "attempt-uuid",
     "status": "ACTIVE",
     "difficulty": "MEDIUM",
+    "interactionMode": "PUSH_TO_TALK",
     "scenario": {
       "key": "salary-negotiation",
       "version": 1,
@@ -904,6 +919,11 @@ creates the conversation, the browser immediately binds its provider-issued ID
 to the owner-authenticated attempt. The browser never supplies user identity,
 scenario key, variation, difficulty, or transcript content.
 
+The interaction mode is chosen at simulation start and persisted on the
+attempt (`interactionMode`). The simulation screen initializes only the chosen
+mode: push-to-talk attempts auto-play the opening message once through stored
+turn TTS, while realtime attempts suppress stored-turn TTS autoplay so the
+live agent speaks the opening message exactly once when the session connects.
 Existing text, STT, TTS, and evaluation flows are unchanged. No variation is
 selected by these endpoints: the attempt's persisted `variationId` is
 authoritative.

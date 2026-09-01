@@ -106,6 +106,7 @@ function createMemoryRepository(
         status: "ACTIVE",
         retryOfAttemptId: input.retryOfAttemptId,
         variationId,
+        interactionMode: input.interactionMode,
         startedAt: input.startedAt,
         endedAt: null,
         expiresAt: input.expiresAt,
@@ -281,6 +282,7 @@ async function startAttempt(
     scenarioKey: "salary-negotiation",
     difficulty: "MEDIUM",
     retryOfAttemptId: null,
+    interactionMode: "PUSH_TO_TALK",
   });
 }
 
@@ -307,6 +309,7 @@ describe("attempt service", () => {
         scenarioKey: scenario.key,
         difficulty,
         retryOfAttemptId: null,
+        interactionMode: "PUSH_TO_TALK",
       });
 
       expect(attempt).toMatchObject({
@@ -405,6 +408,35 @@ describe("attempt service", () => {
     );
   });
 
+  it("persists the interaction mode chosen at simulation start", async () => {
+    const { attempts, repository } = createMemoryRepository();
+    const service = createAttemptService(
+      repository,
+      createSuccessfulAiService(),
+      () => now,
+      () => 0,
+    );
+
+    const realtimeAttempt = await service.create(ownerId, {
+      scenarioKey: "salary-negotiation",
+      difficulty: "MEDIUM",
+      retryOfAttemptId: null,
+      interactionMode: "REALTIME",
+    });
+
+    expect(attempts.get(realtimeAttempt.id)?.interactionMode).toBe("REALTIME");
+    expect(realtimeAttempt.interactionMode).toBe("REALTIME");
+    await expect(
+      service.getOwned(ownerId, realtimeAttempt.id),
+    ).resolves.toMatchObject({ interactionMode: "REALTIME" });
+
+    const defaultAttempt = await startAttempt(service);
+    expect(attempts.get(defaultAttempt.id)?.interactionMode).toBe(
+      "PUSH_TO_TALK",
+    );
+    expect(defaultAttempt.interactionMode).toBe("PUSH_TO_TALK");
+  });
+
   it("retries with a different variation when the pool allows", async () => {
     const variedDefinition = ScenarioDefinitionSchema.parse({
       ...salaryNegotiationV1,
@@ -436,6 +468,7 @@ describe("attempt service", () => {
       scenarioKey: "salary-negotiation",
       difficulty: "MEDIUM",
       retryOfAttemptId: source.id,
+      interactionMode: "PUSH_TO_TALK",
     });
 
     expect(attempts.get(retry.id)?.variationId).toBe("tight-budget");
@@ -498,6 +531,7 @@ describe("attempt service", () => {
         scenarioKey: "salary-negotiation",
         difficulty: "MEDIUM",
         retryOfAttemptId: source.id,
+        interactionMode: "PUSH_TO_TALK",
       }),
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
 
@@ -509,6 +543,7 @@ describe("attempt service", () => {
         scenarioKey: "salary-negotiation",
         difficulty: "MEDIUM",
         retryOfAttemptId: source.id,
+        interactionMode: "PUSH_TO_TALK",
       }),
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
@@ -796,6 +831,7 @@ describe("attempt service", () => {
       scenarioKey: "salary-negotiation",
       difficulty: "MEDIUM",
       retryOfAttemptId: null,
+      interactionMode: "PUSH_TO_TALK",
     });
     const firstStored = attempts.get(first.id);
     if (!firstStored) throw new Error("Expected first attempt");
@@ -832,6 +868,7 @@ describe("attempt service", () => {
       scenarioKey: "salary-negotiation",
       difficulty: "MEDIUM",
       retryOfAttemptId: first.id,
+      interactionMode: "PUSH_TO_TALK",
     });
     const retryStored = attempts.get(retry.id);
     if (!retryStored) throw new Error("Expected retry attempt");

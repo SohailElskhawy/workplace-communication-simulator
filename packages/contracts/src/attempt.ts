@@ -17,6 +17,13 @@ export const AttemptStatusSchema = z.enum([
 export const InputMethodSchema = z.enum(["TEXT", "VOICE"]);
 export const TurnStatusSchema = z.enum(["PENDING", "COMPLETED", "FAILED"]);
 
+/**
+ * Voice interaction mode chosen at simulation start. Push-to-talk is the
+ * Release 1 default (record → transcribe → review → send); realtime is the
+ * feature-flagged ElevenLabs live conversation mode.
+ */
+export const InteractionModeSchema = z.enum(["PUSH_TO_TALK", "REALTIME"]);
+
 const ResourceIdSchema = z.uuid();
 const TimestampSchema = z.iso.datetime({ offset: true });
 
@@ -24,6 +31,7 @@ export const CreateAttemptRequestSchema = z.strictObject({
   scenarioKey: z.string().trim().min(1),
   difficulty: DifficultySchema,
   retryOfAttemptId: ResourceIdSchema.nullable().optional().default(null),
+  interactionMode: InteractionModeSchema.optional().default("PUSH_TO_TALK"),
 });
 
 export const AttemptScenarioSchema = z.strictObject({
@@ -49,6 +57,7 @@ export const CreateAttemptResponseSchema = z.strictObject({
     id: ResourceIdSchema,
     status: z.literal("ACTIVE"),
     difficulty: DifficultySchema,
+    interactionMode: InteractionModeSchema,
     scenario: AttemptScenarioSchema,
     openingMessage: z.string().min(1),
     startedAt: TimestampSchema,
@@ -61,6 +70,7 @@ export const AttemptDetailResponseSchema = z.strictObject({
     id: ResourceIdSchema,
     status: AttemptStatusSchema,
     difficulty: DifficultySchema,
+    interactionMode: InteractionModeSchema,
     scenario: AttemptScenarioSchema,
     retryOfAttemptId: ResourceIdSchema.nullable(),
     turns: z.array(ConversationTurnSchema),
@@ -91,6 +101,7 @@ export const FinishAttemptResponseSchema = z.strictObject({
 
 export type AttemptStatus = z.infer<typeof AttemptStatusSchema>;
 export type InputMethod = z.infer<typeof InputMethodSchema>;
+export type InteractionMode = z.infer<typeof InteractionModeSchema>;
 export type TurnStatus = z.infer<typeof TurnStatusSchema>;
 export type CreateAttemptRequest = z.infer<typeof CreateAttemptRequestSchema>;
 export type CreateAttemptResponse = z.infer<typeof CreateAttemptResponseSchema>;

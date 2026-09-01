@@ -20,7 +20,25 @@ describe("attempt contracts", () => {
       scenarioKey: "salary-negotiation",
       difficulty: "MEDIUM",
       retryOfAttemptId: null,
+      interactionMode: "PUSH_TO_TALK",
     });
+  });
+
+  it("accepts an explicit interaction mode and rejects unknown values", () => {
+    expect(
+      CreateAttemptRequestSchema.parse({
+        scenarioKey: "salary-negotiation",
+        difficulty: "MEDIUM",
+        interactionMode: "REALTIME",
+      }).interactionMode,
+    ).toBe("REALTIME");
+    expect(() =>
+      CreateAttemptRequestSchema.parse({
+        scenarioKey: "salary-negotiation",
+        difficulty: "MEDIUM",
+        interactionMode: "LIVE",
+      }),
+    ).toThrow();
   });
 
   it("rejects invalid retry IDs and unknown fields", () => {
@@ -73,6 +91,7 @@ describe("attempt contracts", () => {
         id: attemptId,
         status: "ACTIVE",
         difficulty: "MEDIUM",
+        interactionMode: "PUSH_TO_TALK",
         scenario: {
           key: "salary-negotiation",
           version: 1,
@@ -86,6 +105,8 @@ describe("attempt contracts", () => {
         expiresAt: "2026-08-29T10:15:00.000Z",
       },
     });
+
+    expect(parsed.data.interactionMode).toBe("PUSH_TO_TALK");
 
     expect(JSON.stringify(parsed)).not.toContain("persona");
     expect(JSON.stringify(parsed)).not.toContain("openingMessage");

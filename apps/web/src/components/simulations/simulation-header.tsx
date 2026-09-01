@@ -23,6 +23,11 @@ export interface SimulationHeaderProps {
   finishing: boolean;
   autoPlaySpeech: boolean;
   onToggleAutoPlay: () => void;
+  /**
+   * Hides the auto-play voice toggle when the chosen interaction mode never
+   * auto-plays stored-turn TTS (realtime mode speaks through the live agent).
+   */
+  showAutoPlayToggle?: boolean;
   onOpenFinishDialog: () => void;
   onOpenBriefing?: () => void;
 }
@@ -41,6 +46,7 @@ export function SimulationHeader({
   elapsedSeconds,
   finishing,
   autoPlaySpeech,
+  showAutoPlayToggle = true,
   onToggleAutoPlay,
   onOpenFinishDialog,
   onOpenBriefing,
@@ -86,33 +92,37 @@ export function SimulationHeader({
             </button>
           )}
 
-          <button
-            type="button"
-            onClick={onToggleAutoPlay}
-            className={cn(
-              "inline-flex items-center justify-center gap-1 font-meta text-xs h-8 px-2 sm:h-auto sm:px-2.5 sm:py-1.5 rounded-control border transition-all duration-200 ease-out cursor-pointer shrink-0 whitespace-nowrap",
-              autoPlaySpeech
-                ? "bg-primary/10 border-primary text-primary font-bold shadow-2xs"
-                : "bg-surface-subtle border-border/40 text-muted-foreground hover:text-foreground",
-            )}
-            title={
-              autoPlaySpeech ? "Auto-play speech: ON" : "Auto-play speech: OFF"
-            }
-            aria-label={
-              autoPlaySpeech
-                ? "Disable auto-play voice"
-                : "Enable auto-play voice"
-            }
-          >
-            {autoPlaySpeech ? (
-              <VolumeIcon className="w-3.5 h-3.5 text-primary shrink-0" />
-            ) : (
-              <VolumeMuteIcon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-            )}
-            <span className="hidden sm:inline">
-              {autoPlaySpeech ? "Voice On" : "Voice Off"}
-            </span>
-          </button>
+          {showAutoPlayToggle && (
+            <button
+              type="button"
+              onClick={onToggleAutoPlay}
+              className={cn(
+                "inline-flex items-center justify-center gap-1 font-meta text-xs h-8 px-2 sm:h-auto sm:px-2.5 sm:py-1.5 rounded-control border transition-all duration-200 ease-out cursor-pointer shrink-0 whitespace-nowrap",
+                autoPlaySpeech
+                  ? "bg-primary/10 border-primary text-primary font-bold shadow-2xs"
+                  : "bg-surface-subtle border-border/40 text-muted-foreground hover:text-foreground",
+              )}
+              title={
+                autoPlaySpeech
+                  ? "Auto-play speech: ON"
+                  : "Auto-play speech: OFF"
+              }
+              aria-label={
+                autoPlaySpeech
+                  ? "Disable auto-play voice"
+                  : "Enable auto-play voice"
+              }
+            >
+              {autoPlaySpeech ? (
+                <VolumeIcon className="w-3.5 h-3.5 text-primary shrink-0" />
+              ) : (
+                <VolumeMuteIcon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+              )}
+              <span className="hidden sm:inline">
+                {autoPlaySpeech ? "Voice On" : "Voice Off"}
+              </span>
+            </button>
+          )}
 
           <div className="hidden sm:flex items-center gap-1.5 font-meta text-xs text-muted-foreground bg-surface-subtle px-2.5 py-1.5 rounded-control border border-border/30 shrink-0 whitespace-nowrap">
             <TimerIcon className="w-3.5 h-3.5 shrink-0" />

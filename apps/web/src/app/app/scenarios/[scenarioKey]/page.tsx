@@ -1,7 +1,11 @@
 "use client";
 
 import { useAuth } from "@clerk/nextjs";
-import type { Difficulty, PublicScenarioDetail } from "@kalemny/contracts";
+import type {
+  Difficulty,
+  InteractionMode,
+  PublicScenarioDetail,
+} from "@kalemny/contracts";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -9,11 +13,20 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowLeftIcon, PlayIcon, RefreshIcon } from "@/components/icons";
 import { ErrorState, LoadingState } from "@/components/route-state";
 import { DifficultySelector } from "@/components/scenarios/difficulty-selector";
+import { InteractionModeSelector } from "@/components/scenarios/interaction-mode-selector";
 import { ScenarioBriefingCard } from "@/components/scenarios/scenario-briefing-card";
 import { ScenarioHeroGraphic } from "@/components/scenarios/scenario-hero-graphic";
 import { ApiClientError, createApiClient } from "@/lib/api-client";
+import { isRealtimeVoiceEnabled } from "@/lib/feature-flags";
 
 import { getScenarioMeta } from "../../scenario-library-view";
+
+// Build-time UI gate only; the backend endpoints remain separately gated by
+// the server-only ELEVENLABS_* settings.
+const realtimeVoiceEnabled = isRealtimeVoiceEnabled();
+const availableInteractionModes: InteractionMode[] = realtimeVoiceEnabled
+  ? ["PUSH_TO_TALK", "REALTIME"]
+  : ["PUSH_TO_TALK"];
 
 export default function ScenarioDetailPage() {
   const params = useParams();
@@ -27,6 +40,11 @@ export default function ScenarioDetailPage() {
   const [scenario, setScenario] = useState<PublicScenarioDetail | null>(null);
   const [selectedDifficulty, setSelectedDifficulty] =
     useState<Difficulty>("MEDIUM");
+  // Voice interaction mode chosen at simulation start and persisted on the
+  // attempt. Push-to-talk is the Release 1 default; realtime is offered only
+  // when the build-time feature flag is enabled.
+  const [selectedInteractionMode, setSelectedInteractionMode] =
+    useState<InteractionMode>("PUSH_TO_TALK");
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +78,9 @@ export default function ScenarioDetailPage() {
         setError("The requested scenario could not be found.");
       } else {
         setError(
-          err instanceof Error ? err.message : "Failed to load scenario detail.",
+          err instanceof Error
+            ? err.message
+            : "Failed to load scenario detail.",
         );
       }
     } finally {
@@ -97,7 +117,9 @@ export default function ScenarioDetailPage() {
           setError("The requested scenario could not be found.");
         } else {
           setError(
-            err instanceof Error ? err.message : "Failed to load scenario detail.",
+            err instanceof Error
+              ? err.message
+              : "Failed to load scenario detail.",
           );
         }
       } finally {
@@ -126,12 +148,15 @@ export default function ScenarioDetailPage() {
         scenarioKey: scenario.key,
         difficulty: selectedDifficulty,
         retryOfAttemptId: null,
+        interactionMode: selectedInteractionMode,
       });
 
       router.push(`/app/simulations/${encodeURIComponent(attempt.id)}`);
     } catch (err: unknown) {
       setStartError(
-        err instanceof Error ? err.message : "Failed to begin simulation rehearsal.",
+        err instanceof Error
+          ? err.message
+          : "Failed to begin simulation rehearsal.",
       );
       setStarting(false);
     }
@@ -167,7 +192,10 @@ export default function ScenarioDetailPage() {
   return (
     <div className="w-full max-w-container-max mx-auto px-4 sm:px-6 md:px-8 py-8 space-y-10 font-sans pb-24">
       {/* 1. Top Navigation & Category */}
-      <nav aria-label="Breadcrumb navigation" className="flex items-center gap-2">
+      <nav
+        aria-label="Breadcrumb navigation"
+        className="flex items-center gap-2"
+      >
         <Link
           href="/app"
           className="inline-flex items-center gap-1.5 font-meta text-xs font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
@@ -203,6 +231,15 @@ export default function ScenarioDetailPage() {
         selectedDifficulty={selectedDifficulty}
         onSelectDifficulty={setSelectedDifficulty}
       />
+
+      {/* 5b. Interaction Mode Selection (realtime builds only) */}
+      {realtimeVoiceEnabled && (
+        <InteractionModeSelector
+          availableModes={availableInteractionModes}
+          selectedMode={selectedInteractionMode}
+          onSelectMode={setSelectedInteractionMode}
+        />
+      )}
 
       {/* Start Simulation Error Alert (if any) */}
       {startError && (

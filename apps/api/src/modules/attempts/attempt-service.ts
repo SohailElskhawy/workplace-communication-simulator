@@ -10,6 +10,7 @@ import type {
   EvaluationData,
   FinishAttemptResponse,
   InputMethod,
+  InteractionMode,
   TurnStatus,
 } from "@kalemny/contracts";
 
@@ -50,6 +51,7 @@ export interface AttemptRecord {
   status: AttemptStatus;
   retryOfAttemptId: string | null;
   variationId: string | null;
+  interactionMode: InteractionMode;
   startedAt: Date;
   endedAt: Date | null;
   expiresAt: Date;
@@ -65,6 +67,8 @@ export interface CreateAttemptRepositoryInput {
   scenarioKey: string;
   difficulty: Difficulty;
   retryOfAttemptId: string | null;
+  /** Voice interaction mode chosen at simulation start. */
+  interactionMode: InteractionMode;
   startedAt: Date;
   /**
    * Chooses the variation id to persist for the new attempt. Receives the
@@ -261,6 +265,7 @@ function mapAttempt(attempt: AttemptRecord): AttemptDetailResponse["data"] {
     id: attempt.id,
     status: attempt.status,
     difficulty: attempt.difficulty,
+    interactionMode: attempt.interactionMode,
     scenario: mapScenario(attempt.scenario, attempt.variationId),
     retryOfAttemptId: attempt.retryOfAttemptId,
     turns: attempt.turns.map(mapTurn),
@@ -357,6 +362,7 @@ export function createAttemptService(
         scenarioKey: request.scenarioKey,
         difficulty: request.difficulty,
         retryOfAttemptId: request.retryOfAttemptId,
+        interactionMode: request.interactionMode,
         startedAt,
         expiresAt: new Date(startedAt.getTime() + ATTEMPT_DURATION_MS),
         selectVariationId: (definition, excludeVariationId) => {
@@ -390,6 +396,7 @@ export function createAttemptService(
         id: attempt.id,
         status: "ACTIVE",
         difficulty: attempt.difficulty,
+        interactionMode: attempt.interactionMode,
         scenario: mapScenario(attempt.scenario, attempt.variationId),
         openingMessage: variation?.openingMessage ?? definition.openingMessage,
         startedAt: attempt.startedAt.toISOString(),

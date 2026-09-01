@@ -53,6 +53,11 @@ enum InputMethod {
   VOICE
 }
 
+enum InteractionMode {
+  PUSH_TO_TALK
+  REALTIME
+}
+
 enum TurnStatus {
   PENDING
   COMPLETED
@@ -86,6 +91,7 @@ model SimulationAttempt {
   retryOfAttemptId    String?       @db.Uuid
   variationId         String?
   difficulty          Difficulty
+  interactionMode     InteractionMode @default(PUSH_TO_TALK)
   status              AttemptStatus @default(ACTIVE)
   startedAt           DateTime      @default(now()) @db.Timestamptz(3)
   endedAt             DateTime?     @db.Timestamptz(3)

@@ -84,6 +84,7 @@ function mapAttempt(attempt: PrismaAttemptRecord): AttemptRecord {
     status: attempt.status,
     retryOfAttemptId: attempt.retryOfAttemptId,
     variationId: attempt.variationId,
+    interactionMode: attempt.interactionMode,
     startedAt: attempt.startedAt,
     endedAt: attempt.endedAt,
     expiresAt: attempt.expiresAt,
@@ -158,6 +159,7 @@ export function createPrismaAttemptRepository(
             scenarioId: scenario.id,
             retryOfAttemptId: input.retryOfAttemptId,
             difficulty: input.difficulty,
+            interactionMode: input.interactionMode,
             variationId: input.selectVariationId(
               scenario.definition,
               excludeVariationId,
