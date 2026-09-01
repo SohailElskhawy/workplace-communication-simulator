@@ -75,3 +75,25 @@ export type BindRealtimeConversationRequest = z.infer<
 export type BindRealtimeConversationResponse = z.infer<
   typeof BindRealtimeConversationResponseSchema
 >;
+
+/**
+ * Request for `POST /api/v1/attempts/:attemptId/realtime-transcript`.
+ *
+ * Submits the browser's live transcript as conversation turns before
+ * finishing. Each entry pairs one learner utterance with the following
+ * agent response (null when the agent did not reply).
+ */
+export const SubmitRealtimeTranscriptTurnSchema = z.strictObject({
+  userText: z.string().trim().min(1),
+  assistantText: z.string().trim().min(1).nullable(),
+});
+
+export const SubmitRealtimeTranscriptRequestSchema = z.strictObject({
+  /** Must already be owner-bound to the attempt by the realtime SDK flow. */
+  conversationId: RealtimeConversationIdSchema,
+  turns: z.array(SubmitRealtimeTranscriptTurnSchema).min(1).max(100),
+});
+
+export type SubmitRealtimeTranscriptRequest = z.infer<
+  typeof SubmitRealtimeTranscriptRequestSchema
+>;

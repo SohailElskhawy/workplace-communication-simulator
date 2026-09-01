@@ -25,9 +25,10 @@ export function createPrismaRealtimeTranscriptRepository(
               | "COMPLETED"
               | "EVALUATION_FAILED"
               | "ABANDONED";
+            transcriptImportedAt: Date | null;
           }>
         >`
-          SELECT conversation."attemptId", attempt."status"
+          SELECT conversation."attemptId", attempt."status", conversation."transcriptImportedAt"
           FROM "RealtimeConversation" AS conversation
           INNER JOIN "SimulationAttempt" AS attempt
             ON attempt."id" = conversation."attemptId"
@@ -36,9 +37,11 @@ export function createPrismaRealtimeTranscriptRepository(
         `;
         const [mapping] = mappings;
         if (!mapping) return "unknown" as const;
-        // Finishing freezes the transcript; never mutate frozen attempts if a
-        // provider delivery arrives late.
-        if (mapping.status !== "ACTIVE") return "ignored" as const;
+        // A browser import may have completed first. It is already frozen or
+        // will be frozen by Finish, so provider retries must not append copies.
+        if (mapping.status !== "ACTIVE" || mapping.transcriptImportedAt) {
+          return "ignored" as const;
+        }
 
         const existing = await transaction.conversationTurn.findMany({
           where: {
@@ -53,14 +56,6 @@ export function createPrismaRealtimeTranscriptRepository(
         const missing = turns.filter(
           (turn) => !existingIds.has(turn.clientRequestId),
         );
-        if (missing.length === 0) {
-          await transaction.realtimeConversation.update({
-            where: { conversationId },
-            data: { transcriptImportedAt: completedAt },
-          });
-          return "imported" as const;
-        }
-
         const aggregate = await transaction.conversationTurn.aggregate({
           where: { attemptId: mapping.attemptId },
           _max: { sequence: true },

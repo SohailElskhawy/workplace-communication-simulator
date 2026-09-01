@@ -84,6 +84,7 @@ function createEvaluationApp(
     createTurn: vi.fn(),
     retryTurn: vi.fn(),
     finish: vi.fn(),
+    importRealtimeTranscript: vi.fn(),
     delete: vi.fn(),
   };
 

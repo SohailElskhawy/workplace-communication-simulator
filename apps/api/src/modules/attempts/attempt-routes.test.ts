@@ -77,6 +77,9 @@ function createAttemptApp(
       finish: vi
         .fn<AttemptService["finish"]>()
         .mockResolvedValue({ id: attemptId, status: "EVALUATING" }),
+      importRealtimeTranscript: vi
+        .fn<AttemptService["importRealtimeTranscript"]>()
+        .mockResolvedValue(undefined),
       delete: vi.fn<AttemptService["delete"]>().mockResolvedValue(undefined),
     } satisfies AttemptService,
     overrides,
@@ -281,6 +284,38 @@ describe("attempt endpoints", () => {
       data: { id: attemptId, status: "EVALUATING" },
     });
     expect(attemptService.finish).toHaveBeenCalledWith(ownerId, attemptId);
+  });
+
+  it("imports the bound realtime transcript before finishing", async () => {
+    const importRealtimeTranscript = vi
+      .fn<AttemptService["importRealtimeTranscript"]>()
+      .mockResolvedValue(undefined);
+    const { app } = createAttemptApp({ importRealtimeTranscript });
+
+    const response = await request(app)
+      .post(`/api/v1/attempts/${attemptId}/realtime-transcript`)
+      .send({
+        conversationId: "conv_example",
+        turns: [
+          {
+            userText: "I would like to discuss compensation.",
+            assistantText: "Tell me more.",
+          },
+        ],
+      });
+
+    expect(response.status).toBe(204);
+    expect(importRealtimeTranscript).toHaveBeenCalledWith(
+      ownerId,
+      attemptId,
+      "conv_example",
+      [
+        {
+          userText: "I would like to discuss compensation.",
+          assistantText: "Tell me more.",
+        },
+      ],
+    );
   });
 
   it("returns comparison data for an owned attempt", async () => {

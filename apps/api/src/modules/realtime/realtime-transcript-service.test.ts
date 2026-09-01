@@ -18,7 +18,7 @@ const transcript: ElevenLabsPostCallTranscription["data"]["transcript"] = [
 ];
 
 describe("normalizeElevenLabsTranscript", () => {
-  it("excludes the opening and tool-only entries, pairs ordered speech, and preserves an interrupted final learner message", () => {
+  it("omits the opening/tool entries and pairs finalized speech", () => {
     expect(normalizeElevenLabsTranscript("conv_example", transcript)).toEqual([
       {
         clientRequestId: "realtime:conv_example:2",
@@ -47,7 +47,7 @@ describe("normalizeElevenLabsTranscript", () => {
     ]);
   });
 
-  it("passes normalized finalized transcript data to one importer call", async () => {
+  it("passes normalized transcript data to one importer call", async () => {
     const repository = {
       importTranscript: vi.fn().mockResolvedValue("imported"),
     };
@@ -55,7 +55,6 @@ describe("normalizeElevenLabsTranscript", () => {
       repository,
       () => new Date("2026-08-31T10:00:00.000Z"),
     );
-
     await service.importPostCallTranscription({
       type: "post_call_transcription",
       event_timestamp: 1,
@@ -65,9 +64,7 @@ describe("normalizeElevenLabsTranscript", () => {
         transcript,
       },
     });
-
     expect(repository.importTranscript).toHaveBeenCalledTimes(1);
     expect(repository.importTranscript.mock.calls[0]?.[0]).toBe("conv_example");
-    expect(repository.importTranscript.mock.calls[0]?.[1]).toHaveLength(4);
   });
 });

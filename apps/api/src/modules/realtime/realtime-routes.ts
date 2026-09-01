@@ -40,10 +40,7 @@ export interface ElevenLabsWebhookRouteDependencies {
   clock?: () => Date;
 }
 
-/**
- * Public provider callback. This is registered before the app's JSON parser
- * and Clerk middleware so HMAC validation sees the untouched raw bytes.
- */
+/** Provider callback, registered before JSON parsing and Clerk middleware. */
 export function registerElevenLabsWebhookRoute(
   app: Express,
   dependencies: ElevenLabsWebhookRouteDependencies,
@@ -82,7 +79,6 @@ export function registerElevenLabsWebhookRoute(
         response.status(204).end();
         return;
       }
-
       await dependencies.transcriptService.importPostCallTranscription(
         parsed.data,
       );

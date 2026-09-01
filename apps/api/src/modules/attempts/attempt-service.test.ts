@@ -66,6 +66,8 @@ function createMemoryRepository(
   const usageEvents: Array<
     Parameters<AttemptRepository["finalizeRoleplayTurn"]>[0]
   > = [];
+  /** Bound realtime conversation IDs still awaiting canonical import. */
+  const realtimePending = new Map<string, string[]>();
   let nextAttempt = 1;
 
   const repository: AttemptRepository = {
@@ -242,6 +244,10 @@ function createMemoryRepository(
         return { kind: "not_found" };
       }
 
+      if ((realtimePending.get(attemptId) ?? []).length > 0) {
+        return { kind: "rejected", code: "REALTIME_TRANSCRIPT_PENDING" };
+      }
+
       if (attempt.turns.some((turn) => turn.status === "PENDING")) {
         return { kind: "rejected", code: "TURN_ALREADY_PENDING" };
       }
@@ -261,6 +267,27 @@ function createMemoryRepository(
       return attempt && attempt.userId === userId ? "bound" : "not_found";
     },
 
+    async importRealtimeTranscript({ attemptId, userId, turns }) {
+      const attempt = attempts.get(attemptId);
+      if (!attempt || attempt.userId !== userId) return "not_found";
+      if (attempt.status !== "ACTIVE") return "invalid_state";
+      if (attempt.turns.length + turns.length > 20) return "limit_reached";
+      for (const turn of turns) {
+        attempt.turns.push(
+          createTurn(attempt.turns.length + 1, {
+            clientRequestId: `realtime-test-${attempt.turns.length}`,
+            inputMethod: "VOICE",
+            userText: turn.userText,
+            assistantText: turn.assistantText,
+            status: turn.assistantText ? "COMPLETED" : "FAILED",
+            completedAt: turn.assistantText ? now : null,
+          }),
+        );
+      }
+      realtimePending.set(attemptId, []);
+      return "imported";
+    },
+
     async deleteAttempt(attemptId, userId) {
       const attempt = attempts.get(attemptId);
       if (!attempt || attempt.userId !== userId) {
@@ -271,7 +298,12 @@ function createMemoryRepository(
     },
   };
 
-  return { attempts, repository, usageEvents };
+  return {
+    attempts,
+    repository,
+    usageEvents,
+    realtimePending,
+  };
 }
 
 async function startAttempt(
@@ -815,6 +847,38 @@ describe("attempt service", () => {
     });
     await expect(service.finish(ownerId, eligible.id)).resolves.toEqual({
       id: eligible.id,
+      status: "EVALUATING",
+    });
+  });
+
+  it("imports the live UI transcript before allowing finish", async () => {
+    const { repository, realtimePending } = createMemoryRepository();
+    const service = createAttemptService(
+      repository,
+      createSuccessfulAiService(),
+      () => now,
+    );
+    const attempt = await startAttempt(service);
+    realtimePending.set(attempt.id, ["conv_ui-transcript"]);
+
+    await expect(service.finish(ownerId, attempt.id)).rejects.toMatchObject({
+      code: "REALTIME_TRANSCRIPT_PENDING",
+    });
+
+    await service.importRealtimeTranscript(
+      ownerId,
+      attempt.id,
+      "conv_ui-transcript",
+      [
+        {
+          userText: "I would like to discuss my salary.",
+          assistantText: "Tell me more.",
+        },
+      ],
+    );
+
+    await expect(service.finish(ownerId, attempt.id)).resolves.toEqual({
+      id: attempt.id,
       status: "EVALUATING",
     });
   });

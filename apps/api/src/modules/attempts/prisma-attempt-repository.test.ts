@@ -71,6 +71,68 @@ describe("Prisma attempt repository race recovery", () => {
     });
   });
 
+  it("imports only a bound realtime UI transcript and marks it finalized", async () => {
+    const created: unknown[] = [];
+    const transaction = {
+      $queryRaw: vi.fn().mockResolvedValue([{ id: input.attemptId }]),
+      simulationAttempt: {
+        findUniqueOrThrow: vi.fn().mockResolvedValue({
+          status: "ACTIVE",
+          interactionMode: "REALTIME",
+        }),
+      },
+      realtimeConversation: {
+        findFirst: vi.fn().mockResolvedValue({ transcriptImportedAt: null }),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      },
+      conversationTurn: {
+        aggregate: vi.fn().mockResolvedValue({ _max: { sequence: 2 } }),
+        count: vi.fn().mockResolvedValue(2),
+        findMany: vi.fn().mockResolvedValue([]),
+        create: vi.fn(async ({ data }) => created.push(data)),
+      },
+    };
+    const prisma = {
+      $transaction: vi.fn(
+        async (callback: (client: typeof transaction) => Promise<unknown>) =>
+          callback(transaction),
+      ),
+    } as unknown as PrismaClient;
+    const repository = createPrismaAttemptRepository(prisma);
+
+    await expect(
+      repository.importRealtimeTranscript({
+        attemptId: input.attemptId,
+        userId: input.userId,
+        conversationId: "conv_example",
+        turns: [
+          {
+            userText: "I would like to discuss compensation.",
+            assistantText: "Tell me more.",
+          },
+        ],
+        currentTime: input.currentTime,
+      }),
+    ).resolves.toBe("imported");
+
+    expect(created).toEqual([
+      expect.objectContaining({
+        sequence: 3,
+        clientRequestId: "realtime:conv_example:ui:0",
+        inputMethod: "VOICE",
+        status: "COMPLETED",
+      }),
+    ]);
+    expect(transaction.realtimeConversation.updateMany).toHaveBeenCalledWith({
+      where: {
+        attemptId: input.attemptId,
+        conversationId: "conv_example",
+        transcriptImportedAt: null,
+      },
+      data: { transcriptImportedAt: input.currentTime },
+    });
+  });
+
   it("returns the existing logical turn after an idempotency constraint race", async () => {
     const repository = createPrismaAttemptRepository(
       createRacePrisma([null, existingTurn]),

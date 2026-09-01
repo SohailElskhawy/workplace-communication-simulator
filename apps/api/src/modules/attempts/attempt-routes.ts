@@ -5,6 +5,7 @@ import {
   type AttemptDetailResponse,
   type CreateAttemptResponse,
   type FinishAttemptResponse,
+  SubmitRealtimeTranscriptRequestSchema,
   type TurnResponse,
 } from "@kalemny/contracts";
 import type { Express, Request } from "express";
@@ -230,4 +231,42 @@ export function registerAttemptRoutes(
       if (!handleAttemptError(response, error)) next(error);
     }
   });
+
+  app.post(
+    "/api/v1/attempts/:attemptId/realtime-transcript",
+    async (request, response, next) => {
+      try {
+        const userId = await resolveLocalUserId(
+          request,
+          response,
+          dependencies,
+        );
+        if (!userId) return;
+
+        const parsedParams = AttemptParamsSchema.safeParse(request.params);
+        const parsedBody = SubmitRealtimeTranscriptRequestSchema.safeParse(
+          request.body,
+        );
+        if (!parsedParams.success || !parsedBody.success) {
+          sendError(
+            response,
+            400,
+            "VALIDATION_FAILED",
+            "Request body is invalid.",
+          );
+          return;
+        }
+
+        await dependencies.attemptService.importRealtimeTranscript(
+          userId,
+          parsedParams.data.attemptId,
+          parsedBody.data.conversationId,
+          parsedBody.data.turns,
+        );
+        response.status(204).end();
+      } catch (error) {
+        if (!handleAttemptError(response, error)) next(error);
+      }
+    },
+  );
 }

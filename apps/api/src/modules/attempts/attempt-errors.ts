@@ -31,7 +31,7 @@ const errorDetails: Record<
   REALTIME_TRANSCRIPT_PENDING: {
     status: 409,
     message:
-      "Your live conversation transcript is still being finalized. Please try again shortly.",
+      "Your live conversation transcript is still being saved. Please try again shortly.",
   },
   AI_TIMEOUT: {
     status: 504,

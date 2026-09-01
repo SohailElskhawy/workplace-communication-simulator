@@ -44,6 +44,8 @@ export interface LiveConversationProps {
   onActiveChange: (active: boolean) => void;
   /** Blocks Finish until the SDK-created ID has been durably bound. */
   onBindingPendingChange: (pending: boolean) => void;
+  /** The bound ElevenLabs conversation that owns the current UI transcript. */
+  onConversationIdChange: (conversationId: string | null) => void;
   /** Notifies the page of the live UI state for the shared conversation orb. */
   onUiStateChange: (state: LiveConversationUiState) => void;
   /** Live microphone level (0–1) while connected, for the shared orb visual. */
@@ -215,6 +217,7 @@ function LiveConversationSession({
   startDisabled,
   onActiveChange,
   onBindingPendingChange,
+  onConversationIdChange,
   onUiStateChange,
   onMicrophoneLevelChange,
   awaitingStart,
@@ -340,6 +343,7 @@ function LiveConversationSession({
     // A new session begins: reset the end-in-flight guard and start from an
     // empty ephemeral transcript.
     endingRef.current = false;
+    onConversationIdChange(null);
     onClearLiveTranscript();
     setRequestError(null);
     onAwaitingStartChange(true);
@@ -379,8 +383,12 @@ function LiveConversationSession({
         // through this callback (its hook `startSession` is typed `void`).
         // Bind its authoritative ID immediately; no browser identity or
         // scenario data is included in this request.
-        onConversationCreated: (createdConversation) => {
+        onConversationCreated: (createdConversation: {
+          getId(): string;
+          endSession(): Promise<void>;
+        }) => {
           const conversationId = createdConversation.getId();
+          onConversationIdChange(conversationId);
           onBindingPendingChange(true);
           void createApiClient(apiUrl)
             .bindRealtimeConversation(authToken, attemptId, conversationId)
@@ -412,6 +420,7 @@ function LiveConversationSession({
     getToken,
     onAwaitingStartChange,
     onBindingPendingChange,
+    onConversationIdChange,
     onClearLiveTranscript,
     startDisabled,
     startSession,

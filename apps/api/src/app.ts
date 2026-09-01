@@ -41,10 +41,12 @@ import { registerTtsRoutes } from "./modules/tts/tts-routes.js";
 import type { TtsService } from "./modules/tts/tts-service.js";
 import { registerVoiceRoutes } from "./modules/voice/voice-routes.js";
 import type { VoiceService } from "./modules/voice/voice-service.js";
-import { registerRealtimeVoiceRoutes } from "./modules/realtime/realtime-routes.js";
+import {
+  registerElevenLabsWebhookRoute,
+  registerRealtimeVoiceRoutes,
+} from "./modules/realtime/realtime-routes.js";
 import type { RealtimeVoiceService } from "./modules/realtime/realtime-service.js";
 import type { RealtimeTranscriptService } from "./modules/realtime/realtime-transcript-service.js";
-import { registerElevenLabsWebhookRoute } from "./modules/realtime/realtime-routes.js";
 
 export interface AuthenticatedAppDependencies {
   attemptService: AttemptService;
@@ -62,6 +64,7 @@ export interface AuthenticatedAppDependencies {
   elevenLabsAgentId?: string;
   elevenLabsWebhookSecret?: string;
   realtimeTranscriptService?: RealtimeTranscriptService;
+
   webOrigin: string;
   logger?: AppLogger;
   captureException?: (

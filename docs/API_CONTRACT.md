@@ -917,7 +917,8 @@ WebRTC session with the returned `conversationToken` plus the public dynamic
 variables `opening_message` and `secret__kalemny_context_token`. After the SDK
 creates the conversation, the browser immediately binds its provider-issued ID
 to the owner-authenticated attempt. The browser never supplies user identity,
-scenario key, variation, difficulty, or transcript content.
+scenario key, variation, or difficulty. Its finalized live transcript events
+are submitted only for that already-bound conversation after disconnect.
 
 The interaction mode is chosen at simulation start and persisted on the
 attempt (`interactionMode`). The simulation screen initializes only the chosen
@@ -1001,10 +1002,26 @@ Deterministic IDs derived from conversation ID and transcript position make all
 provider retries transactionally idempotent. The webhook does not start
 evaluation and does not consume `post_call_audio`.
 
+### `POST /api/v1/attempts/:attemptId/realtime-transcript`
+
+Clerk-authenticated and owner-only. This is the immediate browser fallback for
+finalized ElevenLabs SDK transcript events, so a development API that is not
+publicly reachable can still persist a completed live call. The request must
+include the already-bound `conversationId` and at most 20 normalized learner /
+counterpart pairs. The API verifies that the ID belongs to this active
+`REALTIME` attempt, assigns deterministic IDs scoped to that conversation,
+persists `VOICE` turns transactionally, and marks the mapping imported. A
+replayed request is a no-op. The endpoint never logs transcript text.
+
+The first successful import wins: a later webhook sees the imported marker and
+does not append a second copy. A conversation ID bound to another attempt is
+indistinguishable from a missing attempt (`404 NOT_FOUND`).
+
 An attempt with a bound conversation cannot finish until its canonical
-post-call transcript has imported (including an empty normalized transcript).
-This prevents an asynchronous provider delivery from being omitted from the
-frozen evaluation transcript.
+transcript has imported. This prevents an asynchronous provider callback or
+browser save from being omitted from the frozen evaluation transcript. Finish
+returns `409 REALTIME_TRANSCRIPT_PENDING` while that import remains pending;
+the UI keeps the transcript and retries its authenticated save before Finish.
 
 ### `POST /api/v1/realtime/scenario-context`
 

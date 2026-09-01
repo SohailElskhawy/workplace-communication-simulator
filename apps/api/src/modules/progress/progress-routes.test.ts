@@ -49,6 +49,7 @@ function createProgressApp(
       createTurn: vi.fn(),
       retryTurn: vi.fn(),
       finish: vi.fn(),
+      importRealtimeTranscript: vi.fn(),
       delete: vi.fn(),
     },
     authenticationMiddleware: (_req, _res, next) => next(),

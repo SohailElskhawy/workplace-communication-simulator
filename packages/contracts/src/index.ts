@@ -93,6 +93,8 @@ export {
   type BindRealtimeConversationRequest,
   type BindRealtimeConversationResponse,
   type RealtimeSessionResponse,
+  SubmitRealtimeTranscriptRequestSchema,
+  type SubmitRealtimeTranscriptRequest,
 } from "./realtime.js";
 export {
   DifficultySchema,

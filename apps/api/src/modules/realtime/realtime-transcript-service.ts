@@ -14,13 +14,12 @@ export function createRealtimeTranscriptService(
 ): RealtimeTranscriptService {
   return {
     async importPostCallTranscription(event) {
-      const turns = normalizeElevenLabsTranscript(
-        event.data.conversation_id,
-        event.data.transcript,
-      );
       await repository.importTranscript(
         event.data.conversation_id,
-        turns,
+        normalizeElevenLabsTranscript(
+          event.data.conversation_id,
+          event.data.transcript,
+        ),
         clock(),
       );
     },

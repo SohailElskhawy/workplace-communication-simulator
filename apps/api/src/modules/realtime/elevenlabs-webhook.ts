@@ -25,7 +25,6 @@ const WebhookSignatureHeaderSchema = z
       }
       parts.set(key, value);
     }
-
     const timestamp = parts.get("t");
     const signature = parts.get("v0");
     if (!timestamp || !/^[0-9]+$/.test(timestamp) || !signature) {
@@ -47,10 +46,6 @@ export interface VerifyElevenLabsWebhookSignatureInput {
   signatureHeader: string | undefined;
 }
 
-/**
- * Verifies ElevenLabs' `t=<unix>,v0=<hmac>` SHA-256 signature over the exact
- * raw request bytes. Parsing happens only after this returns true.
- */
 export function verifyElevenLabsWebhookSignature({
   currentTime,
   rawBody,
@@ -58,10 +53,8 @@ export function verifyElevenLabsWebhookSignature({
   signatureHeader,
 }: VerifyElevenLabsWebhookSignatureInput): boolean {
   const parsed = WebhookSignatureHeaderSchema.safeParse(signatureHeader);
-  if (!parsed.success || !Number.isSafeInteger(parsed.data.timestamp)) {
+  if (!parsed.success || !Number.isSafeInteger(parsed.data.timestamp))
     return false;
-  }
-
   if (
     Math.abs(
       Math.floor(currentTime.getTime() / 1_000) - parsed.data.timestamp,
@@ -69,7 +62,6 @@ export function verifyElevenLabsWebhookSignature({
   ) {
     return false;
   }
-
   const expected = createHmac("sha256", secret)
     .update(`${parsed.data.timestamp}.`)
     .update(rawBody)
@@ -114,11 +106,6 @@ export interface NormalizedRealtimeTranscriptTurn {
   userText: string;
 }
 
-/**
- * Converts finalized post-call transcript entries into Kalemny turns. The
- * position comes from the original transcript array, making retry IDs stable
- * even when tool-only entries are ignored.
- */
 export function normalizeElevenLabsTranscript(
   conversationId: string,
   transcript: ElevenLabsPostCallTranscription["data"]["transcript"],
@@ -127,16 +114,12 @@ export function normalizeElevenLabsTranscript(
     const message = entry.message?.trim() ?? "";
     return message ? [{ role: entry.role, message, position }] : [];
   });
-
-  // The agent's initial opener is represented in scenario UI already and is
-  // not a learner turn. Tool-only/empty entries were removed above.
   if (spoken[0]?.role === "agent") spoken.shift();
 
   const turns: NormalizedRealtimeTranscriptTurn[] = [];
   for (let index = 0; index < spoken.length; index += 1) {
     const learner = spoken[index];
     if (!learner || learner.role !== "user") continue;
-
     const following = spoken[index + 1];
     const assistantText =
       following?.role === "agent" ? following.message : null;

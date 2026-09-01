@@ -32,6 +32,9 @@ const unusedAttemptService = {
   finish: async () => {
     throw new Error("Attempt service should not run");
   },
+  importRealtimeTranscript: async () => {
+    throw new Error("Attempt service should not run");
+  },
   delete: async () => {
     throw new Error("Attempt service should not run");
   },

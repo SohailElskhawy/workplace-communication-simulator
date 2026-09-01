@@ -232,6 +232,87 @@ export function createPrismaAttemptRepository(
       }
     },
 
+    async importRealtimeTranscript({
+      attemptId,
+      userId,
+      conversationId,
+      turns,
+      currentTime,
+    }) {
+      return prisma.$transaction(async (transaction) => {
+        const owned = await lockOwnedAttempt(transaction, attemptId, userId);
+        if (!owned) return "not_found" as const;
+
+        const attempt = await transaction.simulationAttempt.findUniqueOrThrow({
+          where: { id: attemptId },
+          select: { interactionMode: true, status: true },
+        });
+        if (
+          attempt.status !== "ACTIVE" ||
+          attempt.interactionMode !== "REALTIME"
+        ) {
+          return "invalid_state" as const;
+        }
+
+        const conversation = await transaction.realtimeConversation.findFirst({
+          where: { attemptId, conversationId },
+          select: { transcriptImportedAt: true },
+        });
+        // Do not allow a client to attach an arbitrary transcript to an
+        // attempt. The ElevenLabs-created ID must have been bound first.
+        if (!conversation) return "not_found" as const;
+        if (conversation.transcriptImportedAt) return "imported" as const;
+
+        const [aggregate, existingCount] = await Promise.all([
+          transaction.conversationTurn.aggregate({
+            where: { attemptId },
+            _max: { sequence: true },
+          }),
+          transaction.conversationTurn.count({ where: { attemptId } }),
+        ]);
+        if (existingCount + turns.length > 20) {
+          return "limit_reached" as const;
+        }
+
+        const existing = await transaction.conversationTurn.findMany({
+          where: { attemptId },
+          select: { clientRequestId: true },
+        });
+        const existingIds = new Set(
+          existing.map((turn) => turn.clientRequestId),
+        );
+        const missing = turns.filter(
+          (_turn, index) =>
+            !existingIds.has(`realtime:${conversationId}:ui:${index}`),
+        );
+        let sequence = aggregate._max.sequence ?? 0;
+
+        for (const [index, turn] of turns.entries()) {
+          if (!missing.includes(turn)) continue;
+          sequence += 1;
+          await transaction.conversationTurn.create({
+            data: {
+              attemptId,
+              sequence,
+              clientRequestId: `realtime:${conversationId}:ui:${index}`,
+              inputMethod: "VOICE",
+              userText: turn.userText,
+              assistantText: turn.assistantText,
+              status: turn.assistantText ? "COMPLETED" : "FAILED",
+              completedAt: turn.assistantText ? currentTime : null,
+            },
+          });
+        }
+
+        await transaction.realtimeConversation.updateMany({
+          where: { attemptId, conversationId, transcriptImportedAt: null },
+          data: { transcriptImportedAt: currentTime },
+        });
+
+        return "imported" as const;
+      });
+    },
+
     async findRoleplayContext({ attemptId, userId, beforeSequence }) {
       const attempt = await prisma.simulationAttempt.findFirst({
         where: { id: attemptId, userId },

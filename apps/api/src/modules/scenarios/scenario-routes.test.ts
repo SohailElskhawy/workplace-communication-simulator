@@ -37,6 +37,9 @@ const unusedAttemptService = {
   finish: async () => {
     throw new Error("Attempt service should not run for scenario routes");
   },
+  importRealtimeTranscript: async () => {
+    throw new Error("Attempt service should not run for scenario routes");
+  },
   delete: async () => {
     throw new Error("Attempt service should not run for scenario routes");
   },

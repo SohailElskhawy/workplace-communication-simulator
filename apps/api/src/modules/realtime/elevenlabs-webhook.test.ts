@@ -13,11 +13,10 @@ const timestamp = Math.floor(currentTime.getTime() / 1_000);
 const rawBody = Buffer.from('{"type":"post_call_transcription"}');
 
 function signature(value = timestamp, body = rawBody): string {
-  const digest = createHmac("sha256", secret)
+  return `t=${value},v0=${createHmac("sha256", secret)
     .update(`${value}.`)
     .update(body)
-    .digest("hex");
-  return `t=${value},v0=${digest}`;
+    .digest("hex")}`;
 }
 
 describe("verifyElevenLabsWebhookSignature", () => {

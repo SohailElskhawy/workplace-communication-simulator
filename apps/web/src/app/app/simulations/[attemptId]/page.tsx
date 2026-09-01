@@ -29,9 +29,10 @@ import { ApiClientError, createApiClient } from "@/lib/api-client";
 import { isConversationInputDisabled } from "@/lib/conversation-input-state";
 import { isRealtimeVoiceEnabled } from "@/lib/feature-flags";
 import { resolveEffectiveInteractionMode } from "@/lib/interaction-mode";
-import type {
-  LiveConversationUiState,
-  LiveTranscriptEntry,
+import {
+  pairLiveTranscriptEntries,
+  type LiveConversationUiState,
+  type LiveTranscriptEntry,
 } from "@/lib/live-conversation-state";
 import { isPersistedRoleplayFailure } from "@/lib/roleplay-recovery";
 import type { SpeechPlaybackStatus } from "@/lib/speech-playback-controller";
@@ -91,8 +92,12 @@ export default function SimulationPage() {
   const [liveBindingPending, setLiveBindingPending] = useState(false);
   const [liveUiState, setLiveUiState] =
     useState<LiveConversationUiState>("disconnected");
-  // Ephemeral live transcript (finalized realtime utterances). In-memory
-  // only: never sent to the API and never persisted.
+  const [liveConversationId, setLiveConversationId] = useState<string | null>(
+    null,
+  );
+  const savedLiveConversationIdRef = useRef<string | null>(null);
+  // Ephemeral live transcript (finalized realtime utterances). Submitted
+  // to the API when the learner finishes the simulation.
   const [liveTranscript, setLiveTranscript] = useState<LiveTranscriptEntry[]>(
     [],
   );
@@ -304,6 +309,58 @@ export default function SimulationPage() {
     [attempt?.interactionMode],
   );
   const isRealtimeMode = effectiveInteractionMode === "REALTIME";
+
+  const persistLiveTranscript = useCallback(async () => {
+    if (!attemptId || !liveConversationId) return;
+    if (savedLiveConversationIdRef.current === liveConversationId) return;
+
+    const turns = pairLiveTranscriptEntries(liveTranscript);
+    if (turns.length === 0) return;
+
+    const token = await getToken();
+    if (!token) throw new Error("Authentication token not available.");
+
+    const client = createApiClient(apiUrl);
+    await client.submitRealtimeTranscript(
+      token,
+      attemptId,
+      liveConversationId,
+      turns,
+    );
+    savedLiveConversationIdRef.current = liveConversationId;
+    setAttempt(await client.fetchAttempt(token, attemptId));
+  }, [apiUrl, attemptId, getToken, liveConversationId, liveTranscript]);
+
+  // The live transcript is already rendered from finalized SDK events. Save
+  // it as soon as the call disconnects, rather than relying on a later Finish
+  // click. Finish calls the same idempotent operation as a retry safety net.
+  useEffect(() => {
+    if (
+      !isRealtimeMode ||
+      liveUiState !== "disconnected" ||
+      liveActive ||
+      liveBindingPending ||
+      liveTranscript.length === 0
+    ) {
+      return;
+    }
+
+    void persistLiveTranscript().catch((error: unknown) => {
+      setGeneralError(
+        error instanceof Error
+          ? error.message
+          : "Failed to save the live conversation transcript.",
+      );
+    });
+  }, [
+    isRealtimeMode,
+    liveActive,
+    liveBindingPending,
+    liveTranscript.length,
+    liveUiState,
+    persistLiveTranscript,
+  ]);
+
   // In realtime mode the live agent speaks the opening message when the
   // session connects, so stored-turn TTS must never auto-play it a second
   // time. Manual replay from the transcript remains available.
@@ -478,6 +535,11 @@ export default function SimulationPage() {
       if (!token) throw new Error("Authentication token not available.");
 
       const client = createApiClient(apiUrl);
+
+      if (isRealtimeMode && liveTranscript.length > 0) {
+        await persistLiveTranscript();
+      }
+
       await client.finishAttempt(token, attemptId);
 
       router.push(`/app/results/${encodeURIComponent(attemptId)}`);
@@ -590,6 +652,7 @@ export default function SimulationPage() {
               startDisabled={isComposerDisabled || finishing}
               onActiveChange={setLiveActive}
               onBindingPendingChange={setLiveBindingPending}
+              onConversationIdChange={setLiveConversationId}
               onUiStateChange={setLiveUiState}
               onMicrophoneLevelChange={setMicrophoneLevel}
               onTranscriptChange={setLiveTranscript}

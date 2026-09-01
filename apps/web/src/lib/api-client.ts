@@ -360,6 +360,27 @@ export function createApiClient(baseUrl: string) {
       );
     },
 
+    async submitRealtimeTranscript(
+      token: string,
+      attemptId: string,
+      conversationId: string,
+      turns: ReadonlyArray<{
+        userText: string;
+        assistantText: string | null;
+      }>,
+    ): Promise<void> {
+      return requestVoid(
+        baseUrl,
+        `/api/v1/attempts/${encodeURIComponent(attemptId)}/realtime-transcript`,
+        token,
+        {
+          method: "POST",
+          body: JSON.stringify({ conversationId, turns }),
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    },
+
     async finishAttempt(
       token: string,
       attemptId: string,

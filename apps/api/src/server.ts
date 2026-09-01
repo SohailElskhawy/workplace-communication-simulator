@@ -29,8 +29,8 @@ import { createVoiceService } from "./modules/voice/voice-service.js";
 import { createPrismaTtsRepository } from "./modules/tts/prisma-tts-repository.js";
 import { createTtsService } from "./modules/tts/tts-service.js";
 import { createElevenLabsProvider } from "./modules/realtime/elevenlabs-provider.js";
-import { createRealtimeVoiceService } from "./modules/realtime/realtime-service.js";
 import { createPrismaRealtimeTranscriptRepository } from "./modules/realtime/prisma-realtime-transcript-repository.js";
+import { createRealtimeVoiceService } from "./modules/realtime/realtime-service.js";
 import { createRealtimeTranscriptService } from "./modules/realtime/realtime-transcript-service.js";
 
 const rootEnvPath = resolve(process.cwd(), "../../.env");
@@ -79,7 +79,24 @@ const aiService = createAiService({
 
 const attemptRepository = createPrismaAttemptRepository(prisma);
 
-const attemptService = createAttemptService(attemptRepository, aiService);
+// Realtime voice bootstrap: enabled only when the server-only ElevenLabs
+// settings are configured. Absent configuration leaves text/STT/TTS flows
+// untouched and the realtime endpoints unregistered.
+const elevenLabsAgentId = apiEnv.ELEVENLABS_AGENT_ID;
+const elevenLabsProvider =
+  apiEnv.ELEVENLABS_API_KEY && elevenLabsAgentId
+    ? createElevenLabsProvider({
+        apiKey: apiEnv.ELEVENLABS_API_KEY,
+        agentId: elevenLabsAgentId,
+      })
+    : undefined;
+
+const attemptService = createAttemptService(
+  attemptRepository,
+  aiService,
+  undefined,
+  undefined,
+);
 
 const evaluationService = createEvaluationService(
   createPrismaEvaluationRepository(prisma),
@@ -104,27 +121,22 @@ const ttsService = createTtsService(
   aiService,
 );
 
-// Realtime voice bootstrap: enabled only when all server-only ElevenLabs
-// settings are configured. Absent configuration leaves text/STT/TTS flows
-// untouched and the realtime endpoints unregistered.
+// Realtime session bootstrap (voice service): requires the tool secret in
+// addition to the shared provider above. The transcript importer and pull
+// sync are created next to the provider; the public webhook route below
+// stays gated on the webhook secret.
 const elevenLabsToolSecret = apiEnv.ELEVENLABS_TOOL_SECRET;
 const realtimeVoiceService =
-  apiEnv.ELEVENLABS_API_KEY &&
-  apiEnv.ELEVENLABS_AGENT_ID &&
-  elevenLabsToolSecret
+  elevenLabsAgentId && elevenLabsProvider && elevenLabsToolSecret
     ? createRealtimeVoiceService({
         repository: attemptRepository,
-        elevenLabsProvider: createElevenLabsProvider({
-          apiKey: apiEnv.ELEVENLABS_API_KEY,
-          agentId: apiEnv.ELEVENLABS_AGENT_ID,
-        }),
+        elevenLabsProvider,
         contextTokenSecret: elevenLabsToolSecret,
-        agentId: apiEnv.ELEVENLABS_AGENT_ID,
+        agentId: elevenLabsAgentId,
       })
     : undefined;
-
 const realtimeTranscriptService =
-  apiEnv.ELEVENLABS_AGENT_ID && apiEnv.ELEVENLABS_WEBHOOK_SECRET
+  elevenLabsAgentId && apiEnv.ELEVENLABS_WEBHOOK_SECRET
     ? createRealtimeTranscriptService(
         createPrismaRealtimeTranscriptRepository(prisma),
       )
@@ -147,15 +159,16 @@ const app = createApp({
   ...(realtimeVoiceService && elevenLabsToolSecret
     ? { realtimeVoiceService, elevenLabsToolSecret }
     : {}),
-  ...(realtimeTranscriptService &&
-  apiEnv.ELEVENLABS_AGENT_ID &&
-  apiEnv.ELEVENLABS_WEBHOOK_SECRET
+  ...(elevenLabsAgentId &&
+  apiEnv.ELEVENLABS_WEBHOOK_SECRET &&
+  realtimeTranscriptService
     ? {
-        realtimeTranscriptService,
-        elevenLabsAgentId: apiEnv.ELEVENLABS_AGENT_ID,
+        elevenLabsAgentId,
         elevenLabsWebhookSecret: apiEnv.ELEVENLABS_WEBHOOK_SECRET,
+        realtimeTranscriptService,
       }
     : {}),
+
   webOrigin: apiEnv.WEB_ORIGIN,
   logger,
   captureException,

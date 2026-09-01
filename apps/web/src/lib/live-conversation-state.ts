@@ -1,9 +1,6 @@
 /**
- * Pure UI-state mapping for the feature-flagged ElevenLabs live conversation
- * spike. Kept free of React and SDK imports so it is trivially testable.
- *
- * The live conversation is a presentation-only addition: it never persists
- * transcripts, creates ConversationTurns, or touches evaluation/scoring.
+ * Pure UI-state mapping for the ElevenLabs live conversation. Kept free of
+ * React and SDK imports so it is trivially testable.
  */
 
 /** SDK connection status reported by `useConversationStatus`. */
@@ -109,7 +106,8 @@ export function appendLiveTranscriptEntry(
 
   if (payload.event_id !== undefined) {
     const duplicate = existing.some(
-      (entry) => entry.role === role && entry.id === `${role}:${payload.event_id}`,
+      (entry) =>
+        entry.role === role && entry.id === `${role}:${payload.event_id}`,
     );
     if (duplicate) return [...existing];
   } else {
@@ -131,4 +129,25 @@ export function appendLiveTranscriptEntry(
   return next.length > LIVE_TRANSCRIPT_MAX_ENTRIES
     ? next.slice(next.length - LIVE_TRANSCRIPT_MAX_ENTRIES)
     : next;
+}
+
+/**
+ * Pairs consecutive user/agent entries into conversation turns for the
+ * transcript submission endpoint. Each user entry pairs with the following
+ * agent entry; agent-only entries without a preceding user entry are skipped.
+ */
+export function pairLiveTranscriptEntries(
+  entries: readonly LiveTranscriptEntry[],
+): Array<{ userText: string; assistantText: string | null }> {
+  const turns: Array<{ userText: string; assistantText: string | null }> = [];
+  for (let i = 0; i < entries.length; i++) {
+    const entry = entries[i];
+    if (!entry) continue;
+    if (entry.role !== "user") continue;
+    const next = entries[i + 1];
+    const assistantText = next?.role === "agent" ? next.text : null;
+    turns.push({ userText: entry.text, assistantText });
+    if (assistantText !== null) i++;
+  }
+  return turns;
 }
