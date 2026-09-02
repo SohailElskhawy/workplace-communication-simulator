@@ -246,6 +246,13 @@ export function createOpenRouterProvider(
       );
 
       if (!response.ok) {
+        logger?.warn({
+          event: "openrouter_http_error",
+          operation,
+          model,
+          status: response.status,
+          errorCode: `HTTP_${response.status}`,
+        });
         throw new AiProviderError(
           "AI_PROVIDER_ERROR",
           Math.max(0, clock() - startedAt),
@@ -383,6 +390,7 @@ export function createOpenRouterProvider(
           stream: false,
           max_tokens: EVALUATION_MAX_OUTPUT_TOKENS,
           response_format: { type: "json_object" },
+          reasoning: { enabled: false },
           provider: {
             zdr: true,
             data_collection: "deny",
@@ -397,6 +405,12 @@ export function createOpenRouterProvider(
         const jsonString = extractJsonString(result.content);
         jsonPayload = JSON.parse(jsonString);
       } catch {
+        logger?.warn({
+          event: "custom_scenario_json_parse_failed",
+          operation: "SCENARIO_GENERATION",
+          model: request.model,
+          errorCode: "JSON_PARSE_ERROR",
+        });
         throw new AiProviderError("AI_PROVIDER_ERROR", result.latencyMs);
       }
 
@@ -407,6 +421,12 @@ export function createOpenRouterProvider(
           request.scenarioKey,
         );
       } catch {
+        logger?.warn({
+          event: "custom_scenario_validation_failed",
+          operation: "SCENARIO_GENERATION",
+          model: request.model,
+          errorCode: "VALIDATION_ERROR",
+        });
         throw new AiProviderError("AI_PROVIDER_ERROR", result.latencyMs);
       }
 

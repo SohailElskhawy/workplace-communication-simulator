@@ -185,50 +185,13 @@ export function createScenarioService(
 
       const scenarioKey = `custom-interview-${randomUUID()}`;
 
+      let aiResult;
       try {
-        const aiResult = await aiService.generateCustomScenario({
+        aiResult = await aiService.generateCustomScenario({
           scenarioKey,
           cvText: parsedCv.text,
           jobDescription: trimmedJd,
         });
-
-        if (!repository.createCustomScenario) {
-          throw new ScenarioError(
-            "INTERNAL_ERROR",
-            "Scenario creation repository is not configured.",
-          );
-        }
-
-        const record = await repository.createCustomScenario({
-          userId: input.userId,
-          key: scenarioKey,
-          title: aiResult.definition.title,
-          summary: aiResult.definition.summary,
-          definition: aiResult.definition,
-          usage: {
-            provider: "openrouter",
-            model: aiService.evaluationModel,
-            status: "SUCCESS",
-            latencyMs: aiResult.latencyMs,
-            inputTokens: aiResult.inputTokens,
-            outputTokens: aiResult.outputTokens,
-            estimatedCost: aiResult.estimatedCost,
-            errorCode: null,
-          },
-        });
-
-        const definition = ScenarioDefinitionSchema.parse(record.definition);
-
-        return {
-          key: record.key,
-          version: record.version,
-          title: record.title,
-          category: record.category,
-          summary: record.summary,
-          isCustom: true,
-          context: definition.publicContext,
-          availableDifficulties: ["EASY", "MEDIUM", "HARD"],
-        };
       } catch (error) {
         if (error instanceof AiProviderError) {
           throw new ScenarioError(error.code);
@@ -241,6 +204,44 @@ export function createScenarioService(
           error instanceof Error ? error.message : undefined,
         );
       }
+
+      if (!repository.createCustomScenario) {
+        throw new ScenarioError(
+          "INTERNAL_ERROR",
+          "Scenario creation repository is not configured.",
+        );
+      }
+
+      const record = await repository.createCustomScenario({
+        userId: input.userId,
+        key: scenarioKey,
+        title: aiResult.definition.title,
+        summary: aiResult.definition.summary,
+        definition: aiResult.definition,
+        usage: {
+          provider: "openrouter",
+          model: aiService.evaluationModel,
+          status: "SUCCESS",
+          latencyMs: aiResult.latencyMs,
+          inputTokens: aiResult.inputTokens,
+          outputTokens: aiResult.outputTokens,
+          estimatedCost: aiResult.estimatedCost,
+          errorCode: null,
+        },
+      });
+
+      const definition = ScenarioDefinitionSchema.parse(record.definition);
+
+      return {
+        key: record.key,
+        version: record.version,
+        title: record.title,
+        category: record.category,
+        summary: record.summary,
+        isCustom: true,
+        context: definition.publicContext,
+        availableDifficulties: ["EASY", "MEDIUM", "HARD"],
+      };
     },
 
     async deleteCustomScenario(key: string, userId: string): Promise<void> {
