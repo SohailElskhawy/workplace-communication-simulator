@@ -118,13 +118,47 @@ describe("custom-scenario-prompt", () => {
     expect(parsed.objectives).toHaveLength(2);
   });
 
-  it("throws validation error on invalid JSON shape", () => {
-    const invalidJson = {
-      title: "Missing fields",
+  it("normalizes and sanitizes loose LLM outputs gracefully", () => {
+    const looseJson = {
+      title: "Backend Engineer Interview",
+      persona: {
+        traits: "curious, technical, direct",
+      },
+      skillEmphasis: ["clarity", "invalid_skill", "empathy"],
+      objectives: [
+        {
+          id: "1. Problem Solving & Design",
+          description: "Solve backend architectural questions.",
+          successSignals: "Good structure, clear tradeoffs",
+          failureSignals: "Cannot explain scaling",
+        },
+      ],
+      difficulties: {
+        EASY: { cooperativeness: 10, objectionIntensity: -5 },
+      },
     };
 
+    const parsed = validateCustomScenarioOutput(
+      looseJson,
+      "custom-interview-loose-123",
+    );
+
+    expect(parsed.key).toBe("custom-interview-loose-123");
+    expect(parsed.version).toBe(1);
+    expect(parsed.category).toBe("CUSTOM");
+    expect(parsed.persona.traits).toEqual(["curious", "technical", "direct"]);
+    expect(parsed.skillEmphasis).toEqual(["CLARITY", "EMPATHY"]);
+    expect(parsed.objectives[0]!.id).toBe("PROBLEM_SOLVING_DESIGN");
+    expect(parsed.objectives[0]!.successSignals).toEqual([
+      "Good structure, clear tradeoffs",
+    ]);
+    expect(parsed.difficulties.EASY.cooperativeness).toBe(5);
+    expect(parsed.difficulties.EASY.objectionIntensity).toBe(1);
+  });
+
+  it("throws validation error on non-object payload", () => {
     expect(() =>
-      validateCustomScenarioOutput(invalidJson, "custom-interview-fail"),
-    ).toThrow();
+      validateCustomScenarioOutput("not-json", "custom-interview-fail"),
+    ).toThrow("AI output is not a valid JSON object.");
   });
 });

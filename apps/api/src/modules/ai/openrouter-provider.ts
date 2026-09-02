@@ -157,6 +157,22 @@ interface OpenRouterProviderOptions {
   clock?: () => number;
 }
 
+function extractJsonString(raw: string): string {
+  const trimmed = raw.trim();
+  if (trimmed.startsWith("```")) {
+    const match = /```(?:json)?\s*([\s\S]*?)\s*```/i.exec(trimmed);
+    if (match?.[1]) {
+      return match[1].trim();
+    }
+  }
+  const firstBrace = trimmed.indexOf("{");
+  const lastBrace = trimmed.lastIndexOf("}");
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    return trimmed.slice(firstBrace, lastBrace + 1);
+  }
+  return trimmed;
+}
+
 export function createOpenRouterProvider(
   options: OpenRouterProviderOptions,
 ): OpenRouterProvider {
@@ -337,7 +353,8 @@ export function createOpenRouterProvider(
 
       let jsonPayload: unknown;
       try {
-        jsonPayload = JSON.parse(result.content);
+        const jsonString = extractJsonString(result.content);
+        jsonPayload = JSON.parse(jsonString);
       } catch {
         throw new AiProviderError("AI_PROVIDER_ERROR", result.latencyMs);
       }
@@ -377,7 +394,8 @@ export function createOpenRouterProvider(
 
       let jsonPayload: unknown;
       try {
-        jsonPayload = JSON.parse(result.content);
+        const jsonString = extractJsonString(result.content);
+        jsonPayload = JSON.parse(jsonString);
       } catch {
         throw new AiProviderError("AI_PROVIDER_ERROR", result.latencyMs);
       }
