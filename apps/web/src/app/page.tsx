@@ -17,6 +17,7 @@ import {
   DEFAULT_MOCK_SCENARIOS,
   getScenarioMeta,
 } from "./app/scenario-library-view";
+import { PricingSection } from "@/components/pricing/pricing-section";
 
 const UNIVERSAL_SKILLS_SHOWCASE = [
   {
@@ -147,6 +148,12 @@ export default function LandingPage() {
             >
               Coaching
             </a>
+            <a
+              href="#pricing"
+              className="hover:text-foreground transition-colors"
+            >
+              Pricing
+            </a>
           </nav>
 
           {/* Nav Actions */}
@@ -228,6 +235,13 @@ export default function LandingPage() {
               className="py-1 text-muted-foreground hover:text-foreground"
             >
               Coaching
+            </a>
+            <a
+              href="#pricing"
+              onClick={() => setMobileMenuOpen(false)}
+              className="py-1 text-muted-foreground hover:text-foreground"
+            >
+              Pricing
             </a>
             <div className="pt-2 border-t border-border/40 flex items-center justify-between">
               <Show when="signed-out">
@@ -645,7 +659,10 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* 7. Final Call to Action (CTA) */}
+        {/* 7. Pricing Section */}
+        <PricingSection />
+
+        {/* 8. Final Call to Action (CTA) */}
         <section className="max-w-container-max mx-auto px-4 sm:px-6 md:px-8">
           <div className="glass-surface rounded-card p-8 sm:p-12 md:p-16 border-2 border-border shadow-[8px_8px_0px_0px_#1a1a1a] text-center space-y-6 relative overflow-hidden bg-primary/5">
             <div
@@ -699,7 +716,7 @@ export default function LandingPage() {
         </section>
       </main>
 
-      {/* 8. Footer */}
+      {/* 9. Footer */}
       <footer className="border-t border-border bg-surface py-12 px-4 sm:px-6 md:px-8">
         <div className="max-w-container-max mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-3">
@@ -726,6 +743,9 @@ export default function LandingPage() {
             </a>
             <a href="#coaching" className="hover:text-foreground">
               Coaching
+            </a>
+            <a href="#pricing" className="hover:text-foreground">
+              Pricing
             </a>
             <Link href="/app" className="text-primary font-bold">
               Simulator
