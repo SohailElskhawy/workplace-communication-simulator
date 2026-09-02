@@ -51,6 +51,7 @@ export interface ScenarioRepository {
   createCustomScenario?(
     input: CreateCustomScenarioRepositoryInput,
   ): Promise<ScenarioDetailRecord>;
+  deleteCustomScenario?(key: string, userId: string): Promise<boolean>;
 }
 
 export interface CreateCustomInterviewScenarioInput {
@@ -69,6 +70,7 @@ export interface ScenarioService {
   createCustomInterviewScenario?(
     input: CreateCustomInterviewScenarioInput,
   ): Promise<PublicScenarioDetail>;
+  deleteCustomScenario?(key: string, userId: string): Promise<void>;
 }
 
 export interface ScenarioServiceOptions {
@@ -249,6 +251,35 @@ export function createScenarioService(
           error instanceof Error ? error.message : undefined,
         );
       }
+    },
+
+    async deleteCustomScenario(key: string, userId: string): Promise<void> {
+      const record = await repository.findActiveByKey(key, userId);
+      if (!record) {
+        throw new ScenarioError("NOT_FOUND", "Scenario not found.");
+      }
+
+      if (!record.userId || record.userId !== userId) {
+        throw new ScenarioError(
+          "FORBIDDEN",
+          "You do not have permission to delete this scenario.",
+        );
+      }
+
+      if (!repository.deleteCustomScenario) {
+        throw new ScenarioError(
+          "INTERNAL_ERROR",
+          "Custom scenario deletion is not configured.",
+        );
+      }
+
+      const deleted = await repository.deleteCustomScenario(key, userId);
+      if (!deleted) {
+        throw new ScenarioError("NOT_FOUND", "Scenario not found.");
+      }
+
+      cachedPublicList = null;
+      cachedPublicDetails.delete(key);
     },
   };
 }

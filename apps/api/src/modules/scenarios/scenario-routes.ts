@@ -212,4 +212,65 @@ export function registerScenarioRoutes(
       }
     },
   );
+
+  app.delete(
+    "/api/v1/scenarios/:scenarioKey",
+    async (request: Request, response, next) => {
+      try {
+        if (
+          !("resolveAuthProviderUserId" in dependencies) ||
+          !dependencies.resolveAuthProviderUserId ||
+          !dependencies.userProvisioner
+        ) {
+          sendError(
+            response,
+            401,
+            "UNAUTHENTICATED",
+            "Authentication is required.",
+          );
+          return;
+        }
+
+        const parsed = ScenarioParamsSchema.safeParse(request.params);
+        if (!parsed.success) {
+          sendError(
+            response,
+            400,
+            "VALIDATION_FAILED",
+            "Scenario key is invalid.",
+          );
+          return;
+        }
+
+        const userId = await resolveLocalUserId(request, response, {
+          resolveAuthProviderUserId: dependencies.resolveAuthProviderUserId,
+          userProvisioner: dependencies.userProvisioner,
+        });
+        if (!userId) return;
+
+        if (!scenarioService.deleteCustomScenario) {
+          sendError(
+            response,
+            500,
+            "INTERNAL_ERROR",
+            "Custom scenario deletion is not configured.",
+          );
+          return;
+        }
+
+        await scenarioService.deleteCustomScenario(
+          parsed.data.scenarioKey,
+          userId,
+        );
+
+        response.status(204).end();
+      } catch (error) {
+        if (error instanceof ScenarioError) {
+          sendError(response, error.status, error.code, error.message);
+          return;
+        }
+        next(error);
+      }
+    },
+  );
 }

@@ -552,4 +552,23 @@ describe("api-client", () => {
       requestId: "req-custom-err",
     });
   });
+
+  it("deletes custom scenario successfully via DELETE /api/v1/scenarios/:key", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      status: 204,
+    } as Response);
+
+    await expect(
+      client.deleteCustomScenario(token, "custom-interview-123"),
+    ).resolves.toBeUndefined();
+
+    expect(fetch).toHaveBeenCalledWith(
+      "https://api.test.kalemny.com/api/v1/scenarios/custom-interview-123",
+      expect.objectContaining({
+        method: "DELETE",
+        headers: expect.any(Headers),
+      }),
+    );
+  });
 });

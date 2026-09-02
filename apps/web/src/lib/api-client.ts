@@ -301,6 +301,20 @@ export function createApiClient(baseUrl: string) {
       );
     },
 
+    async deleteCustomScenario(
+      token: string,
+      scenarioKey: string,
+    ): Promise<void> {
+      return requestVoid(
+        baseUrl,
+        `/api/v1/scenarios/${encodeURIComponent(scenarioKey)}`,
+        token,
+        {
+          method: "DELETE",
+        },
+      );
+    },
+
     async createAttempt(
       token: string,
       input: CreateAttemptRequest,

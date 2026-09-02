@@ -82,5 +82,18 @@ export function createPrismaScenarioRepository(
         return scenario;
       });
     },
+    async deleteCustomScenario(key: string, userId: string): Promise<boolean> {
+      const result = await prisma.scenario.updateMany({
+        where: {
+          key,
+          userId,
+          isActive: true,
+        },
+        data: {
+          isActive: false,
+        },
+      });
+      return result.count > 0;
+    },
   };
 }

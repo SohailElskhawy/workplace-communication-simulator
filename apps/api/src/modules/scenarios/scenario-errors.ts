@@ -1,5 +1,6 @@
 export type ScenarioErrorCode =
   | "NOT_FOUND"
+  | "FORBIDDEN"
   | "PLAN_UPGRADE_REQUIRED"
   | "VALIDATION_FAILED"
   | "AI_TIMEOUT"
@@ -11,6 +12,11 @@ const errorDetails: Record<
   { status: number; message: string }
 > = {
   NOT_FOUND: { status: 404, message: "Scenario not found." },
+  FORBIDDEN: {
+    status: 403,
+    message:
+      "You do not have permission to perform this action on the scenario.",
+  },
   PLAN_UPGRADE_REQUIRED: {
     status: 403,
     message: "Custom interview scenarios require a Plus or Pro plan.",

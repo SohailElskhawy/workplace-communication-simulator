@@ -273,3 +273,99 @@ startxref
     expect((savedInput as { userId: string }).userId).toBe("user-plus-1");
   });
 });
+
+describe("ScenarioService custom scenario deletion", () => {
+  it("rejects deletion if scenario does not exist", async () => {
+    const service = createScenarioService({
+      async listActive() {
+        return [];
+      },
+      async findActiveByKey() {
+        return null;
+      },
+    });
+
+    await expect(
+      service.deleteCustomScenario!("non-existent", "user-1"),
+    ).rejects.toThrow("Scenario not found.");
+  });
+
+  it("rejects deletion if scenario is not custom (userId is null)", async () => {
+    const service = createScenarioService({
+      async listActive() {
+        return [];
+      },
+      async findActiveByKey() {
+        return {
+          ...summary,
+          userId: null,
+          definition: salaryNegotiationV1,
+        };
+      },
+    });
+
+    await expect(
+      service.deleteCustomScenario!("salary-negotiation", "user-1"),
+    ).rejects.toThrow("You do not have permission to delete this scenario.");
+  });
+
+  it("rejects deletion if scenario is owned by another user", async () => {
+    const service = createScenarioService({
+      async listActive() {
+        return [];
+      },
+      async findActiveByKey() {
+        return {
+          ...summary,
+          userId: "user-owner",
+          definition: salaryNegotiationV1,
+        };
+      },
+    });
+
+    await expect(
+      service.deleteCustomScenario!("custom-123", "user-intruder"),
+    ).rejects.toThrow("You do not have permission to delete this scenario.");
+  });
+
+  it("successfully deletes custom scenario and invalidates cache", async () => {
+    let deleted = false;
+    let repositoryActive = true;
+    const service = createScenarioService({
+      async listActive() {
+        return repositoryActive
+          ? [
+              {
+                ...summary,
+                key: "custom-123",
+                userId: "user-owner",
+              },
+            ]
+          : [];
+      },
+      async findActiveByKey(key) {
+        if (!repositoryActive || key !== "custom-123") return null;
+        return {
+          ...summary,
+          key: "custom-123",
+          userId: "user-owner",
+          definition: salaryNegotiationV1,
+        };
+      },
+      async deleteCustomScenario(key, userId) {
+        if (key === "custom-123" && userId === "user-owner") {
+          deleted = true;
+          repositoryActive = false;
+          return true;
+        }
+        return false;
+      },
+    });
+
+    await service.deleteCustomScenario!("custom-123", "user-owner");
+    expect(deleted).toBe(true);
+
+    const listAfter = await service.listActive("user-owner");
+    expect(listAfter).toHaveLength(0);
+  });
+});

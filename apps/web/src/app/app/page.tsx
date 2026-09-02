@@ -9,6 +9,7 @@ import type {
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { CreateCustomScenarioDialog } from "@/components/scenarios/create-custom-scenario-dialog";
 import { createApiClient } from "@/lib/api-client";
 import {
   ArrowRightIcon,
@@ -72,6 +73,8 @@ export default function DashboardPage() {
   );
   const [progress, setProgress] = useState<ProgressData | null>(null);
   const [recentHistory, setRecentHistory] = useState<HistoryItem[]>([]);
+  const [userPlan, setUserPlan] = useState<"FREE" | "PLUS" | "PRO">("FREE");
+  const [createCustomOpen, setCreateCustomOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [scenariosError, setScenariosError] = useState<string | null>(null);
 
@@ -86,12 +89,13 @@ export default function DashboardPage() {
 
       const client = createApiClient(apiUrl);
 
-      // Load all 3 endpoints in parallel with resilient fault-tolerance
-      const [scenariosResult, progressResult, historyResult] =
+      // Load all endpoints in parallel with resilient fault-tolerance
+      const [scenariosResult, progressResult, historyResult, meResult] =
         await Promise.allSettled([
           client.fetchScenarios(token),
           client.fetchProgress(token),
           client.fetchHistory(token, { limit: 3 }),
+          client.fetchMe(token),
         ]);
 
       if (scenariosResult.status === "fulfilled") {
@@ -107,6 +111,10 @@ export default function DashboardPage() {
 
       if (historyResult.status === "fulfilled") {
         setRecentHistory(historyResult.value.data);
+      }
+
+      if (meResult.status === "fulfilled") {
+        setUserPlan(meResult.value.entitlement.effectivePlan);
       }
     } finally {
       setLoading(false);
@@ -347,14 +355,33 @@ export default function DashboardPage() {
 
       {/* 4. Quick Scenarios Section (Practice Something Else) */}
       <section className="space-y-6">
-        <div className="flex items-center justify-between border-b border-border/20 pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/20 pb-4">
           <div>
             <h2 className="font-display text-xl sm:text-2xl font-bold uppercase tracking-tight text-foreground">
               Practice something else
             </h2>
             <p className="font-sans text-xs sm:text-sm text-muted-foreground mt-0.5">
-              Explore curated workplace simulation scenarios.
+              Explore curated workplace simulation scenarios or create your own
+              custom interview.
             </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setCreateCustomOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-control border-2 border-primary/50 font-display text-xs font-bold uppercase tracking-wider bg-surface-solid text-foreground hover:bg-primary hover:text-primary-foreground shadow-[3px_3px_0px_0px_#1a1a1a] hover:shadow-[1px_1px_0px_0px_#1a1a1a] hover:translate-x-0.5 hover:translate-y-0.5 transition-all cursor-pointer select-none"
+            >
+              <SparklesIcon className="w-3.5 h-3.5 text-primary" />
+              <span>Create Custom Interview</span>
+            </button>
+            <Link
+              href="/app/scenarios"
+              className="font-meta text-xs font-bold text-primary flex items-center gap-1 hover:underline underline-offset-4 shrink-0"
+            >
+              <span>View All</span>
+              <ArrowRightIcon className="w-3.5 h-3.5" />
+            </Link>
           </div>
         </div>
 
@@ -523,6 +550,12 @@ export default function DashboardPage() {
           </div>
         )}
       </section>
+
+      <CreateCustomScenarioDialog
+        open={createCustomOpen}
+        onClose={() => setCreateCustomOpen(false)}
+        userEffectivePlan={userPlan}
+      />
     </div>
   );
 }

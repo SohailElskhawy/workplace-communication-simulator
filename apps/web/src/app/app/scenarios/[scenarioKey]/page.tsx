@@ -10,8 +10,14 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { ArrowLeftIcon, PlayIcon, RefreshIcon } from "@/components/icons";
+import {
+  ArrowLeftIcon,
+  PlayIcon,
+  RefreshIcon,
+  TrashIcon,
+} from "@/components/icons";
 import { ErrorState, LoadingState } from "@/components/route-state";
+import { DeleteCustomScenarioDialog } from "@/components/scenarios/delete-custom-scenario-dialog";
 import { DifficultySelector } from "@/components/scenarios/difficulty-selector";
 import { InteractionModeSelector } from "@/components/scenarios/interaction-mode-selector";
 import { ScenarioBriefingCard } from "@/components/scenarios/scenario-briefing-card";
@@ -50,6 +56,9 @@ export default function ScenarioDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [startError, setStartError] = useState<string | null>(null);
   const [isNotFound, setIsNotFound] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
 
@@ -162,6 +171,30 @@ export default function ScenarioDetailPage() {
     }
   };
 
+  const handleConfirmDelete = async () => {
+    if (!scenario) return;
+    try {
+      setDeleteLoading(true);
+      setDeleteError(null);
+
+      const token = await getToken();
+      if (!token) throw new Error("Authentication token not available.");
+
+      const client = createApiClient(apiUrl);
+      await client.deleteCustomScenario(token, scenario.key);
+
+      router.push("/app/scenarios");
+    } catch (err: unknown) {
+      setDeleteError(
+        err instanceof Error
+          ? err.message
+          : "Failed to delete custom scenario.",
+      );
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
   const availableDifficulties = useMemo<Difficulty[]>(() => {
     return scenario?.availableDifficulties ?? ["EASY", "MEDIUM", "HARD"];
   }, [scenario?.availableDifficulties]);
@@ -194,19 +227,35 @@ export default function ScenarioDetailPage() {
       {/* 1. Top Navigation & Category */}
       <nav
         aria-label="Breadcrumb navigation"
-        className="flex items-center gap-2"
+        className="flex items-center justify-between"
       >
-        <Link
-          href="/app"
-          className="inline-flex items-center gap-1.5 font-meta text-xs font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ArrowLeftIcon className="w-3.5 h-3.5" />
-          <span>All Scenarios</span>
-        </Link>
-        <span className="text-border/40 font-meta text-xs">/</span>
-        <span className="font-meta text-xs uppercase tracking-widest text-primary font-bold">
-          {getScenarioMeta(scenario).categoryLabel}
-        </span>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/app"
+            className="inline-flex items-center gap-1.5 font-meta text-xs font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeftIcon className="w-3.5 h-3.5" />
+            <span>All Scenarios</span>
+          </Link>
+          <span className="text-border/40 font-meta text-xs">/</span>
+          <span className="font-meta text-xs uppercase tracking-widest text-primary font-bold">
+            {getScenarioMeta(scenario).categoryLabel}
+          </span>
+        </div>
+
+        {scenario.isCustom && (
+          <button
+            type="button"
+            onClick={() => {
+              setDeleteOpen(true);
+              setDeleteError(null);
+            }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-control text-muted-foreground hover:text-alert hover:bg-alert/10 border border-border/40 font-meta text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
+          >
+            <TrashIcon className="w-3.5 h-3.5" />
+            <span>Delete Scenario</span>
+          </button>
+        )}
       </nav>
 
       {/* 2. Memphis Hero Banner */}
@@ -281,6 +330,22 @@ export default function ScenarioDetailPage() {
           )}
         </button>
       </div>
+
+      {scenario.isCustom && (
+        <DeleteCustomScenarioDialog
+          open={deleteOpen}
+          scenarioTitle={scenario.title}
+          deleteError={deleteError}
+          deleteLoading={deleteLoading}
+          onClose={() => {
+            if (!deleteLoading) {
+              setDeleteOpen(false);
+              setDeleteError(null);
+            }
+          }}
+          onConfirm={handleConfirmDelete}
+        />
+      )}
     </div>
   );
 }

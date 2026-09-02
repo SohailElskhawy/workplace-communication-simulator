@@ -8,6 +8,7 @@ import { describe, expect, it } from "vitest";
 
 import { createApp } from "../../app.js";
 import { salaryNegotiationV1 } from "./definitions/salary-negotiation.js";
+import { ScenarioError } from "./scenario-errors.js";
 import { createScenarioService } from "./scenario-service.js";
 
 const summary = {
@@ -272,5 +273,94 @@ describe("scenario endpoints", () => {
     expect(listRes.status).toBe(200);
     expect(listRes.body.data).toHaveLength(2);
     expect(listRes.body.data[1].isCustom).toBe(true);
+  });
+
+  it("rejects unauthenticated custom scenario deletion with 401", async () => {
+    const response = await request(createScenarioApp()).delete(
+      "/api/v1/scenarios/custom-interview-test-uuid",
+    );
+    expect(response.status).toBe(401);
+  });
+
+  it("handles scenario deletion ownership and success correctly", async () => {
+    let deletedKey: string | null = null;
+    const customApp = createApp({
+      attemptService: unusedAttemptService,
+      authenticationMiddleware: (_request, _response, next) => next(),
+      evaluationService: {
+        evaluate: async () => {
+          throw new Error("Not used");
+        },
+      },
+      historyService: {
+        getHistory: async () => {
+          throw new Error("Not used");
+        },
+      },
+      progressService: {
+        getProgress: async () => {
+          throw new Error("Not used");
+        },
+      },
+      resolveAuthProviderUserId: () => "clerk_user_1",
+      userProvisioner: {
+        ensureUser: async (id: string) => ({
+          id: id === "clerk_user_1" ? "db_user_1" : "db_user_other",
+          authProviderUserId: id,
+          email: "user1@example.com",
+          name: "User One",
+          imageUrl: null,
+          role: "LEARNER",
+          plan: "PLUS" as const,
+          planExpiresAt: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }),
+      },
+      scenarioService: {
+        listActive: async () => [summary],
+        getActiveByKey: async () => null,
+        deleteCustomScenario: async (key: string, userId: string) => {
+          if (key === "salary-negotiation") {
+            throw new ScenarioError(
+              "FORBIDDEN",
+              "Curated scenarios cannot be deleted.",
+            );
+          }
+          if (key === "not-found-key") {
+            throw new ScenarioError("NOT_FOUND", "Scenario not found.");
+          }
+          if (userId !== "db_user_1") {
+            throw new ScenarioError("FORBIDDEN", "Not allowed.");
+          }
+          deletedKey = key;
+        },
+      },
+      voiceService: {
+        transcribe: async () => {
+          throw new Error("Not used");
+        },
+      },
+      webOrigin: "http://localhost:3000",
+    });
+
+    // 1. Trying to delete a curated scenario yields 403
+    const forbiddenRes = await request(customApp).delete(
+      "/api/v1/scenarios/salary-negotiation",
+    );
+    expect(forbiddenRes.status).toBe(403);
+
+    // 2. Trying to delete non-existent scenario yields 404
+    const notFoundRes = await request(customApp).delete(
+      "/api/v1/scenarios/not-found-key",
+    );
+    expect(notFoundRes.status).toBe(404);
+
+    // 3. Successfully deleting custom scenario yields 204
+    const successRes = await request(customApp).delete(
+      "/api/v1/scenarios/custom-interview-test-uuid",
+    );
+    expect(successRes.status).toBe(204);
+    expect(deletedKey).toBe("custom-interview-test-uuid");
   });
 });

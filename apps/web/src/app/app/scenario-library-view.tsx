@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { CreateCustomScenarioDialog } from "@/components/scenarios/create-custom-scenario-dialog";
+import { DeleteCustomScenarioDialog } from "@/components/scenarios/delete-custom-scenario-dialog";
 import { createApiClient } from "@/lib/api-client";
 import { cn } from "@/lib/cn";
 import { getScenarioImage } from "@/lib/scenario-images";
@@ -223,6 +224,7 @@ import {
   PromotionIcon,
   PushbackIcon,
   SparklesIcon,
+  TrashIcon,
 } from "@/components/icons";
 
 function renderScenarioIcon(
@@ -257,9 +259,14 @@ export function ScenarioLibraryView({
   errorMessage,
 }: ScenarioLibraryViewProps) {
   const { getToken, isSignedIn } = useAuth();
+  const [deletedKeys, setDeletedKeys] = useState<string[]>([]);
   const [selectedFilter, setSelectedFilter] = useState<string>("ALL");
   const [userPlan, setUserPlan] = useState<"FREE" | "PLUS" | "PRO">("FREE");
   const [createCustomOpen, setCreateCustomOpen] = useState(false);
+  const [deletingScenario, setDeletingScenario] =
+    useState<PublicScenarioSummary | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -285,10 +292,12 @@ export function ScenarioLibraryView({
   }, [getToken, isSignedIn]);
 
   const scenarios = useMemo(() => {
-    return initialScenarios.length > 0
-      ? initialScenarios
-      : DEFAULT_MOCK_SCENARIOS;
-  }, [initialScenarios]);
+    const base =
+      initialScenarios.length > 0 ? initialScenarios : DEFAULT_MOCK_SCENARIOS;
+    if (deletedKeys.length === 0) return base;
+    const deletedSet = new Set(deletedKeys);
+    return base.filter((s) => !deletedSet.has(s.key));
+  }, [initialScenarios, deletedKeys]);
 
   const filteredScenarios = useMemo(() => {
     if (selectedFilter === "ALL") return scenarios;
@@ -313,9 +322,34 @@ export function ScenarioLibraryView({
     return filteredScenarios;
   }, [selectedFilter, featuredScenario, scenarios, filteredScenarios]);
 
+  const handleConfirmDelete = async () => {
+    if (!deletingScenario) return;
+    try {
+      setDeleteLoading(true);
+      setDeleteError(null);
+      const token = await getToken();
+      if (!token) throw new Error("Authentication token is unavailable.");
+
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
+      const client = createApiClient(apiUrl);
+      await client.deleteCustomScenario(token, deletingScenario.key);
+
+      setDeletedKeys((prev) => [...prev, deletingScenario.key]);
+      setDeletingScenario(null);
+    } catch (err: unknown) {
+      setDeleteError(
+        err instanceof Error
+          ? err.message
+          : "Failed to delete custom scenario.",
+      );
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
   return (
     <div className="w-full pb-16">
-      {/* Header Intro with Memphis Accents */}
+      {/* Header Intro with Memphis Accents & Hero Spotlight */}
       <header className="relative py-8 sm:py-12 md:py-16 mb-8 sm:mb-12 border-b border-border/15">
         {/* Decorative Memphis Elements */}
         <div
@@ -331,15 +365,59 @@ export function ScenarioLibraryView({
           className="absolute top-12 sm:top-20 left-[10%] sm:left-[14%] w-10 sm:w-12 h-10 sm:h-12 bg-success rotate-12 hidden md:block pointer-events-none"
         />
 
-        <div className="max-w-3xl relative z-10">
-          <h1 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-[48px] font-bold text-foreground mb-4 sm:mb-6 leading-[1.15] tracking-tight">
-            Practice the conversations you usually avoid.
-          </h1>
-          <p className="font-sans text-base sm:text-lg text-muted-foreground max-w-2xl leading-relaxed">
-            Choose a realistic workplace scenario, select your difficulty, and
-            practice responding under pressure before the real conversation
-            happens.
-          </p>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
+          <div className="lg:col-span-7 space-y-4">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 border border-border rounded-full bg-surface-subtle font-meta text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+              <SparklesIcon className="w-3.5 h-3.5 text-primary" />
+              <span>Workplace Rehearsal Lab</span>
+            </div>
+
+            <h1 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-[46px] font-bold text-foreground leading-[1.12] tracking-tight">
+              Practice the conversations you usually avoid.
+            </h1>
+            <p className="font-sans text-base sm:text-lg text-muted-foreground leading-relaxed max-w-xl">
+              Choose a realistic workplace scenario or generate a custom
+              interview from your CV to rehearse under pressure before the real
+              conversation happens.
+            </p>
+          </div>
+
+          {/* Eye-catching Custom Interview Spotlight Card */}
+          <div className="lg:col-span-5 w-full">
+            <div className="relative overflow-hidden rounded-card p-6 sm:p-7 border-2 border-primary/50 bg-linear-to-br from-primary/15 via-surface to-surface-raised shadow-[6px_6px_0px_0px_#1a1a1a] transition-all hover:shadow-[8px_8px_0px_0px_#1a1a1a] hover:-translate-x-0.5 hover:-translate-y-0.5">
+              <div className="absolute top-0 right-0 bg-primary text-primary-foreground font-meta text-[10px] font-bold px-3 py-1 rounded-bl-card border-b border-l border-border uppercase tracking-widest flex items-center gap-1 shadow-2xs">
+                <SparklesIcon className="w-3 h-3" />
+                <span>AI Role Simulator</span>
+              </div>
+
+              <div className="flex items-center gap-2.5 mb-2.5">
+                <span className="flex h-8 w-8 items-center justify-center rounded-control bg-primary/20 text-primary border border-primary/30 text-base font-bold shadow-2xs">
+                  💼
+                </span>
+                <span className="font-meta text-xs font-bold uppercase tracking-wider text-primary">
+                  Custom Interview
+                </span>
+              </div>
+
+              <h2 className="font-display text-lg sm:text-xl font-bold uppercase tracking-tight text-foreground mb-2">
+                Targeting a Specific Job?
+              </h2>
+              <p className="font-sans text-xs sm:text-sm text-muted-foreground mb-5 leading-relaxed">
+                Upload your CV PDF and job description to generate a
+                hyper-realistic practice simulation tailored to your background.
+              </p>
+
+              <button
+                type="button"
+                onClick={() => setCreateCustomOpen(true)}
+                className="w-full inline-flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-control bg-primary text-primary-foreground font-display text-xs sm:text-sm font-bold uppercase tracking-wider border border-border shadow-[3px_3px_0px_0px_#1a1a1a] brutalist-interactive cursor-pointer select-none"
+              >
+                <SparklesIcon className="w-4 h-4" />
+                <span>Create Custom Interview</span>
+                <ArrowRightIcon className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
         </div>
       </header>
 
@@ -385,10 +463,10 @@ export function ScenarioLibraryView({
         <button
           type="button"
           onClick={() => setCreateCustomOpen(true)}
-          className="inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border-2 border-border font-display text-xs sm:text-sm font-bold uppercase tracking-wider bg-primary text-primary-foreground shadow-[3px_3px_0px_0px_#1a1a1a] hover:shadow-[1px_1px_0px_0px_#1a1a1a] hover:translate-x-0.5 hover:translate-y-0.5 transition-all cursor-pointer select-none"
+          className="inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border-2 border-primary/50 font-display text-xs sm:text-sm font-bold uppercase tracking-wider bg-surface-solid text-foreground hover:bg-primary hover:text-primary-foreground shadow-[3px_3px_0px_0px_#1a1a1a] hover:shadow-[1px_1px_0px_0px_#1a1a1a] hover:translate-x-0.5 hover:translate-y-0.5 transition-all cursor-pointer select-none"
         >
-          <SparklesIcon className="w-4 h-4" />
-          <span>Create Custom Interview</span>
+          <SparklesIcon className="w-4 h-4 text-primary" />
+          <span>+ Custom Interview</span>
         </button>
       </section>
 
@@ -480,6 +558,62 @@ export function ScenarioLibraryView({
       {gridScenarios.length > 0 ? (
         <section aria-label="Available scenarios" className="mb-12 sm:mb-16">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            {/* Dedicated Custom Scenario Creation Tile */}
+            {(selectedFilter === "ALL" || selectedFilter === "CUSTOM") && (
+              <div
+                onClick={() => setCreateCustomOpen(true)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setCreateCustomOpen(true);
+                  }
+                }}
+                className="relative rounded-card p-6 flex flex-col justify-between border-2 border-dashed border-primary/50 bg-linear-to-br from-primary/10 via-surface to-surface-raised shadow-xs hover:border-primary hover:shadow-[6px_6px_0px_0px_#1a1a1a] hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all duration-200 ease-out cursor-pointer group select-none min-h-[340px]"
+              >
+                <div className="w-full">
+                  <div className="flex items-center justify-between gap-2 mb-4">
+                    <span className="font-meta text-xs uppercase tracking-widest text-primary font-bold bg-primary/15 border border-primary/30 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                      <SparklesIcon className="w-3 h-3" />
+                      Tailored
+                    </span>
+                    <span className="font-meta text-[11px] px-2 py-0.5 rounded-full border border-border/40 bg-surface-raised font-bold text-foreground">
+                      Plus / Pro
+                    </span>
+                  </div>
+
+                  <div className="h-28 mb-5 rounded-control border border-border/60 bg-primary/10 flex flex-col items-center justify-center gap-2 group-hover:bg-primary/15 transition-colors">
+                    <div className="w-12 h-12 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-primary text-xl group-hover:scale-110 transition-transform">
+                      💼
+                    </div>
+                    <span className="font-meta text-[11px] uppercase tracking-wider text-primary font-bold">
+                      AI Resume Simulator
+                    </span>
+                  </div>
+
+                  <h3 className="font-display text-lg sm:text-xl font-bold uppercase tracking-tight text-foreground mb-2 group-hover:text-primary transition-colors">
+                    Build Custom Interview
+                  </h3>
+
+                  <p className="font-sans text-sm text-muted-foreground leading-relaxed line-clamp-3">
+                    Upload your CV & job description to practice interview
+                    questions tailored to your exact background.
+                  </p>
+                </div>
+
+                <div className="w-full pt-4 border-t border-border/15 flex items-center justify-between mt-auto">
+                  <span className="font-meta text-xs font-bold text-primary group-hover:underline underline-offset-4">
+                    Create New →
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 rounded-control bg-primary px-3.5 py-1.5 font-display text-xs font-bold uppercase tracking-wider text-primary-foreground border border-border shadow-2xs group-hover:shadow-[2px_2px_0px_0px_#1a1a1a] transition-all">
+                    <span>Build</span>
+                    <SparklesIcon className="w-3 h-3" />
+                  </span>
+                </div>
+              </div>
+            )}
+
             {gridScenarios.map((scenario) => {
               const meta = getScenarioMeta(scenario);
               return (
@@ -542,9 +676,27 @@ export function ScenarioLibraryView({
 
                   {/* Card Footer */}
                   <div className="flex items-center justify-between border-t border-border/15 pt-4 mt-auto">
-                    <span className="font-meta text-[11px] px-2.5 py-1 rounded-control bg-surface-raised border border-border/30 text-foreground">
-                      Diff: {meta.difficulty}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-meta text-[11px] px-2.5 py-1 rounded-control bg-surface-raised border border-border/30 text-foreground">
+                        Diff: {meta.difficulty}
+                      </span>
+                      {scenario.isCustom && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setDeletingScenario(scenario);
+                            setDeleteError(null);
+                          }}
+                          className="p-1 rounded-control text-muted-foreground hover:text-alert hover:bg-alert/10 transition-colors cursor-pointer"
+                          aria-label={`Delete custom interview ${scenario.title}`}
+                          title="Delete custom scenario"
+                        >
+                          <TrashIcon className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
                     <Link
                       href={`/app/scenarios/${encodeURIComponent(scenario.key)}`}
                       className="font-meta text-xs sm:text-sm font-bold text-primary flex items-center gap-1 group-hover:underline underline-offset-4"
@@ -558,8 +710,30 @@ export function ScenarioLibraryView({
             })}
           </div>
         </section>
+      ) : selectedFilter === "CUSTOM" ? (
+        /* Dedicated Empty State for Custom Filter */
+        <div className="glass-surface rounded-card p-12 text-center my-8 border-2 border-dashed border-primary/40 bg-primary/5">
+          <div className="w-12 h-12 rounded-full bg-primary/20 text-primary border border-primary/30 flex items-center justify-center text-xl mx-auto mb-4 font-bold">
+            💼
+          </div>
+          <p className="font-display text-xl font-bold uppercase tracking-tight text-foreground mb-2">
+            No custom scenarios created yet
+          </p>
+          <p className="text-sm text-muted-foreground max-w-md mx-auto mb-6 leading-relaxed">
+            Upload your CV and target job description to generate your first
+            personalized interview rehearsal simulation.
+          </p>
+          <button
+            type="button"
+            onClick={() => setCreateCustomOpen(true)}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-control bg-primary text-primary-foreground font-display text-xs sm:text-sm font-bold uppercase tracking-wider border border-border shadow-[4px_4px_0px_0px_#1a1a1a] hover:shadow-[2px_2px_0px_0px_#1a1a1a] hover:translate-x-0.5 hover:translate-y-0.5 transition-all cursor-pointer"
+          >
+            <SparklesIcon className="w-4 h-4" />
+            <span>Create Custom Interview</span>
+          </button>
+        </div>
       ) : (
-        /* Empty State for Filter */
+        /* Empty State for other filters */
         <div className="glass-surface rounded-card p-12 text-center my-8">
           <p className="font-display text-lg font-bold text-foreground mb-2">
             No scenarios found
@@ -609,6 +783,22 @@ export function ScenarioLibraryView({
         onClose={() => setCreateCustomOpen(false)}
         userEffectivePlan={userPlan}
       />
+
+      {deletingScenario && (
+        <DeleteCustomScenarioDialog
+          open={Boolean(deletingScenario)}
+          scenarioTitle={deletingScenario.title}
+          deleteError={deleteError}
+          deleteLoading={deleteLoading}
+          onClose={() => {
+            if (!deleteLoading) {
+              setDeletingScenario(null);
+              setDeleteError(null);
+            }
+          }}
+          onConfirm={handleConfirmDelete}
+        />
+      )}
     </div>
   );
 }
