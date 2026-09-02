@@ -282,53 +282,23 @@ export function createApiClient(baseUrl: string) {
 
     async createCustomScenario(
       token: string,
-      cvBlob: Blob,
+      cvBlob: Blob | File,
       jobDescription: string,
     ): Promise<PublicScenarioDetail> {
       const formData = new FormData();
-      formData.append("cv", cvBlob, "cv.pdf");
+      formData.append("cv", cvBlob, (cvBlob as File).name ?? "resume.pdf");
       formData.append("jobDescription", jobDescription);
 
-      const url = `${baseUrl}/api/v1/scenarios/custom`;
-      const headers = new Headers();
-      headers.set("Authorization", `Bearer ${token}`);
-
-      let response: Response;
-      try {
-        response = await fetch(url, {
+      return request(
+        baseUrl,
+        "/api/v1/scenarios/custom",
+        token,
+        {
           method: "POST",
-          headers,
           body: formData,
-        });
-      } catch {
-        throw new ApiClientError(
-          "Network connection failure. Please check your internet connection.",
-          "NETWORK_ERROR",
-          0,
-        );
-      }
-
-      const rawJson = await response.json().catch(() => null);
-
-      if (!response.ok) {
-        const errorParsed = ApiErrorResponseSchema.safeParse(rawJson);
-        if (errorParsed.success) {
-          throw new ApiClientError(
-            errorParsed.data.error.message,
-            errorParsed.data.error.code,
-            response.status,
-            errorParsed.data.error.requestId,
-          );
-        }
-        throw new ApiClientError(
-          `API request failed with status ${response.status}.`,
-          "HTTP_ERROR",
-          response.status,
-        );
-      }
-
-      const parsed = CreateCustomScenarioResponseSchema.parse(rawJson);
-      return parsed.data;
+        },
+        CreateCustomScenarioResponseSchema,
+      );
     },
 
     async createAttempt(

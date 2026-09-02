@@ -464,4 +464,92 @@ describe("api-client", () => {
     expect(result.entitlement.plan).toBe("FREE");
     expect(result.entitlement.simulationsRemaining).toBe(2);
   });
+
+  it("posts custom scenario creation with multipart form data and parses detail response", async () => {
+    const mockScenario = {
+      data: {
+        key: "custom-interview-1234-uuid",
+        version: 1,
+        title: "Senior Backend Engineer Interview - Stripe",
+        category: "CUSTOM",
+        summary:
+          "Custom interview scenario tailored to candidate CV and job description.",
+        isCustom: true,
+        context: {
+          description:
+            "Technical interview focusing on system design and APIs.",
+          userRole: "Backend Engineer Candidate",
+          aiRole: "Hiring Manager",
+          userObjective:
+            "Demonstrate strong distributed systems architecture knowledge.",
+          stakes: "High stakes technical round.",
+        },
+        availableDifficulties: ["EASY", "MEDIUM", "HARD"],
+      },
+    };
+
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      status: 201,
+      json: async () => mockScenario,
+    } as Response);
+
+    const cvBlob = new Blob(
+      ["%PDF-1.4 dummy pdf content with more than 50 chars for test"],
+      {
+        type: "application/pdf",
+      },
+    );
+
+    const result = await client.createCustomScenario(
+      token,
+      cvBlob,
+      "Senior backend engineer job description with distributed systems requirements...",
+    );
+
+    expect(fetch).toHaveBeenCalledWith(
+      "https://api.test.kalemny.com/api/v1/scenarios/custom",
+      expect.objectContaining({
+        headers: expect.any(Headers),
+        method: "POST",
+        body: expect.any(FormData),
+      }),
+    );
+    expect(result.key).toBe("custom-interview-1234-uuid");
+    expect(result.isCustom).toBe(true);
+    expect(result.category).toBe("CUSTOM");
+  });
+
+  it("throws ApiClientError when createCustomScenario returns error status", async () => {
+    const errorBody = {
+      error: {
+        code: "PLAN_UPGRADE_REQUIRED",
+        message: "Custom interview scenarios require a Plus or Pro plan.",
+        requestId: "req-custom-err",
+      },
+    };
+
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: false,
+      status: 403,
+      json: async () => errorBody,
+    } as Response);
+
+    const cvBlob = new Blob(["%PDF-1.4 dummy pdf content"], {
+      type: "application/pdf",
+    });
+
+    await expect(
+      client.createCustomScenario(
+        token,
+        cvBlob,
+        "Job description text for testing error handling...",
+      ),
+    ).rejects.toMatchObject({
+      name: "ApiClientError",
+      code: "PLAN_UPGRADE_REQUIRED",
+      status: 403,
+      requestId: "req-custom-err",
+    });
+  });
 });
