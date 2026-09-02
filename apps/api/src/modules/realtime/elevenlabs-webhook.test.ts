@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   ELEVENLABS_WEBHOOK_TOLERANCE_SECONDS,
+  isNonverbalNoise,
   normalizeElevenLabsTranscript,
   verifyElevenLabsWebhookSignature,
 } from "./elevenlabs-webhook.js";
@@ -56,6 +57,29 @@ describe("verifyElevenLabsWebhookSignature", () => {
   });
 });
 
+describe("isNonverbalNoise", () => {
+  it("identifies pure nonverbal sounds and noise annotations as noise", () => {
+    expect(isNonverbalNoise("*coughs*")).toBe(true);
+    expect(isNonverbalNoise("[throat clearing]")).toBe(true);
+    expect(isNonverbalNoise("(clears throat)")).toBe(true);
+    expect(isNonverbalNoise("*sigh*")).toBe(true);
+    expect(isNonverbalNoise("[laughter]")).toBe(true);
+    expect(isNonverbalNoise("[gasp]")).toBe(true);
+    expect(isNonverbalNoise("*snort*")).toBe(true);
+    expect(isNonverbalNoise("...")).toBe(true);
+    expect(isNonverbalNoise("   ")).toBe(true);
+    expect(isNonverbalNoise("*cough* *cough*")).toBe(true);
+  });
+
+  it("preserves real speech, hesitation fillers, and intentional interruptions", () => {
+    expect(isNonverbalNoise("Um, uh, well, I think we should talk.")).toBe(false);
+    expect(isNonverbalNoise("Wait, hold on a second.")).toBe(false);
+    expect(isNonverbalNoise("Uh-huh")).toBe(false);
+    expect(isNonverbalNoise("No, that won't work.")).toBe(false);
+    expect(isNonverbalNoise("*coughs* Excuse me, I want to clarify.")).toBe(false);
+  });
+});
+
 describe("normalizeElevenLabsTranscript", () => {
   it("returns empty array for empty transcript", () => {
     expect(normalizeElevenLabsTranscript("conv_1", [])).toEqual([]);
@@ -75,6 +99,26 @@ describe("normalizeElevenLabsTranscript", () => {
         clientRequestId: "realtime:conv_1:1",
         userText: "Part 1 of speech. Part 2 of speech.",
         assistantText: "Agent response 1. Agent response 2.",
+        status: "COMPLETED",
+      },
+    ]);
+  });
+
+  it("suppresses isolated nonverbal turns while keeping speech turns", () => {
+    const transcript = [
+      { role: "agent" as const, message: "Opening message" },
+      { role: "user" as const, message: "*coughs*" },
+      { role: "agent" as const, message: "Opening message continuation." },
+      { role: "user" as const, message: "I'd like to discuss the project." },
+      { role: "agent" as const, message: "Sure, let's discuss it." },
+      { role: "user" as const, message: "[throat clearing]" },
+    ];
+
+    expect(normalizeElevenLabsTranscript("conv_1", transcript)).toEqual([
+      {
+        clientRequestId: "realtime:conv_1:3",
+        userText: "I'd like to discuss the project.",
+        assistantText: "Sure, let's discuss it.",
         status: "COMPLETED",
       },
     ]);

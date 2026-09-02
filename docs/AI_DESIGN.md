@@ -281,6 +281,13 @@ Rules:
 - no secrets belong in prompts;
 - role integrity is a behavioral safeguard, not a substitute for backend security.
 
+### Turn-Taking & Noise Handling
+
+- **Patient Turn Eagerness**: Realtime voice agents must use patient turn eagerness (`turn_eagerness = "patient"`, `turn_model = "turn_v3"`), providing the learner adequate time to formulate thoughts and pause naturally without being interrupted prematurely.
+- **Noise & Nonverbal Suppression**: The counterpart agent must never acknowledge, comment on, or react to isolated coughing, throat-clearing, sneezing, sighs, background noise, or microphone clicks (e.g. no "Bless you", "Are you okay?", "I heard you cough"). Isolated nonverbal turns are suppressed from generating false or failed transcript turns.
+- **Speech & Filler Preservation**: Real learner speech containing hesitation fillers ("um", "uh", "well", "like", "you know") is genuine workplace communication and must be preserved and responded to substantively without mocking or mentioning filler words.
+- **Intentional Interruptions**: If the learner cuts in or interrupts to clarify or redirect ("Wait", "Hold on", "Let me finish"), the agent yields the floor respectfully and addresses their point.
+
 ---
 
 ## 9. Evaluation Responsibility

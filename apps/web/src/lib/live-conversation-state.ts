@@ -131,12 +131,76 @@ export function appendLiveTranscriptEntry(
     : next;
 }
 
+const NONVERBAL_NOISE_TOKENS = [
+  "cough",
+  "coughs",
+  "coughing",
+  "throat clearing",
+  "clears throat",
+  "cleared throat",
+  "throat clear",
+  "sigh",
+  "sighs",
+  "sighing",
+  "sneeze",
+  "sneezes",
+  "sneezing",
+  "snort",
+  "snorts",
+  "sniffle",
+  "sniffles",
+  "laughter",
+  "laughing",
+  "chuckle",
+  "chuckles",
+  "gasp",
+  "gasps",
+  "applause",
+  "music",
+  "noise",
+  "silence",
+  "inaudible",
+  "groan",
+  "groans",
+  "yawn",
+  "yawns",
+  "breath",
+  "breathing",
+  "heavy breathing",
+];
+
+const NONVERBAL_REGEX = new RegExp(
+  `(?:\\[|\\(|\\*)(?:${NONVERBAL_NOISE_TOKENS.map((t) => t.replace(/\s+/g, "\\s+")).join("|")})(?:\\]|\\)|\\*)`,
+  "gi",
+);
+
+/**
+ * Detects whether an utterance consists entirely of nonverbal sound annotations
+ * (e.g. *coughs*, [throat clearing], (sighs), [laughter]) or punctuation/whitespace
+ * with no spoken words or communicative fillers.
+ */
+export function isNonverbalNoise(text: string): boolean {
+  const trimmed = text.trim();
+  if (!trimmed) return true;
+
+  // Strip nonverbal bracketed/parenthesized/asterisked annotations
+  const stripped = trimmed
+    .replace(NONVERBAL_REGEX, "")
+    .replace(/^[\p{P}\p{S}\s]+$/gu, "")
+    .trim();
+
+  // If nothing remains or only punctuation/symbols, it's pure nonverbal noise
+  return !stripped || /^[\p{P}\p{S}\s]+$/u.test(stripped);
+}
+
 /**
  * Pairs consecutive user/agent entries into conversation turns for the
  * transcript submission endpoint. Consecutive same-role utterances (e.g. from
  * natural speaking pauses or multi-part AI responses) are grouped together.
  * The initial agent opening prompt is skipped, and each user turn pairs with
  * the following agent response (null when the agent did not reply).
+ * Isolated nonverbal noise entries (e.g. coughing, throat-clearing) are
+ * suppressed from creating false or failed turns.
  */
 export function pairLiveTranscriptEntries(
   entries: readonly LiveTranscriptEntry[],
@@ -164,10 +228,15 @@ export function pairLiveTranscriptEntries(
   for (let i = 0; i < chunks.length; i++) {
     const chunk = chunks[i];
     if (!chunk || chunk.role !== "user") continue;
+
+    // Suppress isolated nonverbal noise
+    if (isNonverbalNoise(chunk.text)) continue;
+
     const next = chunks[i + 1];
-    const assistantText = next?.role === "agent" ? next.text : null;
+    const assistantText =
+      next?.role === "agent" && !isNonverbalNoise(next.text) ? next.text : null;
     turns.push({ userText: chunk.text, assistantText });
-    if (assistantText !== null) i++;
+    if (next?.role === "agent") i++;
   }
   return turns;
 }

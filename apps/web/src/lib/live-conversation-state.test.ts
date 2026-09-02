@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   appendLiveTranscriptEntry,
   isLiveConversationActive,
+  isNonverbalNoise,
   LIVE_TRANSCRIPT_MAX_ENTRIES,
   pairLiveTranscriptEntries,
   resolveLiveConversationUiState,
@@ -292,5 +293,41 @@ describe("pairLiveTranscriptEntries", () => {
         assistantText: null,
       },
     ]);
+  });
+
+  it("suppresses isolated nonverbal turns while keeping substantive speech", () => {
+    const entries: LiveTranscriptEntry[] = [
+      { id: "agent:1", role: "agent", text: "Opening message" },
+      { id: "user:1", role: "user", text: "*coughs*" },
+      { id: "agent:2", role: "agent", text: "Opening message continuation." },
+      { id: "user:2", role: "user", text: "I'd like to propose a compromise." },
+      { id: "agent:3", role: "agent", text: "I'm open to hearing that." },
+      { id: "user:3", role: "user", text: "[clears throat]" },
+    ];
+
+    expect(pairLiveTranscriptEntries(entries)).toEqual([
+      {
+        userText: "I'd like to propose a compromise.",
+        assistantText: "I'm open to hearing that.",
+      },
+    ]);
+  });
+});
+
+describe("isNonverbalNoise", () => {
+  it("detects isolated nonverbal tokens, coughs, and throat clearing", () => {
+    expect(isNonverbalNoise("*coughs*")).toBe(true);
+    expect(isNonverbalNoise("[throat clearing]")).toBe(true);
+    expect(isNonverbalNoise("(clears throat)")).toBe(true);
+    expect(isNonverbalNoise("*sigh*")).toBe(true);
+    expect(isNonverbalNoise("[laughter]")).toBe(true);
+    expect(isNonverbalNoise("...")).toBe(true);
+  });
+
+  it("preserves real speech and conversational fillers", () => {
+    expect(isNonverbalNoise("Um, uh, well, let's talk.")).toBe(false);
+    expect(isNonverbalNoise("Wait, hold on.")).toBe(false);
+    expect(isNonverbalNoise("Uh-huh")).toBe(false);
+    expect(isNonverbalNoise("*coughs* Excuse me, here is my idea.")).toBe(false);
   });
 });

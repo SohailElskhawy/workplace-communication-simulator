@@ -106,6 +106,68 @@ export interface NormalizedRealtimeTranscriptTurn {
   userText: string;
 }
 
+const NONVERBAL_NOISE_TOKENS = [
+  "cough",
+  "coughs",
+  "coughing",
+  "throat clearing",
+  "clears throat",
+  "cleared throat",
+  "throat clear",
+  "sigh",
+  "sighs",
+  "sighing",
+  "sneeze",
+  "sneezes",
+  "sneezing",
+  "snort",
+  "snorts",
+  "sniffle",
+  "sniffles",
+  "laughter",
+  "laughing",
+  "chuckle",
+  "chuckles",
+  "gasp",
+  "gasps",
+  "applause",
+  "music",
+  "noise",
+  "silence",
+  "inaudible",
+  "groan",
+  "groans",
+  "yawn",
+  "yawns",
+  "breath",
+  "breathing",
+  "heavy breathing",
+];
+
+const NONVERBAL_REGEX = new RegExp(
+  `(?:\\[|\\(|\\*)(?:${NONVERBAL_NOISE_TOKENS.map((t) => t.replace(/\s+/g, "\\s+")).join("|")})(?:\\]|\\)|\\*)`,
+  "gi",
+);
+
+/**
+ * Detects whether an utterance consists entirely of nonverbal sound annotations
+ * (e.g. *coughs*, [throat clearing], (sighs), [laughter]) or punctuation/whitespace
+ * with no spoken words or communicative fillers.
+ */
+export function isNonverbalNoise(text: string): boolean {
+  const trimmed = text.trim();
+  if (!trimmed) return true;
+
+  // Strip nonverbal bracketed/parenthesized/asterisked annotations
+  const stripped = trimmed
+    .replace(NONVERBAL_REGEX, "")
+    .replace(/^[\p{P}\p{S}\s]+$/gu, "")
+    .trim();
+
+  // If nothing remains or only punctuation/symbols, it's pure nonverbal noise
+  return !stripped || /^[\p{P}\p{S}\s]+$/u.test(stripped);
+}
+
 export function normalizeElevenLabsTranscript(
   conversationId: string,
   transcript: ElevenLabsPostCallTranscription["data"]["transcript"],
@@ -140,16 +202,22 @@ export function normalizeElevenLabsTranscript(
   for (let index = 0; index < chunks.length; index += 1) {
     const learner = chunks[index];
     if (!learner || learner.role !== "user") continue;
+
+    // Suppress isolated nonverbal noise
+    if (isNonverbalNoise(learner.message)) continue;
+
     const following = chunks[index + 1];
     const assistantText =
-      following?.role === "agent" ? following.message : null;
+      following?.role === "agent" && !isNonverbalNoise(following.message)
+        ? following.message
+        : null;
     turns.push({
       clientRequestId: `realtime:${conversationId}:${learner.position}`,
       userText: learner.message,
       assistantText,
       status: assistantText === null ? "FAILED" : "COMPLETED",
     });
-    if (assistantText !== null) index += 1;
+    if (following?.role === "agent") index += 1;
   }
   return turns;
 }
