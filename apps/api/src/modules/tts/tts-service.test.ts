@@ -11,6 +11,7 @@ const baseAi = {
   ttsModel: "hexgrad/kokoro-82m",
   generateRoleplayReply: vi.fn(),
   evaluateSimulation: vi.fn(),
+  generateCustomScenario: vi.fn(),
   transcribeAudio: vi.fn(),
 };
 

@@ -201,7 +201,7 @@ export function createApp(dependencies: AuthenticatedAppDependencies): Express {
     }
   });
 
-  registerScenarioRoutes(app, dependencies.scenarioService);
+  registerScenarioRoutes(app, dependencies);
   registerAttemptRoutes(app, dependencies);
   registerEvaluationRoutes(app, dependencies);
   registerHistoryRoutes(app, dependencies);

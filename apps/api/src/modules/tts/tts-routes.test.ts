@@ -23,7 +23,11 @@ function createTestApp(ttsService: TtsService, authenticated = true) {
     historyService: { getHistory: vi.fn() },
     progressService: { getProgress: vi.fn() },
     resolveAuthProviderUserId: () => (authenticated ? "clerk-user" : null),
-    scenarioService: { listActive: vi.fn(), getActiveByKey: vi.fn() },
+    scenarioService: {
+      listActive: vi.fn(),
+      getActiveByKey: vi.fn(),
+      createCustomInterviewScenario: vi.fn(),
+    },
     userProvisioner: {
       ensureUser: vi.fn().mockResolvedValue({ id: "local-user" }),
     },

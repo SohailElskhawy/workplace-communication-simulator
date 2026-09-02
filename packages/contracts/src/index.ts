@@ -104,12 +104,16 @@ export {
   type SubmitRealtimeTranscriptRequest,
 } from "./realtime.js";
 export {
+  CreateCustomScenarioRequestSchema,
+  CreateCustomScenarioResponseSchema,
   DifficultySchema,
   PublicScenarioContextSchema,
   PublicScenarioDetailSchema,
   PublicScenarioSummarySchema,
   ScenarioDetailResponseSchema,
   ScenarioListResponseSchema,
+  type CreateCustomScenarioRequest,
+  type CreateCustomScenarioResponse,
   type Difficulty,
   type PublicScenarioDetail,
   type PublicScenarioSummary,

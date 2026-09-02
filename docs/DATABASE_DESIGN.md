@@ -67,20 +67,23 @@ User 1 ─── * PracticeUsageLedger
 ```text
 Scenario
 - id          UUID PK
+- userId      UUID nullable (null for curated/system scenarios; owner userId for CUSTOM scenarios)
 - key         string
 - version     integer
 - title       string
-- category    string/enum
+- category    string/enum ("CUSTOM" for user-created scenarios)
 - summary     string
 - definition  JSONB
 - isActive    boolean
 - createdAt   timestamp
 ```
 
-Constraint:
+Constraints and Indexes:
 
 ```text
 UNIQUE(key, version)
+INDEX(userId, isActive)
+INDEX(category, isActive)
 version >= 1
 ```
 
@@ -471,6 +474,7 @@ ROLEPLAY
 EVALUATION
 TRANSCRIPTION
 TTS
+SCENARIO_GENERATION
 ```
 
 Never store:

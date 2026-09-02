@@ -1,12 +1,15 @@
 import { z } from "zod";
 
 import type { AppLogger } from "../../infrastructure/logging/logger.js";
+import type { CustomScenarioMessage } from "./custom-scenario-prompt.js";
+import { validateCustomScenarioOutput } from "./custom-scenario-prompt.js";
 import type {
   EvaluationMessage,
   RawAiEvaluation,
 } from "./evaluation-prompt.js";
 import { RawAiEvaluationSchema } from "./evaluation-prompt.js";
 import type { RoleplayMessage } from "./roleplay-prompt.js";
+import type { ScenarioDefinition } from "../scenarios/scenario-definition.js";
 
 const OpenRouterResponseSchema = z.object({
   choices: z
@@ -107,6 +110,21 @@ export interface OpenRouterSpeechResult {
   estimatedCost: number | null;
 }
 
+export interface OpenRouterCustomScenarioRequest {
+  model: string;
+  messages: CustomScenarioMessage[];
+  scenarioKey: string;
+  timeoutMs: number;
+}
+
+export interface OpenRouterCustomScenarioResult {
+  definition: ScenarioDefinition;
+  latencyMs: number;
+  inputTokens: number | null;
+  outputTokens: number | null;
+  estimatedCost: number | null;
+}
+
 const OpenRouterTranscriptionResponseSchema = z.object({
   text: z.string(),
 });
@@ -118,6 +136,9 @@ export interface OpenRouterProvider {
   evaluateSimulation(
     request: OpenRouterEvaluationRequest,
   ): Promise<OpenRouterEvaluationResult>;
+  generateCustomScenario(
+    request: OpenRouterCustomScenarioRequest,
+  ): Promise<OpenRouterCustomScenarioResult>;
   transcribeAudio(
     request: OpenRouterTranscriptionRequest,
   ): Promise<OpenRouterTranscriptionResult>;
@@ -126,7 +147,8 @@ export interface OpenRouterProvider {
   ): Promise<OpenRouterSpeechResult>;
 }
 
-type AiOperationName = "ROLEPLAY" | "EVALUATION" | "TRANSCRIPTION" | "TTS";
+type AiOperationName =
+  "ROLEPLAY" | "EVALUATION" | "TRANSCRIPTION" | "TTS" | "SCENARIO_GENERATION";
 
 interface OpenRouterProviderOptions {
   apiKey: string;
@@ -327,6 +349,51 @@ export function createOpenRouterProvider(
 
       return {
         evaluation: evaluated.data,
+        latencyMs: result.latencyMs,
+        inputTokens: result.inputTokens,
+        outputTokens: result.outputTokens,
+        estimatedCost: result.estimatedCost,
+      };
+    },
+
+    async generateCustomScenario(request) {
+      const result = await sendChatCompletion(
+        "SCENARIO_GENERATION",
+        request.model,
+        {
+          model: request.model,
+          messages: request.messages,
+          stream: false,
+          max_tokens: EVALUATION_MAX_OUTPUT_TOKENS,
+          response_format: { type: "json_object" },
+          provider: {
+            zdr: true,
+            data_collection: "deny",
+          },
+        },
+        request.timeoutMs,
+        EVALUATION_MAX_RESPONSE_CHARS,
+      );
+
+      let jsonPayload: unknown;
+      try {
+        jsonPayload = JSON.parse(result.content);
+      } catch {
+        throw new AiProviderError("AI_PROVIDER_ERROR", result.latencyMs);
+      }
+
+      let definition: ScenarioDefinition;
+      try {
+        definition = validateCustomScenarioOutput(
+          jsonPayload,
+          request.scenarioKey,
+        );
+      } catch {
+        throw new AiProviderError("AI_PROVIDER_ERROR", result.latencyMs);
+      }
+
+      return {
+        definition,
         latencyMs: result.latencyMs,
         inputTokens: result.inputTokens,
         outputTokens: result.outputTokens,

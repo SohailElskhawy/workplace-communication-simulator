@@ -135,8 +135,12 @@ export function createPrismaAttemptRepository(
     createAttempt(input) {
       return prisma.$transaction(async (transaction) => {
         const scenario = await transaction.scenario.findFirst({
-          where: { key: input.scenarioKey, isActive: true },
-          select: { id: true, key: true, definition: true },
+          where: {
+            key: input.scenarioKey,
+            isActive: true,
+            OR: [{ userId: null }, { userId: input.userId }],
+          },
+          select: { id: true, key: true, definition: true, userId: true },
         });
 
         if (!scenario) {
@@ -170,6 +174,14 @@ export function createPrismaAttemptRepository(
           user.planExpiresAt,
           input.startedAt,
         );
+
+        if (Boolean(scenario.userId) && effectivePlan === "FREE") {
+          return {
+            kind: "rejected",
+            code: "PLAN_UPGRADE_REQUIRED",
+          } as const;
+        }
+
         const limit = limits[effectivePlan] ?? null;
 
         if (limit !== null) {

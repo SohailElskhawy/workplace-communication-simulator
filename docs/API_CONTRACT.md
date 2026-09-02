@@ -97,6 +97,7 @@ TRANSCRIPTION_FAILED
 TTS_FAILED
 EVALUATION_FAILED
 PLAN_QUOTA_EXCEEDED
+PLAN_UPGRADE_REQUIRED
 RATE_LIMITED
 INTERNAL_ERROR
 ```
@@ -144,7 +145,7 @@ Do not return unnecessary Clerk profile data.
 
 ### `GET /api/v1/scenarios`
 
-Returns active public scenarios.
+Returns active public scenarios and, when authenticated, the user's active custom scenarios.
 
 Response conceptually:
 
@@ -157,6 +158,14 @@ Response conceptually:
       "title": "Salary Negotiation",
       "category": "NEGOTIATION",
       "summary": "..."
+    },
+    {
+      "key": "custom-interview-1234-uuid",
+      "version": 1,
+      "title": "Senior Frontend Engineer Interview - TechCorp",
+      "category": "CUSTOM",
+      "summary": "...",
+      "isCustom": true
     }
   ]
 }
@@ -168,7 +177,7 @@ No hidden persona, AI objective, rubric, or prompt data.
 
 ### `GET /api/v1/scenarios/:scenarioKey`
 
-Returns the active public version for a scenario key.
+Returns the active public version for a curated scenario key, or the owner's custom scenario. For non-owned custom scenarios, returns `404 NOT_FOUND`.
 
 Response conceptually:
 
@@ -183,6 +192,46 @@ Response conceptually:
       "description": "...",
       "userRole": "...",
       "aiRole": "...",
+      "userObjective": "...",
+      "stakes": "..."
+    },
+    "availableDifficulties": [
+      "EASY",
+      "MEDIUM",
+      "HARD"
+    ]
+  }
+}
+```
+
+---
+
+### `POST /api/v1/scenarios/custom`
+
+Creates an owner-scoped custom interview scenario from an uploaded candidate CV (PDF) and pasted job description.
+
+Requirements & Gating:
+- Authenticated user required (`401 UNAUTHENTICATED` if missing).
+- Plan entitlement must be `PLUS` or `PRO` (`403 PLAN_UPGRADE_REQUIRED` if `FREE`).
+- Multipart form body: `cv` (PDF file, <= 5MB) and `jobDescription` (text, 50 to 20,000 characters).
+- CV is parsed strictly in-memory and never persisted to disk or database.
+- AI generates a Zod-validated `ScenarioDefinition` grounded exclusively in CV facts and JD requirements.
+
+Response:
+
+```json
+{
+  "data": {
+    "key": "custom-interview-4392-uuid",
+    "version": 1,
+    "title": "Senior Software Engineer Interview - Acme",
+    "category": "CUSTOM",
+    "summary": "Personalized interview simulation tailored to your candidate background and Acme requirements.",
+    "isCustom": true,
+    "context": {
+      "description": "...",
+      "userRole": "Job Candidate",
+      "aiRole": "Engineering Hiring Manager",
       "userObjective": "...",
       "stakes": "..."
     },

@@ -68,3 +68,208 @@ describe("ScenarioService caching", () => {
     expect(callCount).toBe(2);
   });
 });
+
+describe("ScenarioService custom interview creation", () => {
+  function createTestPdfBuffer(text: string): Buffer {
+    const content = `BT /F1 12 Tf 100 700 Td (${text}) Tj ET`;
+    const streamLength = content.length;
+    const pdfString = `%PDF-1.4
+1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj
+2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj
+3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >> endobj
+4 0 obj << /Length ${streamLength} >> stream
+${content}
+endstream endobj
+5 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj
+xref
+0 6
+0000000000 65535 f 
+0000000010 00000 n 
+0000000060 00000 n 
+0000000117 00000 n 
+0000000228 00000 n 
+0000000300 00000 n 
+trailer << /Root 1 0 R /Size 6 >>
+startxref
+370
+%%EOF`;
+    return Buffer.from(pdfString, "binary");
+  }
+
+  const sampleJobDescription =
+    "We are seeking an experienced Staff Software Engineer to lead our distributed systems architecture and mentor junior teammates across global hubs.";
+
+  const mockScenarioDefinition = {
+    ...salaryNegotiationV1,
+    key: "custom-interview-123",
+    category: "CUSTOM" as const,
+    title: "Staff Software Engineer Interview",
+  };
+
+  it("rejects FREE tier user with PLAN_UPGRADE_REQUIRED", async () => {
+    const service = createScenarioService(
+      {
+        async listActive() {
+          return [];
+        },
+        async findActiveByKey() {
+          return null;
+        },
+        async createCustomScenario() {
+          throw new Error("Should not be called");
+        },
+      },
+      {
+        entitlementService: {
+          getUserEntitlement: async () => ({
+            plan: "FREE",
+            effectivePlan: "FREE",
+            expiresAt: null,
+            simulationsLimit: 3,
+            simulationsUsed: 0,
+            simulationsRemaining: 3,
+            windowStartsAt: new Date().toISOString(),
+            windowEndsAt: new Date().toISOString(),
+          }),
+        },
+      },
+    );
+
+    await expect(
+      service.createCustomInterviewScenario!({
+        userId: "user-123",
+        cvBuffer: createTestPdfBuffer(
+          "Sample CV text with over 50 characters here for testing",
+        ),
+        cvMimeType: "application/pdf",
+        jobDescription: sampleJobDescription,
+      }),
+    ).rejects.toThrow("Custom interview scenarios require a Plus or Pro plan.");
+  });
+
+  it("rejects job description shorter than 50 characters", async () => {
+    const service = createScenarioService(
+      {
+        async listActive() {
+          return [];
+        },
+        async findActiveByKey() {
+          return null;
+        },
+        async createCustomScenario() {
+          throw new Error("Should not be called");
+        },
+      },
+      {
+        entitlementService: {
+          getUserEntitlement: async () => ({
+            plan: "PLUS",
+            effectivePlan: "PLUS",
+            expiresAt: null,
+            simulationsLimit: null,
+            simulationsUsed: 0,
+            simulationsRemaining: null,
+            windowStartsAt: new Date().toISOString(),
+            windowEndsAt: new Date().toISOString(),
+          }),
+        },
+      },
+    );
+
+    await expect(
+      service.createCustomInterviewScenario!({
+        userId: "user-123",
+        cvBuffer: createTestPdfBuffer(
+          "Sample CV text with over 50 characters here for testing",
+        ),
+        cvMimeType: "application/pdf",
+        jobDescription: "Too short job description",
+      }),
+    ).rejects.toThrow(
+      "Job description must be between 50 and 20,000 characters.",
+    );
+  });
+
+  it("successfully creates custom scenario for PLUS user", async () => {
+    let savedInput: unknown = null;
+    const service = createScenarioService(
+      {
+        async listActive() {
+          return [];
+        },
+        async findActiveByKey() {
+          return null;
+        },
+        async createCustomScenario(input) {
+          savedInput = input;
+          return {
+            key: input.key,
+            version: 1,
+            title: input.title,
+            category: "CUSTOM",
+            summary: input.summary,
+            definition: input.definition,
+            userId: input.userId,
+          };
+        },
+      },
+      {
+        entitlementService: {
+          getUserEntitlement: async () => ({
+            plan: "PLUS",
+            effectivePlan: "PLUS",
+            expiresAt: null,
+            simulationsLimit: null,
+            simulationsUsed: 0,
+            simulationsRemaining: null,
+            windowStartsAt: new Date().toISOString(),
+            windowEndsAt: new Date().toISOString(),
+          }),
+        },
+        aiService: {
+          roleplayModel: "test-roleplay",
+          evaluationModel: "test-eval",
+          transcriptionModel: "test-stt",
+          ttsModel: "test-tts",
+          generateRoleplayReply: async () => {
+            throw new Error("Not implemented");
+          },
+          evaluateSimulation: async () => {
+            throw new Error("Not implemented");
+          },
+          generateCustomScenario: async (input) => ({
+            definition: {
+              ...mockScenarioDefinition,
+              key: input.scenarioKey,
+            },
+            latencyMs: 1200,
+            inputTokens: 500,
+            outputTokens: 800,
+            estimatedCost: 0.005,
+          }),
+          transcribeAudio: async () => {
+            throw new Error("Not implemented");
+          },
+          generateSpeech: async () => {
+            throw new Error("Not implemented");
+          },
+        },
+      },
+    );
+
+    const result = await service.createCustomInterviewScenario!({
+      userId: "user-plus-1",
+      cvBuffer: createTestPdfBuffer(
+        "Staff Software Engineer with 10 years distributed systems experience at Google and Stripe.",
+      ),
+      cvMimeType: "application/pdf",
+      jobDescription: sampleJobDescription,
+    });
+
+    expect(result.isCustom).toBe(true);
+    expect(result.category).toBe("CUSTOM");
+    expect(result.title).toBe("Staff Software Engineer Interview");
+    expect(savedInput).toBeDefined();
+    expect((savedInput as { userId: string }).userId).toBe("user-plus-1");
+  });
+});

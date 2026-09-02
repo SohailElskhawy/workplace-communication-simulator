@@ -37,6 +37,7 @@ Conceptual interface:
 ```text
 generateRoleplayReply()
 evaluateSimulation()
+generateCustomScenario()
 transcribeAudio()
 synthesizeSpeech()
 ```
@@ -591,6 +592,32 @@ Rules:
 - AI text is canonical;
 - TTS failure never fails the conversation turn;
 - generated speech is not persisted.
+
+---
+
+## 19a. Custom Interview Scenario Generation
+
+Flow:
+
+```text
+PDF CV (in memory) + Job Description text
+  ↓
+In-Memory PDF Parsing (`unpdf`)
+  ↓
+Anti-Hallucination Prompting (`CUSTOM_SCENARIO_PROMPT_VERSION`)
+  ↓
+OpenRouter Structured Completion (JSON mode)
+  ↓
+Runtime Validation (`ScenarioDefinitionSchema`)
+  ↓
+Owner-Scoped Scenario Persistence (category: "CUSTOM")
+```
+
+Critical Grounding & Privacy Invariants:
+- Strict Factual Grounding: The generated scenario persona, motivations, context, and evaluation rubrics rely exclusively on stated facts from the parsed CV text and pasted job description. No extrapolation of unsupported credentials or roles.
+- Zero Document Persistence: The CV PDF binary buffer and parsed raw text are held only in memory during request processing and are never written to disk or stored in the database.
+- Structured Conformance: AI output conforms 100% to the standard `ScenarioDefinition` schema with key `custom-interview-<uuid>`, version 1, and category `CUSTOM`.
+- Full Reusability: Custom scenarios seamlessly execute through the standard simulation, roleplay prompt, turn loop, finishing, and deterministic scoring pipeline without custom exceptions.
 
 ---
 

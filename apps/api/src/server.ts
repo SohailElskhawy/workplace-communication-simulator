@@ -61,10 +61,6 @@ const userProvisioner = createLocalUserProvisioner({
   upsert: (args) => prisma.user.upsert(args),
 });
 
-const scenarioService = createScenarioService(
-  createPrismaScenarioRepository(prisma),
-);
-
 const aiService = createAiService({
   provider: createOpenRouterProvider({
     apiKey: apiEnv.OPENROUTER_API_KEY,
@@ -92,6 +88,14 @@ const entitlementRepository = createPrismaEntitlementRepository(prisma);
 const entitlementService = createEntitlementService(
   entitlementRepository,
   planLimits,
+);
+
+const scenarioService = createScenarioService(
+  createPrismaScenarioRepository(prisma),
+  {
+    aiService,
+    entitlementService,
+  },
 );
 
 const attemptRepository = createPrismaAttemptRepository(prisma, planLimits);

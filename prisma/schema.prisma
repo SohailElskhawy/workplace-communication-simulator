@@ -24,6 +24,7 @@ model User {
   simulationAttempts   SimulationAttempt[]
   aiUsageEvents        AiUsageEvent[]
   practiceUsageLedgers PracticeUsageLedger[]
+  scenarios            Scenario[]
 }
 
 model Scenario {
@@ -35,12 +36,15 @@ model Scenario {
   summary    String
   definition Json
   isActive   Boolean  @default(false)
+  userId     String?  @db.Uuid
   createdAt  DateTime @default(now()) @db.Timestamptz(3)
 
+  user               User?               @relation(fields: [userId], references: [id], onDelete: Cascade)
   simulationAttempts SimulationAttempt[]
 
   @@unique([key, version])
   @@index([key, isActive])
+  @@index([userId, isActive])
 }
 
 enum Difficulty {
@@ -78,6 +82,7 @@ enum AiOperation {
   EVALUATION
   TRANSCRIPTION
   TTS
+  SCENARIO_GENERATION
 }
 
 enum AiUsageStatus {

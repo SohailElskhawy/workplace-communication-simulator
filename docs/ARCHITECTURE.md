@@ -260,6 +260,13 @@ creation selects one variation, persists it as `SimulationAttempt.variationId`,
 and roleplay/evaluation resolve it for the whole attempt. Selection is
 deterministic application logic — no extra AI call.
 
+Custom Interview Scenarios:
+- Authenticated users on PLUS or PRO plans can upload a candidate CV (PDF) and target Job Description.
+- The CV is parsed strictly in-memory using `unpdf` and is never persisted to disk or DB.
+- OpenRouter generates a structured, Zod-validated `ScenarioDefinition` strictly grounded in CV facts and JD requirements.
+- Custom scenarios are stored in PostgreSQL with `userId: owner_id`, `category: "CUSTOM"`, and `isActive: true`.
+- Custom scenarios are owner-scoped (non-owners receive 404) and execute through the identical simulation/attempt/evaluation pipeline.
+
 Hidden persona/rubric/variation content stays backend-only.
 
 ---

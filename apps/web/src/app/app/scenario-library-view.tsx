@@ -1,10 +1,13 @@
 "use client";
 
+import { useAuth } from "@clerk/nextjs";
 import type { PublicScenarioSummary } from "@kalemny/contracts";
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
+import { CreateCustomScenarioDialog } from "@/components/scenarios/create-custom-scenario-dialog";
+import { createApiClient } from "@/lib/api-client";
 import { cn } from "@/lib/cn";
 import { getScenarioImage } from "@/lib/scenario-images";
 
@@ -128,6 +131,7 @@ export const SCENARIO_VISUAL_MAP: Record<string, ScenarioVisualMeta> = {
 
 export const FILTER_CATEGORIES = [
   { key: "ALL", label: "All" },
+  { key: "CUSTOM", label: "Custom" },
   { key: "NEGOTIATION", label: "Negotiation" },
   { key: "CAREER_MANAGEMENT", label: "Career Management" },
   { key: "CONFLICT_RESOLUTION", label: "Conflict Resolution" },
@@ -140,6 +144,9 @@ export function normalizeCategory(category: string): string {
     .toUpperCase()
     .trim()
     .replace(/[\s-]+/g, "_");
+  if (upper === "CUSTOM" || upper === "CUSTOM_INTERVIEW") {
+    return "CUSTOM";
+  }
   if (upper === "NEGOTIATION" || upper === "SALARY_NEGOTIATION") {
     return "NEGOTIATION";
   }
@@ -181,6 +188,17 @@ export function getScenarioMeta(
   const byKey = SCENARIO_VISUAL_MAP[scenario.key];
   if (byKey) return byKey;
 
+  if (scenario.category === "CUSTOM" || scenario.isCustom) {
+    return {
+      categoryLabel: "Custom Interview",
+      categoryKey: "CUSTOM",
+      difficulty: "Medium",
+      tags: ["Custom", "Tailored Roleplay"],
+      gradientClass: "from-[#0052ff] to-[#7928ca]",
+      iconName: "interview",
+    };
+  }
+
   const normalized = normalizeCategory(scenario.category);
   return {
     categoryLabel:
@@ -204,6 +222,7 @@ import {
   PlayIcon,
   PromotionIcon,
   PushbackIcon,
+  SparklesIcon,
 } from "@/components/icons";
 
 function renderScenarioIcon(
@@ -237,7 +256,33 @@ export function ScenarioLibraryView({
   initialScenarios,
   errorMessage,
 }: ScenarioLibraryViewProps) {
+  const { getToken, isSignedIn } = useAuth();
   const [selectedFilter, setSelectedFilter] = useState<string>("ALL");
+  const [userPlan, setUserPlan] = useState<"FREE" | "PLUS" | "PRO">("FREE");
+  const [createCustomOpen, setCreateCustomOpen] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    async function loadUserPlan() {
+      if (!isSignedIn) return;
+      try {
+        const token = await getToken();
+        if (!token) return;
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
+        const client = createApiClient(apiUrl);
+        const me = await client.fetchMe(token);
+        if (mounted) {
+          setUserPlan(me.entitlement.effectivePlan);
+        }
+      } catch {
+        // benign fallback
+      }
+    }
+    void loadUserPlan();
+    return () => {
+      mounted = false;
+    };
+  }, [getToken, isSignedIn]);
 
   const scenarios = useMemo(() => {
     return initialScenarios.length > 0
@@ -310,30 +355,41 @@ export function ScenarioLibraryView({
         </div>
       )}
 
-      {/* Filter Row */}
+      {/* Filter Row & Custom Scenario CTA */}
       <section
         aria-label="Filter scenarios by category"
-        className="mb-6 sm:mb-12 flex flex-wrap items-center gap-2 sm:gap-3 pt-1 pb-2"
+        className="mb-6 sm:mb-12 flex flex-wrap items-center justify-between gap-3 pt-1 pb-2"
       >
-        {FILTER_CATEGORIES.map((category) => {
-          const isActive = selectedFilter === category.key;
-          return (
-            <button
-              key={category.key}
-              type="button"
-              onClick={() => setSelectedFilter(category.key)}
-              aria-pressed={isActive}
-              className={cn(
-                "px-3.5 sm:px-6 py-2 sm:py-2.5 rounded-full border border-border font-meta text-xs sm:text-sm transition-all duration-200 ease-out cursor-pointer select-none whitespace-nowrap",
-                isActive
-                  ? "bg-primary text-primary-foreground font-bold shadow-[2px_2px_0px_0px_#1a1a1a] sm:shadow-[4px_4px_0px_0px_#1a1a1a] -translate-x-0.5 -translate-y-0.5"
-                  : "bg-surface-solid text-foreground font-medium hover:bg-surface-subtle hover:text-foreground",
-              )}
-            >
-              {category.label}
-            </button>
-          );
-        })}
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          {FILTER_CATEGORIES.map((category) => {
+            const isActive = selectedFilter === category.key;
+            return (
+              <button
+                key={category.key}
+                type="button"
+                onClick={() => setSelectedFilter(category.key)}
+                aria-pressed={isActive}
+                className={cn(
+                  "px-3.5 sm:px-6 py-2 sm:py-2.5 rounded-full border border-border font-meta text-xs sm:text-sm transition-all duration-200 ease-out cursor-pointer select-none whitespace-nowrap",
+                  isActive
+                    ? "bg-primary text-primary-foreground font-bold shadow-[2px_2px_0px_0px_#1a1a1a] sm:shadow-[4px_4px_0px_0px_#1a1a1a] -translate-x-0.5 -translate-y-0.5"
+                    : "bg-surface-solid text-foreground font-medium hover:bg-surface-subtle hover:text-foreground",
+                )}
+              >
+                {category.label}
+              </button>
+            );
+          })}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setCreateCustomOpen(true)}
+          className="inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border-2 border-border font-display text-xs sm:text-sm font-bold uppercase tracking-wider bg-primary text-primary-foreground shadow-[3px_3px_0px_0px_#1a1a1a] hover:shadow-[1px_1px_0px_0px_#1a1a1a] hover:translate-x-0.5 hover:translate-y-0.5 transition-all cursor-pointer select-none"
+        >
+          <SparklesIcon className="w-4 h-4" />
+          <span>Create Custom Interview</span>
+        </button>
       </section>
 
       {/* Featured Scenario (when All is selected) */}
@@ -429,8 +485,14 @@ export function ScenarioLibraryView({
               return (
                 <article
                   key={scenario.key}
-                  className="relative glass-surface rounded-card p-6 flex flex-col group transition-all duration-200 ease-out hover:shadow-[6px_6px_0px_0px_#1a1a1a] hover:-translate-x-0.5 hover:-translate-y-0.5"
+                  className="relative glass-surface rounded-card p-6 flex flex-col group transition-all duration-200 ease-out hover:shadow-[6px_6px_0px_0px_#1a1a1a] hover:-translate-x-0.5 hover:-translate-y-0.5 overflow-hidden"
                 >
+                  {scenario.isCustom && (
+                    <div className="absolute top-0 right-0 bg-primary text-primary-foreground font-meta text-[10px] px-3 py-1 rounded-bl-card rounded-tr-card border-b border-l border-border uppercase tracking-wider font-bold shadow-2xs z-20">
+                      Custom
+                    </div>
+                  )}
+
                   {/* Card Visual Header */}
                   {(() => {
                     const img = getScenarioImage(scenario.key);
@@ -541,6 +603,12 @@ export function ScenarioLibraryView({
           </Link>
         </div>
       </section>
+
+      <CreateCustomScenarioDialog
+        open={createCustomOpen}
+        onClose={() => setCreateCustomOpen(false)}
+        userEffectivePlan={userPlan}
+      />
     </div>
   );
 }

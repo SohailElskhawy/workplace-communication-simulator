@@ -51,6 +51,7 @@ function createVoiceApp(
     scenarioService: {
       listActive: async () => [],
       getActiveByKey: async () => null,
+      createCustomInterviewScenario: vi.fn(),
     },
     userProvisioner: { ensureUser },
     voiceService,

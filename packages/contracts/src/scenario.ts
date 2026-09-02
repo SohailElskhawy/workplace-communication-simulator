@@ -8,6 +8,7 @@ export const PublicScenarioSummarySchema = z.object({
   title: z.string().min(1),
   category: z.string().min(1),
   summary: z.string().min(1),
+  isCustom: z.boolean().optional(),
 });
 
 export const PublicScenarioContextSchema = z.object({
@@ -31,10 +32,24 @@ export const ScenarioDetailResponseSchema = z.object({
   data: PublicScenarioDetailSchema,
 });
 
+export const CreateCustomScenarioRequestSchema = z.object({
+  jobDescription: z.string().trim().min(50).max(20000),
+});
+
+export const CreateCustomScenarioResponseSchema = z.object({
+  data: PublicScenarioDetailSchema,
+});
+
 export type Difficulty = z.infer<typeof DifficultySchema>;
 export type PublicScenarioSummary = z.infer<typeof PublicScenarioSummarySchema>;
 export type PublicScenarioDetail = z.infer<typeof PublicScenarioDetailSchema>;
 export type ScenarioListResponse = z.infer<typeof ScenarioListResponseSchema>;
 export type ScenarioDetailResponse = z.infer<
   typeof ScenarioDetailResponseSchema
+>;
+export type CreateCustomScenarioRequest = z.infer<
+  typeof CreateCustomScenarioRequestSchema
+>;
+export type CreateCustomScenarioResponse = z.infer<
+  typeof CreateCustomScenarioResponseSchema
 >;

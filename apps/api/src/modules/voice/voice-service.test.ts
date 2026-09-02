@@ -30,6 +30,7 @@ function createMockAiService(overrides?: Partial<AiService>): AiService {
     generateSpeech: vi.fn(),
     generateRoleplayReply: vi.fn(),
     evaluateSimulation: vi.fn(),
+    generateCustomScenario: vi.fn(),
     transcribeAudio: vi.fn().mockResolvedValue({
       text: "Hello I would like to negotiate.",
       latencyMs: 150,

@@ -4,12 +4,14 @@ import type {
   ScenarioDefinition,
   ScenarioVariation,
 } from "../scenarios/scenario-definition.js";
+import { buildCustomScenarioMessages } from "./custom-scenario-prompt.js";
 import {
   buildEvaluationMessages,
   EVALUATION_PROMPT_VERSION,
   type EvaluationTranscriptTurn,
 } from "./evaluation-prompt.js";
 import type {
+  OpenRouterCustomScenarioResult,
   OpenRouterEvaluationResult,
   OpenRouterRoleplayResult,
   OpenRouterSpeechResult,
@@ -36,6 +38,12 @@ export interface EvaluateSimulationInput {
   variation?: ScenarioVariation | null;
 }
 
+export interface GenerateCustomScenarioInput {
+  scenarioKey: string;
+  cvText: string;
+  jobDescription: string;
+}
+
 export interface TranscribeAudioInput {
   audioBuffer: Buffer;
   mimeType: string;
@@ -53,6 +61,9 @@ export interface AiService {
   evaluateSimulation(
     input: EvaluateSimulationInput,
   ): Promise<OpenRouterEvaluationResult>;
+  generateCustomScenario?(
+    input: GenerateCustomScenarioInput,
+  ): Promise<OpenRouterCustomScenarioResult>;
   transcribeAudio(
     input: TranscribeAudioInput,
   ): Promise<{ text: string; latencyMs: number; estimatedCost: number | null }>;
@@ -98,6 +109,14 @@ export function createAiService(options: AiServiceOptions): AiService {
       return options.provider.evaluateSimulation({
         model: options.evaluationModel,
         messages: buildEvaluationMessages(input),
+        timeoutMs: options.evaluationTimeoutMs,
+      });
+    },
+    generateCustomScenario(input) {
+      return options.provider.generateCustomScenario({
+        model: options.evaluationModel,
+        messages: buildCustomScenarioMessages(input),
+        scenarioKey: input.scenarioKey,
         timeoutMs: options.evaluationTimeoutMs,
       });
     },

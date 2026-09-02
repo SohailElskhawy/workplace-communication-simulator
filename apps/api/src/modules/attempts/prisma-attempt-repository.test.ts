@@ -396,14 +396,23 @@ describe("Prisma attempt repository variation persistence", () => {
     userPlan?: "FREE" | "PLUS" | "PRO";
     userPlanExpiresAt?: Date | null;
     usageCount?: number;
+    scenario?: {
+      id: string;
+      key: string;
+      definition: unknown;
+      userId?: string | null;
+    } | null;
   }) {
     const transaction = {
       scenario: {
-        findFirst: vi.fn().mockResolvedValue({
-          id: "20000000-0000-4000-8000-000000000001",
-          key: "salary-negotiation",
-          definition: scenarioDefinition,
-        }),
+        findFirst: vi.fn().mockResolvedValue(
+          options.scenario ?? {
+            id: "20000000-0000-4000-8000-000000000001",
+            key: "salary-negotiation",
+            definition: scenarioDefinition,
+            userId: null,
+          },
+        ),
       },
       user: {
         findUniqueOrThrow: vi.fn().mockResolvedValue({
@@ -596,5 +605,54 @@ describe("Prisma attempt repository variation persistence", () => {
     const result = await repository.createAttempt(createRepositoryInput({}));
     expect(result.kind).toBe("created");
     expect(transaction.practiceUsageLedger.create).toHaveBeenCalled();
+  });
+
+  it("allows PLUS user to start attempt on owned custom scenario", async () => {
+    const { prisma } = createCreateAttemptPrisma({
+      userPlan: "PLUS",
+      scenario: {
+        id: "scenario-custom-id",
+        key: "custom-interview-123",
+        definition: scenarioDefinition,
+        userId: input.userId,
+      },
+    });
+    const repository = createPrismaAttemptRepository(prisma, {
+      FREE: 3,
+      PLUS: 10,
+      PRO: null,
+    });
+
+    const result = await repository.createAttempt({
+      ...createRepositoryInput({}),
+      scenarioKey: "custom-interview-123",
+    });
+    expect(result.kind).toBe("created");
+  });
+
+  it("rejects FREE user attempting custom scenario with PLAN_UPGRADE_REQUIRED", async () => {
+    const { prisma } = createCreateAttemptPrisma({
+      userPlan: "FREE",
+      scenario: {
+        id: "scenario-custom-id",
+        key: "custom-interview-123",
+        definition: scenarioDefinition,
+        userId: input.userId,
+      },
+    });
+    const repository = createPrismaAttemptRepository(prisma, {
+      FREE: 3,
+      PLUS: 10,
+      PRO: null,
+    });
+
+    const result = await repository.createAttempt({
+      ...createRepositoryInput({}),
+      scenarioKey: "custom-interview-123",
+    });
+    expect(result).toEqual({
+      kind: "rejected",
+      code: "PLAN_UPGRADE_REQUIRED",
+    });
   });
 });
