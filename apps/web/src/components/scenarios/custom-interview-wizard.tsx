@@ -17,7 +17,6 @@ import {
 import {
   AlertTriangleIcon,
   ArrowRightIcon,
-  CheckIcon,
   DocumentTextIcon,
   InterviewIcon,
   PlayIcon,
@@ -31,11 +30,6 @@ import { InteractionModeSelector } from "@/components/scenarios/interaction-mode
 import { createApiClient } from "@/lib/api-client";
 import { cn } from "@/lib/cn";
 import { isRealtimeVoiceEnabled } from "@/lib/feature-flags";
-import {
-  formatWhatsAppUrl,
-  PRICING_PLANS,
-  WHATSAPP_PHONE_NUMBER,
-} from "@/lib/pricing-config";
 
 export interface CustomInterviewWizardProps {
   userEffectivePlan?: "FREE" | "PLUS" | "PRO";
@@ -48,7 +42,6 @@ type WizardStep = "INPUT" | "GENERATING" | "REVIEW" | "STARTING";
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
 
 export function CustomInterviewWizard({
-  userEffectivePlan = "FREE",
   onCancel,
   onSuccessStart,
 }: CustomInterviewWizardProps) {
@@ -70,7 +63,6 @@ export function CustomInterviewWizard({
   const [error, setError] = useState<string | null>(null);
   const [startError, setStartError] = useState<string | null>(null);
 
-  const isFreePlan = userEffectivePlan === "FREE";
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
   const realtimeVoiceEnabled = isRealtimeVoiceEnabled();
   const availableInteractionModes: InteractionMode[] = realtimeVoiceEnabled
@@ -124,7 +116,7 @@ export function CustomInterviewWizard({
 
   const handleGenerate = async (event: FormEvent) => {
     event.preventDefault();
-    if (step === "GENERATING" || isFreePlan) return;
+    if (step === "GENERATING") return;
 
     if (!cvFile) {
       setError("Please upload your candidate CV in PDF format.");
@@ -206,67 +198,7 @@ export function CustomInterviewWizard({
     }
   };
 
-  // 1. FREE Plan Upgrade Required View
-  if (isFreePlan) {
-    return (
-      <div className="space-y-4 sm:space-y-5">
-        <div className="rounded-control border-2 border-primary/30 bg-primary/5 p-4 sm:p-5 space-y-3">
-          <div className="flex items-center gap-2 text-primary font-bold font-display text-sm sm:text-base uppercase tracking-wide">
-            <SparklesIcon className="w-4 h-4 sm:w-5 sm:h-5" />
-            <span>Plus & Pro Plan Exclusive</span>
-          </div>
-          <p className="font-sans text-xs sm:text-sm text-foreground/90 leading-relaxed">
-            Custom interview scenario generation is available exclusively on{" "}
-            <strong className="text-foreground font-bold">Plus</strong> and{" "}
-            <strong className="text-foreground font-bold">Pro</strong> plans.
-            Upload your CV and target Job Description to generate personalized
-            interview rehearsals grounded strictly in your real background and
-            skills.
-          </p>
-          <div className="space-y-1.5 pt-1 font-meta text-[11px] sm:text-xs text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <CheckIcon className="w-3.5 h-3.5 text-primary shrink-0" />
-              <span>In-memory CV parsing with zero file persistence</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <CheckIcon className="w-3.5 h-3.5 text-primary shrink-0" />
-              <span>Tailored interviewer persona, objections & rubrics</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <CheckIcon className="w-3.5 h-3.5 text-primary shrink-0" />
-              <span>Full speech, evaluation & attempt comparison support</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-col-reverse sm:flex-row gap-2.5 sm:gap-3 pt-1">
-          {onCancel && (
-            <button
-              type="button"
-              onClick={onCancel}
-              className="px-5 py-2.5 sm:py-3 rounded-control bg-surface-raised border border-border font-meta text-xs font-bold uppercase text-foreground hover:bg-surface-subtle transition-colors cursor-pointer text-center"
-            >
-              Maybe Later
-            </button>
-          )}
-          <a
-            href={formatWhatsAppUrl(
-              WHATSAPP_PHONE_NUMBER,
-              PRICING_PLANS[1]!.whatsappMessage ??
-                "Hi, I would like to upgrade to the Kalemny Plus plan.",
-            )}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 inline-flex items-center justify-center gap-2 rounded-control bg-primary px-5 py-2.5 sm:py-3 font-display text-xs sm:text-sm font-bold uppercase tracking-wider text-primary-foreground border border-border shadow-[3px_3px_0px_0px_#1a1a1a] hover:shadow-[1px_1px_0px_0px_#1a1a1a] hover:translate-x-0.5 hover:translate-y-0.5 transition-all text-center"
-          >
-            Upgrade to Plus ($15/mo)
-          </a>
-        </div>
-      </div>
-    );
-  }
-
-  // 2. Generating Loading State
+  // 1. Generating Loading State
   if (step === "GENERATING") {
     return (
       <div className="py-8 sm:py-12 px-2 text-center space-y-5">

@@ -106,7 +106,8 @@ startxref
     title: "Staff Software Engineer Interview",
   };
 
-  it("rejects FREE tier user with PLAN_UPGRADE_REQUIRED", async () => {
+  it("allows FREE tier user to create custom scenario", async () => {
+    let savedInput: unknown = null;
     const service = createScenarioService(
       {
         async listActive() {
@@ -115,36 +116,67 @@ startxref
         async findActiveByKey() {
           return null;
         },
-        async createCustomScenario() {
-          throw new Error("Should not be called");
+        async createCustomScenario(data) {
+          savedInput = data;
+          return {
+            id: "scenario-rec-123",
+            key: data.key,
+            version: 1,
+            category: "CUSTOM",
+            title: data.title,
+            summary: data.summary,
+            definition: data.definition,
+            isActive: true,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            userId: data.userId,
+          };
         },
       },
       {
-        entitlementService: {
-          getUserEntitlement: async () => ({
-            plan: "FREE",
-            effectivePlan: "FREE",
-            expiresAt: null,
-            simulationsLimit: 3,
-            simulationsUsed: 0,
-            simulationsRemaining: 3,
-            windowStartsAt: new Date().toISOString(),
-            windowEndsAt: new Date().toISOString(),
+        aiService: {
+          roleplayModel: "test-roleplay",
+          evaluationModel: "test-eval",
+          transcriptionModel: "test-stt",
+          ttsModel: "test-tts",
+          generateRoleplayReply: async () => {
+            throw new Error("Not implemented");
+          },
+          evaluateSimulation: async () => {
+            throw new Error("Not implemented");
+          },
+          generateCustomScenario: async (input) => ({
+            definition: {
+              ...mockScenarioDefinition,
+              key: input.scenarioKey,
+            },
+            latencyMs: 1200,
+            inputTokens: 500,
+            outputTokens: 800,
+            estimatedCost: 0.005,
           }),
+          transcribeAudio: async () => {
+            throw new Error("Not implemented");
+          },
+          generateSpeech: async () => {
+            throw new Error("Not implemented");
+          },
         },
       },
     );
 
-    await expect(
-      service.createCustomInterviewScenario!({
-        userId: "user-123",
-        cvBuffer: createTestPdfBuffer(
-          "Sample CV text with over 50 characters here for testing",
-        ),
-        cvMimeType: "application/pdf",
-        jobDescription: sampleJobDescription,
-      }),
-    ).rejects.toThrow("Custom interview scenarios require a Plus or Pro plan.");
+    const result = await service.createCustomInterviewScenario!({
+      userId: "user-free-123",
+      cvBuffer: createTestPdfBuffer(
+        "Sample CV text with over 50 characters here for testing candidate profile",
+      ),
+      cvMimeType: "application/pdf",
+      jobDescription: sampleJobDescription,
+    });
+
+    expect(result.isCustom).toBe(true);
+    expect(result.category).toBe("CUSTOM");
+    expect(savedInput).toBeDefined();
   });
 
   it("rejects job description shorter than 50 characters", async () => {

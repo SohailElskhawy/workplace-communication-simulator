@@ -579,7 +579,7 @@ export function ScenarioLibraryView({
                       Tailored
                     </span>
                     <span className="font-meta text-[11px] px-2 py-0.5 rounded-full border border-border/40 bg-surface-raised font-bold text-foreground">
-                      Plus / Pro
+                      Free Demo
                     </span>
                   </div>
 

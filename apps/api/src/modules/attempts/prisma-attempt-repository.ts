@@ -175,13 +175,6 @@ export function createPrismaAttemptRepository(
           input.startedAt,
         );
 
-        if (Boolean(scenario.userId) && effectivePlan === "FREE") {
-          return {
-            kind: "rejected",
-            code: "PLAN_UPGRADE_REQUIRED",
-          } as const;
-        }
-
         const limit = limits[effectivePlan] ?? null;
 
         if (limit !== null) {

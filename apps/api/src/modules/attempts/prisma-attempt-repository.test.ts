@@ -630,7 +630,7 @@ describe("Prisma attempt repository variation persistence", () => {
     expect(result.kind).toBe("created");
   });
 
-  it("rejects FREE user attempting custom scenario with PLAN_UPGRADE_REQUIRED", async () => {
+  it("allows FREE user attempting custom scenario", async () => {
     const { prisma } = createCreateAttemptPrisma({
       userPlan: "FREE",
       scenario: {
@@ -650,9 +650,6 @@ describe("Prisma attempt repository variation persistence", () => {
       ...createRepositoryInput({}),
       scenarioKey: "custom-interview-123",
     });
-    expect(result).toEqual({
-      kind: "rejected",
-      code: "PLAN_UPGRADE_REQUIRED",
-    });
+    expect(result.kind).toBe("created");
   });
 });

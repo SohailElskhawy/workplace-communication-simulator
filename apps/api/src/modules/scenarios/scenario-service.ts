@@ -89,7 +89,6 @@ export function createScenarioService(
   const ttlMs = options.ttlMs ?? DEFAULT_SCENARIO_CACHE_TTL_MS;
   const clock = options.clock ?? Date.now;
   const aiService = options.aiService;
-  const entitlementService = options.entitlementService;
 
   let cachedPublicList: {
     data: PublicScenarioSummary[];
@@ -164,15 +163,6 @@ export function createScenarioService(
     },
 
     async createCustomInterviewScenario(input) {
-      if (entitlementService) {
-        const entitlement = await entitlementService.getUserEntitlement(
-          input.userId,
-        );
-        if (entitlement.effectivePlan === "FREE") {
-          throw new ScenarioError("PLAN_UPGRADE_REQUIRED");
-        }
-      }
-
       const parsedCv = await parsePdfCvFromBuffer(
         input.cvBuffer,
         input.cvMimeType,
