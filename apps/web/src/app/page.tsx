@@ -98,7 +98,7 @@ export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-background text-foreground selection:bg-primary selection:text-primary-foreground font-sans">
+    <div className="min-h-screen bg-background text-foreground selection:bg-primary selection:text-primary-foreground font-sans overflow-x-hidden">
       {/* Ambient Memphis Dot Grid Background */}
       <div
         className="fixed inset-0 pointer-events-none opacity-5 bg-[radial-gradient(#1a1a1a_1px,transparent_1px)] bg-size-[20px_20px] z-0"
@@ -265,35 +265,35 @@ export default function LandingPage() {
         )}
       </header>
 
-      <main className="relative z-10 pt-28 sm:pt-32 pb-24 space-y-24 sm:space-y-32">
+      <main className="relative z-10 pt-20 sm:pt-32 pb-14 sm:pb-24 space-y-14 sm:space-y-24 md:space-y-32">
         {/* 2. Hero Section */}
         <section className="max-w-container-max mx-auto px-4 sm:px-6 md:px-8">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-16 pt-6 sm:pt-12">
             {/* Left Copy */}
             <div className="max-w-2xl space-y-6">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 border border-primary/20 rounded-full bg-primary/10">
-                <SparklesIcon className="w-3.5 h-3.5 text-primary" />
-                <span className="font-meta text-xs uppercase tracking-widest text-primary font-bold">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 border border-primary/20 rounded-full bg-primary/10 max-w-full">
+                <SparklesIcon className="w-3.5 h-3.5 text-primary shrink-0" />
+                <span className="font-meta text-[10px] sm:text-xs uppercase tracking-widest text-primary font-bold text-left">
                   Workplace Communication Simulator
                 </span>
               </div>
 
-              <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-bold uppercase tracking-tight text-foreground leading-[1.1]">
+              <h1 className="font-display text-[1.65rem] leading-[1.15] sm:text-5xl sm:leading-[1.1] md:text-6xl font-bold uppercase tracking-tight text-foreground">
                 Master high-stakes workplace conversations.
               </h1>
 
-              <p className="font-sans text-lg sm:text-xl text-muted-foreground leading-relaxed">
+              <p className="font-sans text-[15px] sm:text-lg text-muted-foreground leading-relaxed">
                 Rehearse salary negotiations, manager disagreements, tough
                 feedback, and promotion requests with realistic AI counterparts.
                 Receive structured turn-linked coaching to sharpen your
                 communication.
               </p>
 
-              <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+              <div className="pt-2 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                 <Show when="signed-in">
                   <Link
                     href="/app"
-                    className="inline-flex items-center justify-center gap-2 rounded-control bg-primary px-8 py-4 font-display text-sm sm:text-base font-bold uppercase tracking-wider text-primary-foreground border border-border shadow-[6px_6px_0px_0px_#1a1a1a] brutalist-interactive"
+                    className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-control bg-primary px-6 py-3.5 sm:px-8 sm:py-4 font-display text-sm sm:text-base font-bold uppercase tracking-wider text-primary-foreground border border-border shadow-[6px_6px_0px_0px_#1a1a1a] brutalist-interactive"
                   >
                     <span>Open Simulator</span>
                     <ArrowRightIcon className="w-4 h-4" />
@@ -304,7 +304,7 @@ export default function LandingPage() {
                   <SignUpButton mode="modal">
                     <button
                       type="button"
-                      className="inline-flex items-center justify-center gap-2 rounded-control bg-primary px-8 py-4 font-display text-sm sm:text-base font-bold uppercase tracking-wider text-primary-foreground border border-border shadow-[6px_6px_0px_0px_#1a1a1a] brutalist-interactive cursor-pointer"
+                      className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-control bg-primary px-6 py-3.5 sm:px-8 sm:py-4 font-display text-sm sm:text-base font-bold uppercase tracking-wider text-primary-foreground border border-border shadow-[6px_6px_0px_0px_#1a1a1a] brutalist-interactive cursor-pointer"
                     >
                       <span>Start Free Rehearsal</span>
                       <ArrowRightIcon className="w-4 h-4" />
@@ -314,13 +314,13 @@ export default function LandingPage() {
 
                 <a
                   href="#scenarios"
-                  className="inline-flex items-center justify-center gap-2 rounded-control bg-surface px-6 py-4 font-display text-sm sm:text-base font-bold uppercase tracking-wider text-foreground border border-border shadow-[4px_4px_0px_0px_#1a1a1a] hover:bg-surface-subtle transition-all"
+                  className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-control bg-surface px-6 py-3.5 sm:py-4 font-display text-sm sm:text-base font-bold uppercase tracking-wider text-foreground border border-border shadow-[4px_4px_0px_0px_#1a1a1a] hover:bg-surface-subtle transition-all"
                 >
                   Explore 6 Scenarios
                 </a>
               </div>
 
-              <div className="pt-4 flex items-center gap-6 font-meta text-xs text-muted-foreground">
+              <div className="pt-4 flex flex-wrap items-center gap-x-4 gap-y-2 font-meta text-xs text-muted-foreground">
                 <span className="flex items-center gap-1.5">
                   <CheckIcon className="w-4 h-4 text-primary" /> Voice & Text
                 </span>
@@ -336,18 +336,19 @@ export default function LandingPage() {
 
             {/* Right Product Preview Mockup */}
             <div className="w-full max-w-lg relative">
-              {/* Memphis decorative geometric shapes */}
+              {/* Memphis decorative geometric shapes (contained on mobile so
+                  they never widen the page) */}
               <div
-                className="absolute -top-6 -right-6 w-32 h-32 rounded-full bg-primary/15 border border-border pointer-events-none z-0"
+                className="absolute -top-4 -right-3 w-20 h-20 sm:-top-6 sm:-right-6 sm:w-32 sm:h-32 rounded-full bg-primary/15 border border-border pointer-events-none z-0"
                 aria-hidden="true"
               />
               <div
-                className="absolute -bottom-6 -left-6 w-24 h-24 bg-[#d4ff00]/40 border border-border transform rotate-6 pointer-events-none z-0"
+                className="absolute -bottom-4 -left-3 w-16 h-16 sm:-bottom-6 sm:-left-6 sm:w-24 sm:h-24 bg-[#d4ff00]/40 border border-border transform rotate-6 pointer-events-none z-0"
                 aria-hidden="true"
               />
 
               {/* Simulation Session Preview Window */}
-              <div className="glass-surface rounded-card p-6 border-2 border-border shadow-[8px_8px_0px_0px_#1a1a1a] relative z-10 space-y-4">
+              <div className="glass-surface rounded-card p-4 sm:p-6 border-2 border-border shadow-[4px_4px_0px_0px_#1a1a1a] sm:shadow-[8px_8px_0px_0px_#1a1a1a] relative z-10 space-y-4">
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-border/20 pb-3">
                   <div>
@@ -358,7 +359,7 @@ export default function LandingPage() {
                       Salary Negotiation · Medium
                     </h3>
                   </div>
-                  <span className="font-meta text-xs px-2.5 py-1 rounded-full border border-border bg-[#d4ff00]/30 font-bold text-[#171e00]">
+                  <span className="font-meta text-xs px-2.5 py-1 rounded-full border border-border bg-[#d4ff00]/30 font-bold text-[#171e00] whitespace-nowrap shrink-0">
                     Turn 3 / 6
                   </span>
                 </div>
@@ -391,12 +392,12 @@ export default function LandingPage() {
                 </div>
 
                 {/* Real-time coaching insight preview */}
-                <div className="pt-2 border-t border-border/20 flex items-center justify-between font-meta text-xs">
+                <div className="pt-2 border-t border-border/20 flex flex-col sm:flex-row sm:items-center justify-between gap-1 font-meta text-xs">
                   <div className="flex items-center gap-1.5 text-primary font-bold">
-                    <TargetIcon className="w-4 h-4" />
+                    <TargetIcon className="w-4 h-4 shrink-0" />
                     <span>Evidence-Linked Scoring</span>
                   </div>
-                  <span className="font-display font-bold text-foreground">
+                  <span className="font-display font-bold text-foreground text-[11px] sm:text-xs">
                     Clarity 86 · Assertiveness 82
                   </span>
                 </div>
@@ -414,7 +415,7 @@ export default function LandingPage() {
             <span className="font-meta text-xs uppercase tracking-widest text-primary font-bold">
               Structured Methodology
             </span>
-            <h2 className="font-display text-3xl sm:text-4xl font-bold uppercase tracking-tight text-foreground">
+            <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold uppercase tracking-tight text-foreground">
               How the simulation loop works
             </h2>
             <p className="font-sans text-base sm:text-lg text-muted-foreground leading-relaxed">
@@ -427,9 +428,9 @@ export default function LandingPage() {
             {HOW_IT_WORKS_STEPS.map((item) => (
               <div
                 key={item.step}
-                className="glass-surface rounded-card p-6 border border-border shadow-[4px_4px_0px_0px_#1a1a1a] flex flex-col justify-between space-y-4 relative overflow-hidden group hover:border-primary transition-all"
+                className="glass-surface rounded-card p-5 sm:p-6 border border-border shadow-[4px_4px_0px_0px_#1a1a1a] flex flex-col justify-between space-y-4 relative overflow-hidden group hover:border-primary transition-all"
               >
-                <div className="font-display text-4xl font-extrabold text-primary/20 group-hover:text-primary transition-colors">
+                <div className="font-display text-3xl sm:text-4xl font-extrabold text-primary/20 group-hover:text-primary transition-colors">
                   {item.step}
                 </div>
                 <div>
@@ -455,7 +456,7 @@ export default function LandingPage() {
               <span className="font-meta text-xs uppercase tracking-widest text-primary font-bold">
                 Curated Practice Scenarios
               </span>
-              <h2 className="font-display text-3xl sm:text-4xl font-bold uppercase tracking-tight text-foreground">
+              <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold uppercase tracking-tight text-foreground">
                 6 Core Workplace Challenges
               </h2>
               <p className="font-sans text-sm sm:text-base text-muted-foreground">
@@ -480,7 +481,7 @@ export default function LandingPage() {
               return (
                 <article
                   key={scenario.key}
-                  className="glass-surface rounded-card p-6 flex flex-col justify-between border border-border shadow-[4px_4px_0px_0px_#1a1a1a] hover:shadow-[6px_6px_0px_0px_#1a1a1a] hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all duration-200 ease-out group"
+                  className="glass-surface rounded-card p-5 sm:p-6 flex flex-col justify-between border border-border shadow-[4px_4px_0px_0px_#1a1a1a] hover:shadow-[6px_6px_0px_0px_#1a1a1a] hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all duration-200 ease-out group"
                 >
                   <div>
                     <div className="flex items-center justify-between gap-2 mb-3">
@@ -536,7 +537,7 @@ export default function LandingPage() {
             <span className="font-meta text-xs uppercase tracking-widest text-primary font-bold">
               The Communication Framework
             </span>
-            <h2 className="font-display text-3xl sm:text-4xl font-bold uppercase tracking-tight text-foreground">
+            <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold uppercase tracking-tight text-foreground">
               5 Universal Competencies
             </h2>
             <p className="font-sans text-base sm:text-lg text-muted-foreground leading-relaxed">
@@ -549,10 +550,10 @@ export default function LandingPage() {
             {UNIVERSAL_SKILLS_SHOWCASE.map((skill) => (
               <div
                 key={skill.key}
-                className="glass-surface rounded-card p-6 border border-border shadow-[4px_4px_0px_0px_#1a1a1a] flex flex-col justify-between space-y-4"
+                className="glass-surface rounded-card p-5 sm:p-6 border border-border shadow-[4px_4px_0px_0px_#1a1a1a] flex flex-col justify-between space-y-4"
               >
                 <div>
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between gap-2 mb-2">
                     <span className="font-meta text-xs uppercase tracking-wider font-bold text-foreground">
                       {skill.name}
                     </span>
@@ -595,7 +596,7 @@ export default function LandingPage() {
             <span className="font-meta text-xs uppercase tracking-widest text-primary font-bold">
               Turn-Linked Coaching
             </span>
-            <h2 className="font-display text-3xl sm:text-4xl font-bold uppercase tracking-tight text-foreground">
+            <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold uppercase tracking-tight text-foreground">
               Feedback that references real words
             </h2>
             <p className="font-sans text-base sm:text-lg text-muted-foreground leading-relaxed">
@@ -604,7 +605,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="glass-surface rounded-card p-6 sm:p-8 md:p-10 border-2 border-border shadow-[8px_8px_0px_0px_#1a1a1a] space-y-6">
+          <div className="glass-surface rounded-card p-4 sm:p-8 md:p-10 border-2 border-border shadow-[4px_4px_0px_0px_#1a1a1a] sm:shadow-[8px_8px_0px_0px_#1a1a1a] space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/20 pb-4">
               <div className="flex items-center gap-2">
                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground font-display font-bold text-xs">
@@ -619,9 +620,9 @@ export default function LandingPage() {
               </span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               {/* Actual Quote & Critique */}
-              <div className="space-y-3 p-5 rounded-card bg-surface border border-border">
+              <div className="space-y-3 p-4 sm:p-5 rounded-card bg-surface border border-border">
                 <span className="font-meta text-xs uppercase font-bold text-alert flex items-center gap-1.5">
                   Your Response (Turn 4) · Opportunity to Strengthen
                 </span>
@@ -639,7 +640,7 @@ export default function LandingPage() {
               </div>
 
               {/* Stronger Alternative */}
-              <div className="space-y-3 p-5 rounded-card bg-primary/10 border-2 border-primary">
+              <div className="space-y-3 p-4 sm:p-5 rounded-card bg-primary/10 border-2 border-primary">
                 <span className="font-meta text-xs uppercase font-bold text-primary flex items-center gap-1.5">
                   Recommended Stronger Alternative
                 </span>
@@ -664,7 +665,7 @@ export default function LandingPage() {
 
         {/* 8. Final Call to Action (CTA) */}
         <section className="max-w-container-max mx-auto px-4 sm:px-6 md:px-8">
-          <div className="glass-surface rounded-card p-8 sm:p-12 md:p-16 border-2 border-border shadow-[8px_8px_0px_0px_#1a1a1a] text-center space-y-6 relative overflow-hidden bg-primary/5">
+          <div className="glass-surface rounded-card p-6 sm:p-12 md:p-16 border-2 border-border shadow-[4px_4px_0px_0px_#1a1a1a] sm:shadow-[8px_8px_0px_0px_#1a1a1a] text-center space-y-6 relative overflow-hidden bg-primary/5">
             <div
               className="absolute -top-12 -left-12 w-48 h-48 rounded-full bg-[#d4ff00]/30 blur-2xl pointer-events-none"
               aria-hidden="true"
@@ -679,7 +680,7 @@ export default function LandingPage() {
                 Start Practicing Today
               </span>
 
-              <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold uppercase tracking-tight text-foreground leading-[1.15]">
+              <h2 className="font-display text-2xl sm:text-3xl md:text-5xl font-bold uppercase tracking-tight text-foreground leading-[1.15]">
                 Ready to elevate your workplace communication?
               </h2>
 
@@ -718,20 +719,22 @@ export default function LandingPage() {
 
       {/* 9. Footer */}
       <footer className="border-t border-border bg-surface py-12 px-4 sm:px-6 md:px-8">
-        <div className="max-w-container-max mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-3">
-            <span className="flex h-7 w-7 items-center justify-center rounded-control border border-border bg-primary font-display font-extrabold text-primary-foreground shadow-2xs">
-              K
-            </span>
-            <span className="font-display font-bold text-foreground">
-              Kalemny
-            </span>
-            <span className="font-meta text-xs text-muted-foreground ml-2">
+        <div className="max-w-container-max mx-auto flex flex-col md:flex-row items-center md:justify-between justify-center gap-6 text-center md:text-left">
+          <div className="flex flex-col sm:flex-row sm:items-center items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-3 justify-center">
+              <span className="flex h-7 w-7 items-center justify-center rounded-control border border-border bg-primary font-display font-extrabold text-primary-foreground shadow-2xs">
+                K
+              </span>
+              <span className="font-display font-bold text-foreground">
+                Kalemny
+              </span>
+            </div>
+            <span className="font-meta text-xs text-muted-foreground sm:ml-2 max-w-xs sm:max-w-none">
               AI Workplace Communication Simulator · Release 1 (English)
             </span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-6 font-meta text-xs text-muted-foreground">
+          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 font-meta text-xs text-muted-foreground">
             <a href="#how-it-works" className="hover:text-foreground">
               How it works
             </a>

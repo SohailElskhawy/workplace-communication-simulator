@@ -109,7 +109,7 @@ export function EvaluationProcessingView({
             <span className="font-meta text-xs text-muted-foreground uppercase tracking-widest font-bold">
               Simulation Complete
             </span>
-            <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold uppercase tracking-tight text-foreground leading-[1.15] relative z-10">
+            <h1 className="font-display text-2xl sm:text-4xl lg:text-5xl font-bold uppercase tracking-tight text-foreground leading-[1.15] relative z-10">
               Let&apos;s look at how that went.
             </h1>
             <p className="font-sans text-base sm:text-lg text-muted-foreground max-w-md leading-relaxed">

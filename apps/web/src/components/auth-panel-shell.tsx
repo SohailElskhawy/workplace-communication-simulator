@@ -78,7 +78,7 @@ export function AuthPanelShell({ mode, children }: AuthPanelShellProps) {
                 </span>
               </div>
 
-              <h1 className="font-display text-4xl sm:text-5xl font-bold uppercase tracking-tight text-foreground leading-[1.12]">
+              <h1 className="font-display text-3xl sm:text-5xl font-bold uppercase tracking-tight text-foreground leading-[1.12]">
                 Rehearse with realistic pushback. Advance your career.
               </h1>
 

@@ -210,7 +210,7 @@ export default function HistoryPage() {
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold uppercase tracking-tight text-foreground leading-[1.15]">
+            <h1 className="font-display text-2xl sm:text-4xl md:text-5xl font-bold uppercase tracking-tight text-foreground leading-[1.15]">
               Every conversation is another rep.
             </h1>
             <p className="font-sans text-base sm:text-lg text-muted-foreground mt-2 leading-relaxed max-w-2xl">

@@ -372,7 +372,7 @@ export function ScenarioLibraryView({
               <span>Workplace Rehearsal Lab</span>
             </div>
 
-            <h1 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-[46px] font-bold text-foreground leading-[1.12] tracking-tight">
+            <h1 className="font-display text-2xl sm:text-4xl md:text-5xl lg:text-[46px] font-bold text-foreground leading-[1.12] tracking-tight">
               Practice the conversations you usually avoid.
             </h1>
             <p className="font-sans text-base sm:text-lg text-muted-foreground leading-relaxed max-w-xl">

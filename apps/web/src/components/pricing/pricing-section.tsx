@@ -22,7 +22,7 @@ export function PricingSection() {
         <span className="font-meta text-xs uppercase tracking-widest text-primary font-bold">
           Transparent Pricing
         </span>
-        <h2 className="font-display text-3xl sm:text-4xl font-bold uppercase tracking-tight text-foreground">
+        <h2 className="font-display text-2xl sm:text-4xl font-bold uppercase tracking-tight text-foreground">
           Invest in your workplace impact
         </h2>
         <p className="font-sans text-base sm:text-lg text-muted-foreground leading-relaxed">
@@ -74,7 +74,7 @@ export function PricingSection() {
                 {/* Price Display */}
                 <div className="pt-2 border-t border-border/20">
                   <div className="flex items-baseline gap-1.5">
-                    <span className="font-display text-4xl sm:text-5xl font-bold tracking-tight text-foreground">
+                    <span className="font-display text-3xl sm:text-5xl font-bold tracking-tight text-foreground">
                       {plan.price}
                     </span>
                     {plan.billingPeriod && (

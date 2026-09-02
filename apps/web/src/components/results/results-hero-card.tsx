@@ -98,7 +98,7 @@ export function ResultsHeroCard({
             </div>
 
             <div>
-              <h1 className="font-display text-3xl sm:text-4xl font-bold uppercase tracking-tight text-foreground leading-[1.15]">
+              <h1 className="font-display text-2xl sm:text-4xl font-bold uppercase tracking-tight text-foreground leading-[1.15]">
                 {attempt.scenario.title}
               </h1>
             </div>
@@ -121,7 +121,7 @@ export function ResultsHeroCard({
                 Overall Score
               </span>
               <div className="flex items-baseline justify-center lg:justify-end gap-1.5">
-                <span className="font-display text-6xl sm:text-7xl font-bold text-primary tracking-tight">
+                <span className="font-display text-5xl sm:text-7xl font-bold text-primary tracking-tight">
                   {evaluation.overallScore}
                 </span>
                 <span className="font-meta text-base text-muted-foreground font-semibold">

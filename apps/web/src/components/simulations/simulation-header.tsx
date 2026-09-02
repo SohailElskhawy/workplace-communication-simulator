@@ -150,12 +150,18 @@ export function SimulationHeader({
             {finishing ? (
               <>
                 <RefreshIcon className="w-3.5 h-3.5 animate-spin shrink-0" />
-                <span className="whitespace-nowrap">Evaluating...</span>
+                <span className="whitespace-nowrap">
+                  <span className="sm:hidden">Evaluating…</span>
+                  <span className="hidden sm:inline">Evaluating...</span>
+                </span>
               </>
             ) : (
               <>
                 <FlagIcon className="w-3.5 h-3.5 shrink-0" />
-                <span className="whitespace-nowrap">End conversation</span>
+                <span className="whitespace-nowrap">
+                  <span className="sm:hidden">Finish</span>
+                  <span className="hidden sm:inline">End conversation</span>
+                </span>
               </>
             )}
           </button>

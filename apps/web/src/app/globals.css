@@ -32,6 +32,7 @@
 }
 
 @theme inline {
+  --breakpoint-xs: 26rem;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
@@ -64,6 +65,14 @@
   --container-max: var(--container-max);
 }
 
+html,
+body {
+  /* Prevent accidental horizontal scroll from decorative shapes / long
+     strings on small screens. `clip` (unlike `hidden`) does not create a
+     scroll container, so `position: sticky` keeps working. */
+  overflow-x: clip;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
@@ -77,6 +86,19 @@ body {
 * {
   box-sizing: border-box;
   min-width: 0;
+}
+
+/* Keep headings from stacking into tall blocks on narrow screens: balanced
+   line breaking and no forced uppercase widows. */
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+
+/* Numerals / monospace meta labels should never overflow their container. */
+.font-meta {
+  overflow-wrap: break-word;
 }
 
 :focus-visible {

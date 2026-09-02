@@ -263,7 +263,7 @@ export default function ScenarioDetailPage() {
 
       {/* 3. Scenario Title & Overview */}
       <header className="space-y-3">
-        <h1 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold uppercase tracking-tight text-foreground leading-[1.15]">
+        <h1 className="font-display text-2xl sm:text-4xl md:text-5xl font-bold uppercase tracking-tight text-foreground leading-[1.15]">
           {scenario.title}
         </h1>
         <p className="font-sans text-base sm:text-lg text-muted-foreground max-w-3xl leading-relaxed">

@@ -154,7 +154,7 @@ export function SimulationComposer({
   const isNearLimit = composerText.length >= MAX_TURN_TEXT_LENGTH * 0.9;
 
   return (
-    <footer className="border-t border-border bg-surface-solid p-3 sm:p-5 shadow-xs shrink-0">
+    <footer className="border-t border-border bg-surface-solid px-2.5 pt-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] sm:p-5 shadow-xs shrink-0">
       {/* General / Rate Limit Errors */}
       {generalError && (
         <div
@@ -288,7 +288,7 @@ export function SimulationComposer({
                 onKeyDown={handleKeyDown}
                 disabled={isComposerDisabled}
                 placeholder="Type or edit your response…"
-                className="w-full min-h-22 resize-none rounded-control border-2 border-border bg-surface-subtle p-3 pr-24 font-sans text-sm text-foreground placeholder:text-muted-foreground focus:bg-white focus:outline-none disabled:opacity-60"
+                className="w-full min-h-20 resize-none rounded-control border-2 border-border bg-surface-subtle p-3 pr-24 font-sans text-base sm:text-sm text-foreground placeholder:text-muted-foreground focus:bg-white focus:outline-none disabled:opacity-60"
               />
               <button
                 type="submit"
@@ -344,7 +344,7 @@ export function SimulationComposer({
                 onKeyDown={handleKeyDown}
                 disabled={isComposerDisabled}
                 placeholder="Review or edit your spoken response…"
-                className="w-full min-h-22 resize-none rounded-control border-2 border-border bg-surface-subtle p-3 pr-24 font-sans text-sm text-foreground placeholder:text-muted-foreground focus:bg-white focus:outline-none disabled:opacity-60"
+                className="w-full min-h-20 resize-none rounded-control border-2 border-border bg-surface-subtle p-3 pr-24 font-sans text-base sm:text-sm text-foreground placeholder:text-muted-foreground focus:bg-white focus:outline-none disabled:opacity-60"
               />
               <button
                 type="submit"

@@ -166,7 +166,7 @@ export default function DashboardPage() {
           <span>Welcome back, {greetingName}</span>
         </div>
 
-        <h1 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold uppercase tracking-tight text-foreground leading-[1.15]">
+        <h1 className="font-display text-2xl sm:text-4xl md:text-5xl font-bold uppercase tracking-tight text-foreground leading-[1.15]">
           What do you want to practice today?
         </h1>
 

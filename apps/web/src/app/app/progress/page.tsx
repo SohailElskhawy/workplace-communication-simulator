@@ -95,7 +95,7 @@ export default function ProgressPage() {
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold uppercase tracking-tight text-foreground leading-[1.15]">
+            <h1 className="font-display text-2xl sm:text-4xl md:text-5xl font-bold uppercase tracking-tight text-foreground leading-[1.15]">
               See how your communication is changing.
             </h1>
             <p className="font-sans text-base sm:text-lg text-muted-foreground mt-2 leading-relaxed max-w-2xl">
@@ -249,7 +249,7 @@ export default function ProgressPage() {
 
                       <div
                         className={cn(
-                          "font-display text-4xl sm:text-5xl font-bold my-2",
+                          "font-display text-3xl sm:text-5xl font-bold my-2",
                           isWeakest ? "text-primary" : "text-foreground",
                         )}
                       >
