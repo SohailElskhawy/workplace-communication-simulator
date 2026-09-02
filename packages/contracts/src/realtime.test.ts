@@ -4,6 +4,7 @@ import {
   BindRealtimeConversationRequestSchema,
   BindRealtimeConversationResponseSchema,
   RealtimeSessionResponseSchema,
+  SubmitRealtimeTranscriptRequestSchema,
 } from "./realtime.js";
 
 describe("Realtime contracts", () => {
@@ -68,6 +69,29 @@ describe("Realtime contracts", () => {
           attemptId: validResponse.data.attemptId,
           conversationId: "conv_example",
         },
+      }).success,
+    ).toBe(true);
+  });
+
+  it("validates realtime transcript submissions including empty turns", () => {
+    expect(
+      SubmitRealtimeTranscriptRequestSchema.safeParse({
+        conversationId: "conv_example",
+        turns: [],
+      }).success,
+    ).toBe(true);
+
+    expect(
+      SubmitRealtimeTranscriptRequestSchema.safeParse({
+        conversationId: "conv_example",
+        turns: [{ userText: "Hello", assistantText: "Hi there" }],
+      }).success,
+    ).toBe(true);
+
+    expect(
+      SubmitRealtimeTranscriptRequestSchema.safeParse({
+        conversationId: "conv_example",
+        turns: [{ userText: "Hello", assistantText: null }],
       }).success,
     ).toBe(true);
   });

@@ -4,6 +4,7 @@ import {
   appendLiveTranscriptEntry,
   isLiveConversationActive,
   LIVE_TRANSCRIPT_MAX_ENTRIES,
+  pairLiveTranscriptEntries,
   resolveLiveConversationUiState,
   type LiveTranscriptEntry,
 } from "./live-conversation-state.js";
@@ -196,5 +197,100 @@ describe("appendLiveTranscriptEntry", () => {
     expect(transcript.at(-1)?.text).toBe(
       `Message ${LIVE_TRANSCRIPT_MAX_ENTRIES + 4}`,
     );
+  });
+});
+
+describe("pairLiveTranscriptEntries", () => {
+  it("returns empty array for empty entries", () => {
+    expect(pairLiveTranscriptEntries([])).toEqual([]);
+  });
+
+  it("returns empty array if only agent speaks (e.g. opening message only)", () => {
+    const entries: LiveTranscriptEntry[] = [
+      { id: "agent:1", role: "agent", text: "Thanks for joining us today." },
+      { id: "agent:2", role: "agent", text: "What would you like to discuss?" },
+    ];
+    expect(pairLiveTranscriptEntries(entries)).toEqual([]);
+  });
+
+  it("pairs standard user and agent turns, skipping initial agent greeting", () => {
+    const entries: LiveTranscriptEntry[] = [
+      { id: "agent:1", role: "agent", text: "Thanks for joining us today." },
+      { id: "user:1", role: "user", text: "I'd like to discuss my compensation." },
+      { id: "agent:2", role: "agent", text: "Sure, let's talk about it." },
+      { id: "user:2", role: "user", text: "I'm looking for a 10% raise." },
+      { id: "agent:3", role: "agent", text: "We can review your achievements." },
+    ];
+
+    expect(pairLiveTranscriptEntries(entries)).toEqual([
+      {
+        userText: "I'd like to discuss my compensation.",
+        assistantText: "Sure, let's talk about it.",
+      },
+      {
+        userText: "I'm looking for a 10% raise.",
+        assistantText: "We can review your achievements.",
+      },
+    ]);
+  });
+
+  it("groups consecutive user utterances into a single user turn", () => {
+    const entries: LiveTranscriptEntry[] = [
+      { id: "agent:1", role: "agent", text: "Opening message" },
+      { id: "user:1", role: "user", text: "I've been at the company for 2 years," },
+      { id: "user:2", role: "user", text: "and I led the migration project." },
+      { id: "agent:2", role: "agent", text: "That is great work." },
+    ];
+
+    expect(pairLiveTranscriptEntries(entries)).toEqual([
+      {
+        userText: "I've been at the company for 2 years, and I led the migration project.",
+        assistantText: "That is great work.",
+      },
+    ]);
+  });
+
+  it("groups consecutive agent responses into a single assistant reply", () => {
+    const entries: LiveTranscriptEntry[] = [
+      { id: "agent:1", role: "agent", text: "Opening message" },
+      { id: "user:1", role: "user", text: "Here is my proposal." },
+      { id: "agent:2", role: "agent", text: "Thank you for the proposal." },
+      { id: "agent:3", role: "agent", text: "What is your timeline?" },
+    ];
+
+    expect(pairLiveTranscriptEntries(entries)).toEqual([
+      {
+        userText: "Here is my proposal.",
+        assistantText: "Thank you for the proposal. What is your timeline?",
+      },
+    ]);
+  });
+
+  it("handles user speaking first when no agent opening is present", () => {
+    const entries: LiveTranscriptEntry[] = [
+      { id: "user:1", role: "user", text: "Hello there." },
+      { id: "agent:1", role: "agent", text: "Hi! How can I help?" },
+    ];
+
+    expect(pairLiveTranscriptEntries(entries)).toEqual([
+      {
+        userText: "Hello there.",
+        assistantText: "Hi! How can I help?",
+      },
+    ]);
+  });
+
+  it("sets assistantText to null when user speaks last without reply", () => {
+    const entries: LiveTranscriptEntry[] = [
+      { id: "agent:1", role: "agent", text: "Opening question" },
+      { id: "user:1", role: "user", text: "My final statement." },
+    ];
+
+    expect(pairLiveTranscriptEntries(entries)).toEqual([
+      {
+        userText: "My final statement.",
+        assistantText: null,
+      },
+    ]);
   });
 });

@@ -91,7 +91,7 @@ export const SubmitRealtimeTranscriptTurnSchema = z.strictObject({
 export const SubmitRealtimeTranscriptRequestSchema = z.strictObject({
   /** Must already be owner-bound to the attempt by the realtime SDK flow. */
   conversationId: RealtimeConversationIdSchema,
-  turns: z.array(SubmitRealtimeTranscriptTurnSchema).min(1).max(100),
+  turns: z.array(SubmitRealtimeTranscriptTurnSchema).max(100),
 });
 
 export type SubmitRealtimeTranscriptRequest = z.infer<

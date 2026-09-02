@@ -133,20 +133,40 @@ export function appendLiveTranscriptEntry(
 
 /**
  * Pairs consecutive user/agent entries into conversation turns for the
- * transcript submission endpoint. Each user entry pairs with the following
- * agent entry; agent-only entries without a preceding user entry are skipped.
+ * transcript submission endpoint. Consecutive same-role utterances (e.g. from
+ * natural speaking pauses or multi-part AI responses) are grouped together.
+ * The initial agent opening prompt is skipped, and each user turn pairs with
+ * the following agent response (null when the agent did not reply).
  */
 export function pairLiveTranscriptEntries(
   entries: readonly LiveTranscriptEntry[],
 ): Array<{ userText: string; assistantText: string | null }> {
+  const filtered = entries.filter((entry) => Boolean(entry.text.trim()));
+  if (filtered.length === 0) return [];
+
+  const chunks: Array<{ role: "user" | "agent"; text: string }> = [];
+  for (const entry of filtered) {
+    const text = entry.text.trim();
+    const lastChunk = chunks[chunks.length - 1];
+    if (lastChunk && lastChunk.role === entry.role) {
+      lastChunk.text = `${lastChunk.text} ${text}`.trim();
+    } else {
+      chunks.push({ role: entry.role, text });
+    }
+  }
+
+  // Skip the spoken opening message if the agent spoke first.
+  if (chunks[0]?.role === "agent") {
+    chunks.shift();
+  }
+
   const turns: Array<{ userText: string; assistantText: string | null }> = [];
-  for (let i = 0; i < entries.length; i++) {
-    const entry = entries[i];
-    if (!entry) continue;
-    if (entry.role !== "user") continue;
-    const next = entries[i + 1];
+  for (let i = 0; i < chunks.length; i++) {
+    const chunk = chunks[i];
+    if (!chunk || chunk.role !== "user") continue;
+    const next = chunks[i + 1];
     const assistantText = next?.role === "agent" ? next.text : null;
-    turns.push({ userText: entry.text, assistantText });
+    turns.push({ userText: chunk.text, assistantText });
     if (assistantText !== null) i++;
   }
   return turns;

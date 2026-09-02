@@ -160,9 +160,10 @@ export function ConversationStage({
                 <p className="font-meta text-[10px] font-bold uppercase tracking-widest text-primary">
                   Live session transcript
                 </p>
-                <p className="font-meta text-[10px] uppercase tracking-widest text-muted-foreground">
-                  Not saved
-                </p>
+                <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 font-meta text-[10px] font-semibold uppercase tracking-wider text-primary">
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                  Live voice
+                </span>
               </div>
               <div
                 ref={liveTranscriptScrollRef}

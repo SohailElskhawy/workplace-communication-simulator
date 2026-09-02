@@ -114,13 +114,33 @@ export function normalizeElevenLabsTranscript(
     const message = entry.message?.trim() ?? "";
     return message ? [{ role: entry.role, message, position }] : [];
   });
-  if (spoken[0]?.role === "agent") spoken.shift();
+  if (spoken.length === 0) return [];
+
+  const chunks: Array<{
+    role: "user" | "agent";
+    message: string;
+    position: number;
+  }> = [];
+  for (const entry of spoken) {
+    const lastChunk = chunks[chunks.length - 1];
+    if (lastChunk && lastChunk.role === entry.role) {
+      lastChunk.message = `${lastChunk.message} ${entry.message}`.trim();
+    } else {
+      chunks.push({
+        role: entry.role,
+        message: entry.message,
+        position: entry.position,
+      });
+    }
+  }
+
+  if (chunks[0]?.role === "agent") chunks.shift();
 
   const turns: NormalizedRealtimeTranscriptTurn[] = [];
-  for (let index = 0; index < spoken.length; index += 1) {
-    const learner = spoken[index];
+  for (let index = 0; index < chunks.length; index += 1) {
+    const learner = chunks[index];
     if (!learner || learner.role !== "user") continue;
-    const following = spoken[index + 1];
+    const following = chunks[index + 1];
     const assistantText =
       following?.role === "agent" ? following.message : null;
     turns.push({

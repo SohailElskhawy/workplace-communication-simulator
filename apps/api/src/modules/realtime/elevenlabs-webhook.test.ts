@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   ELEVENLABS_WEBHOOK_TOLERANCE_SECONDS,
+  normalizeElevenLabsTranscript,
   verifyElevenLabsWebhookSignature,
 } from "./elevenlabs-webhook.js";
 
@@ -52,5 +53,46 @@ describe("verifyElevenLabsWebhookSignature", () => {
         signatureHeader: signature(stale),
       }),
     ).toBe(false);
+  });
+});
+
+describe("normalizeElevenLabsTranscript", () => {
+  it("returns empty array for empty transcript", () => {
+    expect(normalizeElevenLabsTranscript("conv_1", [])).toEqual([]);
+  });
+
+  it("groups consecutive same-role utterances and pairs cleanly", () => {
+    const transcript = [
+      { role: "agent" as const, message: "Opening message" },
+      { role: "user" as const, message: "Part 1 of speech." },
+      { role: "user" as const, message: "Part 2 of speech." },
+      { role: "agent" as const, message: "Agent response 1." },
+      { role: "agent" as const, message: "Agent response 2." },
+    ];
+
+    expect(normalizeElevenLabsTranscript("conv_1", transcript)).toEqual([
+      {
+        clientRequestId: "realtime:conv_1:1",
+        userText: "Part 1 of speech. Part 2 of speech.",
+        assistantText: "Agent response 1. Agent response 2.",
+        status: "COMPLETED",
+      },
+    ]);
+  });
+
+  it("handles unmatched final user utterance as FAILED", () => {
+    const transcript = [
+      { role: "agent" as const, message: "Opening message" },
+      { role: "user" as const, message: "Final user words" },
+    ];
+
+    expect(normalizeElevenLabsTranscript("conv_1", transcript)).toEqual([
+      {
+        clientRequestId: "realtime:conv_1:1",
+        userText: "Final user words",
+        assistantText: null,
+        status: "FAILED",
+      },
+    ]);
   });
 });

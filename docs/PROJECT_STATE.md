@@ -375,6 +375,8 @@ corepack pnpm prisma:generate
 
 22. September 1 realtime transcript repair: finalized SDK transcript events now persist through the owner-authenticated `realtime-transcript` endpoint immediately after live disconnect and are retried before Finish. The submitted `conversationId` must already be bound to the active realtime attempt; imports are conversation-scoped and idempotent, capped at 20 turns, and set `transcriptImportedAt`. Finish retains its pending-transcript guard, while the signed ElevenLabs webhook remains an idempotent fallback. The earlier provider-pull recovery description is superseded; no provider transcript pull is used.
 
+23. September 2 realtime transcript pairing & UI sync fix: fixed multi-utterance turn shredding and blocked evaluation in realtime voice mode. `pairLiveTranscriptEntries` (web) and `normalizeElevenLabsTranscript` (API) now group consecutive same-role speech chunks (e.g. natural pauses in user speech or multi-sentence AI responses) into unified conversational turns, skip the pre-turn initial agent opening greeting, and pair each learner turn with its following counterpart reply. `SubmitRealtimeTranscriptRequestSchema` now permits empty turn arrays so non-speaking live sessions still mark `transcriptImportedAt` without blocking Finish on `REALTIME_TRANSCRIPT_PENDING`. The simulation screen live transcript banner now displays a live status indicator instead of a static "Not saved" badge, and `TranscriptDrawer` and `SimulationHeader` accurately reflect live turns and allow opening the transcript during or after live calls. Verified with 429 tests across 67 test files, strict typecheck, and clean lint.
+
 ## Source-of-Truth Docs
 
 Agents should read in this order:

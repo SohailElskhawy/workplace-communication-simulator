@@ -310,12 +310,40 @@ export default function SimulationPage() {
   );
   const isRealtimeMode = effectiveInteractionMode === "REALTIME";
 
+  const liveTurns = useMemo(
+    () => (isRealtimeMode ? pairLiveTranscriptEntries(liveTranscript) : []),
+    [isRealtimeMode, liveTranscript],
+  );
+  const displayTurnCount = Math.max(
+    attempt?.turns.length ?? 0,
+    liveTurns.length,
+  );
+
+  const drawerTurns = useMemo(() => {
+    if (!attempt) return [];
+    if (attempt.turns.length > 0) return attempt.turns;
+    if (!isRealtimeMode || liveTurns.length === 0) return [];
+
+    return liveTurns.map((turn, index) => ({
+      id: `live_${index}`,
+      attemptId: attempt.id,
+      sequence: index + 1,
+      inputMethod: "VOICE" as const,
+      userText: turn.userText,
+      assistantText: turn.assistantText,
+      status: turn.assistantText
+        ? ("COMPLETED" as const)
+        : ("PENDING" as const),
+      createdAt: new Date().toISOString(),
+      completedAt: turn.assistantText ? new Date().toISOString() : null,
+    }));
+  }, [attempt, isRealtimeMode, liveTurns]);
+
   const persistLiveTranscript = useCallback(async () => {
     if (!attemptId || !liveConversationId) return;
     if (savedLiveConversationIdRef.current === liveConversationId) return;
 
     const turns = pairLiveTranscriptEntries(liveTranscript);
-    if (turns.length === 0) return;
 
     const token = await getToken();
     if (!token) throw new Error("Authentication token not available.");
@@ -340,7 +368,7 @@ export default function SimulationPage() {
       liveUiState !== "disconnected" ||
       liveActive ||
       liveBindingPending ||
-      liveTranscript.length === 0
+      !liveConversationId
     ) {
       return;
     }
@@ -356,7 +384,7 @@ export default function SimulationPage() {
     isRealtimeMode,
     liveActive,
     liveBindingPending,
-    liveTranscript.length,
+    liveConversationId,
     liveUiState,
     persistLiveTranscript,
   ]);
@@ -536,7 +564,7 @@ export default function SimulationPage() {
 
       const client = createApiClient(apiUrl);
 
-      if (isRealtimeMode && liveTranscript.length > 0) {
+      if (isRealtimeMode && liveConversationId) {
         await persistLiveTranscript();
       }
 
@@ -582,7 +610,7 @@ export default function SimulationPage() {
         scenarioTitle={attempt.scenario.title}
         difficulty={attempt.difficulty}
         counterpartRole={counterpartRole}
-        turnCount={attempt.turns.length}
+        turnCount={displayTurnCount}
         elapsedSeconds={elapsedSeconds}
         finishing={finishing || liveActive || liveBindingPending}
         autoPlaySpeech={autoPlaySpeech}
@@ -635,7 +663,7 @@ export default function SimulationPage() {
             counterpartRole={counterpartRole}
             openingMessage={openingMessage}
             latestAssistantMessage={latestAssistantMessage}
-            turnCount={attempt.turns.length}
+            turnCount={displayTurnCount}
             uiState={simulationUiState}
             autoPlaySpeech={autoPlayStageSpeech}
             cancelSpeechPlayback={finishing || liveActive}
@@ -685,7 +713,7 @@ export default function SimulationPage() {
           <TranscriptDrawer
             open={transcriptOpen}
             attemptId={attempt.id}
-            turns={attempt.turns}
+            turns={drawerTurns}
             counterpartRole={counterpartRole}
             openingMessage={openingMessage}
             pendingTurn={pendingTurn}
@@ -706,7 +734,7 @@ export default function SimulationPage() {
       {/* 3. Finish Simulation Dialog */}
       <FinishSimulationDialog
         open={showFinishDialog}
-        turnCount={attempt.turns.length}
+        turnCount={displayTurnCount}
         finishing={finishing}
         onClose={() => setShowFinishDialog(false)}
         onConfirm={handleFinishSimulation}
