@@ -1,4 +1,10 @@
 import { Prisma, type PrismaClient } from "../../generated/prisma/client.js";
+import {
+  DEFAULT_PLAN_LIMITS,
+  ENTITLEMENT_WINDOW_MS,
+  type PlanLimits,
+  resolveEffectivePlan,
+} from "../entitlements/entitlement-rules.js";
 import { mapPrismaEvaluationToData } from "../evaluations/evaluation-repository.js";
 import { calculateAttemptComparison } from "./attempt-comparison.js";
 import { getFinishStatus, getTurnRejection } from "./attempt-rules.js";
@@ -123,6 +129,7 @@ function isUniqueConstraintViolation(error: unknown): boolean {
 
 export function createPrismaAttemptRepository(
   prisma: PrismaClient,
+  limits: PlanLimits = DEFAULT_PLAN_LIMITS,
 ): AttemptRepository {
   return {
     createAttempt(input) {
@@ -153,6 +160,37 @@ export function createPrismaAttemptRepository(
           excludeVariationId = retrySource.variationId;
         }
 
+        const user = await transaction.user.findUniqueOrThrow({
+          where: { id: input.userId },
+          select: { plan: true, planExpiresAt: true },
+        });
+
+        const effectivePlan = resolveEffectivePlan(
+          user.plan,
+          user.planExpiresAt,
+          input.startedAt,
+        );
+        const limit = limits[effectivePlan] ?? null;
+
+        if (limit !== null) {
+          const windowStartsAt = new Date(
+            input.startedAt.getTime() - ENTITLEMENT_WINDOW_MS,
+          );
+          const usageCount = await transaction.practiceUsageLedger.count({
+            where: {
+              userId: input.userId,
+              createdAt: { gte: windowStartsAt },
+            },
+          });
+
+          if (usageCount >= limit) {
+            return {
+              kind: "rejected",
+              code: "PLAN_QUOTA_EXCEEDED",
+            } as const;
+          }
+        }
+
         const attempt = await transaction.simulationAttempt.create({
           data: {
             userId: input.userId,
@@ -168,6 +206,14 @@ export function createPrismaAttemptRepository(
             expiresAt: input.expiresAt,
           },
           include: attemptInclude,
+        });
+
+        await transaction.practiceUsageLedger.create({
+          data: {
+            userId: input.userId,
+            attemptId: attempt.id,
+            createdAt: input.startedAt,
+          },
         });
 
         return { kind: "created", attempt: mapAttempt(attempt) } as const;

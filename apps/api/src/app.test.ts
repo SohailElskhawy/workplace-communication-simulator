@@ -127,12 +127,28 @@ describe("GET /api/v1/me", () => {
     );
   });
 
-  it("returns the lazily provisioned local user", async () => {
+  it("returns the lazily provisioned local user and plan entitlement", async () => {
     const localUserId = "ef4d8dd1-d525-45d7-91f6-3a180db74eac";
+    const expectedEntitlement = {
+      plan: "FREE" as const,
+      effectivePlan: "FREE" as const,
+      expiresAt: null,
+      simulationsLimit: 3,
+      simulationsUsed: 1,
+      simulationsRemaining: 2,
+      windowStartsAt: "2026-08-26T10:00:00.000Z",
+      windowEndsAt: "2026-09-02T10:00:00.000Z",
+    };
     const response = await request(
       createApp({
         attemptService: unusedAttemptService,
         authenticationMiddleware,
+        entitlementService: {
+          getUserEntitlement: async (userId: string) => {
+            if (userId !== localUserId) throw new Error("Unexpected user ID");
+            return expectedEntitlement;
+          },
+        },
         evaluationService: unusedEvaluationService,
         historyService: unusedHistoryService,
         progressService: unusedProgressService,
@@ -154,7 +170,10 @@ describe("GET /api/v1/me", () => {
 
     expect(response.status).toBe(200);
     expect(MeResponseSchema.parse(response.body)).toEqual({
-      data: { id: localUserId },
+      data: {
+        id: localUserId,
+        entitlement: expectedEntitlement,
+      },
     });
   });
 });

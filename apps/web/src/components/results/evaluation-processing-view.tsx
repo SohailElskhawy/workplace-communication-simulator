@@ -234,8 +234,8 @@ export function EvaluationProcessingView({
               Your conversation is saved.
             </h4>
             <p className="font-sans text-xs sm:text-sm text-muted-foreground mt-0.5 leading-relaxed">
-              You can safely leave this page and return to your results later from
-              your session history.
+              You can safely leave this page and return to your results later
+              from your session history.
             </p>
           </div>
         </div>

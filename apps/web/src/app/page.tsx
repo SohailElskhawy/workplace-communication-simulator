@@ -270,9 +270,9 @@ export default function LandingPage() {
 
               <p className="font-sans text-lg sm:text-xl text-muted-foreground leading-relaxed">
                 Rehearse salary negotiations, manager disagreements, tough
-                feedback, and promotion requests with realistic AI
-                counterparts. Receive structured turn-linked coaching to sharpen
-                your communication.
+                feedback, and promotion requests with realistic AI counterparts.
+                Receive structured turn-linked coaching to sharpen your
+                communication.
               </p>
 
               <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
@@ -357,9 +357,9 @@ export default function LandingPage() {
                       Alex Mercer (VP Engineering)
                     </div>
                     <p className="text-foreground/90 leading-relaxed">
-                      &quot;I understand market rates are higher, but our engineering
-                      budget is strictly capped this quarter. What specific
-                      outcomes justify an exception?&quot;
+                      &quot;I understand market rates are higher, but our
+                      engineering budget is strictly capped this quarter. What
+                      specific outcomes justify an exception?&quot;
                     </p>
                   </div>
 
@@ -369,9 +369,9 @@ export default function LandingPage() {
                       You (Senior Engineer)
                     </div>
                     <p className="text-foreground leading-relaxed">
-                      &quot;Over the past year I led the architecture refactor that
-                      cut cloud infrastructure spend by 32% and delivered our
-                      two major customer milestones ahead of schedule.&quot;
+                      &quot;Over the past year I led the architecture refactor
+                      that cut cloud infrastructure spend by 32% and delivered
+                      our two major customer milestones ahead of schedule.&quot;
                     </p>
                   </div>
                 </div>
@@ -612,13 +612,15 @@ export default function LandingPage() {
                   Your Response (Turn 4) · Opportunity to Strengthen
                 </span>
                 <blockquote className="font-sans text-sm italic text-foreground/90 border-l-2 border-border pl-3 py-1">
-                  &quot;I guess I feel like I&apos;ve been doing a lot of extra work
-                  lately and hoping we could adjust my pay accordingly.&quot;
+                  &quot;I guess I feel like I&apos;ve been doing a lot of extra
+                  work lately and hoping we could adjust my pay
+                  accordingly.&quot;
                 </blockquote>
                 <p className="font-sans text-xs text-muted-foreground leading-relaxed">
-                  <strong>Coach Analysis:</strong> Using passive qualifiers (&quot;I
-                  guess I feel like&quot;) diminishes the impact of your
-                  accomplishments and invites postponement from your manager.
+                  <strong>Coach Analysis:</strong> Using passive qualifiers
+                  (&quot;I guess I feel like&quot;) diminishes the impact of
+                  your accomplishments and invites postponement from your
+                  manager.
                 </p>
               </div>
 
@@ -628,9 +630,10 @@ export default function LandingPage() {
                   Recommended Stronger Alternative
                 </span>
                 <blockquote className="font-sans text-sm font-medium text-foreground border-l-2 border-primary pl-3 py-1">
-                  &quot;Based on leading the recent cloud migration that saved 32%
-                  in operational costs and expanding my scope across two teams,
-                  I am requesting a base salary adjustment to $145,000.&quot;
+                  &quot;Based on leading the recent cloud migration that saved
+                  32% in operational costs and expanding my scope across two
+                  teams, I am requesting a base salary adjustment to
+                  $145,000.&quot;
                 </blockquote>
                 <p className="font-sans text-xs text-foreground/80 leading-relaxed">
                   <strong>Why this works:</strong> Grounds the request in

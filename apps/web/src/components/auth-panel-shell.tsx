@@ -20,12 +20,14 @@ export const CLERK_NEO_BRUTALIST_APPEARANCE = {
       "rounded-control border border-border bg-surface text-foreground font-sans focus:border-primary focus:ring-1 focus:ring-primary text-sm",
     formFieldLabel:
       "font-meta text-[11px] uppercase tracking-wider font-bold text-foreground",
-    footerActionLink: "font-meta text-xs font-bold text-primary hover:underline",
+    footerActionLink:
+      "font-meta text-xs font-bold text-primary hover:underline",
     identityPreviewText: "font-sans text-sm text-foreground font-medium",
     identityPreviewEditButton:
       "font-meta text-xs text-primary font-bold hover:underline",
     dividerLine: "bg-border/40",
-    dividerText: "font-meta text-[10px] uppercase text-muted-foreground font-bold",
+    dividerText:
+      "font-meta text-[10px] uppercase text-muted-foreground font-bold",
   },
 };
 

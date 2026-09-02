@@ -1023,4 +1023,24 @@ describe("attempt service", () => {
       code: "NOT_FOUND",
     });
   });
+
+  it("throws AttemptError with PLAN_QUOTA_EXCEEDED when repository rejects attempt creation", async () => {
+    const { repository } = createMemoryRepository();
+    vi.spyOn(repository, "createAttempt").mockResolvedValue({
+      kind: "rejected",
+      code: "PLAN_QUOTA_EXCEEDED",
+    });
+
+    const service = createAttemptService(
+      repository,
+      createSuccessfulAiService(),
+      () => now,
+    );
+
+    await expect(startAttempt(service)).rejects.toMatchObject({
+      name: "AttemptError",
+      code: "PLAN_QUOTA_EXCEEDED",
+      status: 403,
+    });
+  });
 });

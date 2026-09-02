@@ -20,7 +20,10 @@ export function createAudioDurationParser(
           size: audio.length,
         });
         const durationSeconds = metadata.format.duration;
-        if (!Number.isFinite(durationSeconds) || durationSeconds === undefined) {
+        if (
+          !Number.isFinite(durationSeconds) ||
+          durationSeconds === undefined
+        ) {
           return null;
         }
         return Math.ceil(durationSeconds * 1000);

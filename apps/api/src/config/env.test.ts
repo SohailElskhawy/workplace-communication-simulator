@@ -30,8 +30,32 @@ describe("parseApiEnv", () => {
       GENERAL_RATE_LIMIT_MAX: 120,
       AI_RATE_LIMIT_WINDOW_MS: 60_000,
       AI_RATE_LIMIT_MAX: 30,
+      FREE_PLAN_WEEKLY_SIMULATION_LIMIT: 3,
+      PLUS_PLAN_WEEKLY_SIMULATION_LIMIT: undefined,
+      PRO_PLAN_WEEKLY_SIMULATION_LIMIT: undefined,
       ...requiredEnvironment,
     });
+  });
+
+  it("accepts configured plan weekly simulation limits and defaults properly", () => {
+    const custom = parseApiEnv({
+      ...requiredEnvironment,
+      FREE_PLAN_WEEKLY_SIMULATION_LIMIT: "5",
+      PLUS_PLAN_WEEKLY_SIMULATION_LIMIT: "25",
+      PRO_PLAN_WEEKLY_SIMULATION_LIMIT: "100",
+    });
+    expect(custom.FREE_PLAN_WEEKLY_SIMULATION_LIMIT).toBe(5);
+    expect(custom.PLUS_PLAN_WEEKLY_SIMULATION_LIMIT).toBe(25);
+    expect(custom.PRO_PLAN_WEEKLY_SIMULATION_LIMIT).toBe(100);
+
+    const emptyCustom = parseApiEnv({
+      ...requiredEnvironment,
+      PLUS_PLAN_WEEKLY_SIMULATION_LIMIT: "",
+      PRO_PLAN_WEEKLY_SIMULATION_LIMIT: "",
+    });
+    expect(emptyCustom.FREE_PLAN_WEEKLY_SIMULATION_LIMIT).toBe(3);
+    expect(emptyCustom.PLUS_PLAN_WEEKLY_SIMULATION_LIMIT).toBeUndefined();
+    expect(emptyCustom.PRO_PLAN_WEEKLY_SIMULATION_LIMIT).toBeUndefined();
   });
 
   it("rejects a port outside the TCP range", () => {

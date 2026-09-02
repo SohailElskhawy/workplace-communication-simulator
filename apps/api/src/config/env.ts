@@ -60,6 +60,20 @@ const ApiEnvSchema = z.object({
     .max(3_600_000)
     .default(60_000),
   AI_RATE_LIMIT_MAX: z.coerce.number().int().positive().max(1_000).default(30),
+  // Plan entitlement weekly simulation limits
+  FREE_PLAN_WEEKLY_SIMULATION_LIMIT: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(3),
+  PLUS_PLAN_WEEKLY_SIMULATION_LIMIT: z.preprocess(
+    (value) => (value === "" || value === undefined ? undefined : value),
+    z.coerce.number().int().positive().optional(),
+  ),
+  PRO_PLAN_WEEKLY_SIMULATION_LIMIT: z.preprocess(
+    (value) => (value === "" || value === undefined ? undefined : value),
+    z.coerce.number().int().positive().optional(),
+  ),
   SENTRY_DSN: OptionalUrlSchema,
   SENTRY_ENVIRONMENT: OptionalStringSchema,
   SENTRY_RELEASE: OptionalStringSchema,

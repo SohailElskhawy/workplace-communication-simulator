@@ -72,11 +72,15 @@ describe("isNonverbalNoise", () => {
   });
 
   it("preserves real speech, hesitation fillers, and intentional interruptions", () => {
-    expect(isNonverbalNoise("Um, uh, well, I think we should talk.")).toBe(false);
+    expect(isNonverbalNoise("Um, uh, well, I think we should talk.")).toBe(
+      false,
+    );
     expect(isNonverbalNoise("Wait, hold on a second.")).toBe(false);
     expect(isNonverbalNoise("Uh-huh")).toBe(false);
     expect(isNonverbalNoise("No, that won't work.")).toBe(false);
-    expect(isNonverbalNoise("*coughs* Excuse me, I want to clarify.")).toBe(false);
+    expect(isNonverbalNoise("*coughs* Excuse me, I want to clarify.")).toBe(
+      false,
+    );
   });
 });
 

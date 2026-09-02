@@ -427,4 +427,41 @@ describe("api-client", () => {
       status: 502,
     });
   });
+
+  it("fetches me and plan entitlement data", async () => {
+    const mockData = {
+      data: {
+        id: "123e4567-e89b-12d3-a456-426614174000",
+        entitlement: {
+          plan: "FREE",
+          effectivePlan: "FREE",
+          expiresAt: null,
+          simulationsLimit: 3,
+          simulationsUsed: 1,
+          simulationsRemaining: 2,
+          windowStartsAt: "2026-08-26T10:00:00.000Z",
+          windowEndsAt: "2026-09-02T10:00:00.000Z",
+        },
+      },
+    };
+
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => mockData,
+    } as Response);
+
+    const result = await client.fetchMe(token);
+
+    expect(fetch).toHaveBeenCalledWith(
+      "https://api.test.kalemny.com/api/v1/me",
+      expect.objectContaining({
+        headers: expect.any(Headers),
+        method: "GET",
+      }),
+    );
+    expect(result.id).toBe("123e4567-e89b-12d3-a456-426614174000");
+    expect(result.entitlement.plan).toBe("FREE");
+    expect(result.entitlement.simulationsRemaining).toBe(2);
+  });
 });

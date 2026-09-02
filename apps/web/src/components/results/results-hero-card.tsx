@@ -1,9 +1,6 @@
 "use client";
 
-import type {
-  AttemptDetailResponse,
-  EvaluationData,
-} from "@kalemny/contracts";
+import type { AttemptDetailResponse, EvaluationData } from "@kalemny/contracts";
 import Link from "next/link";
 
 import {

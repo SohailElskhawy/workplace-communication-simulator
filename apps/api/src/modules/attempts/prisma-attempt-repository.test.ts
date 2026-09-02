@@ -393,6 +393,9 @@ describe("Prisma attempt repository variation persistence", () => {
       scenario: { key: string };
       variationId: string | null;
     } | null;
+    userPlan?: "FREE" | "PLUS" | "PRO";
+    userPlanExpiresAt?: Date | null;
+    usageCount?: number;
   }) {
     const transaction = {
       scenario: {
@@ -401,6 +404,16 @@ describe("Prisma attempt repository variation persistence", () => {
           key: "salary-negotiation",
           definition: scenarioDefinition,
         }),
+      },
+      user: {
+        findUniqueOrThrow: vi.fn().mockResolvedValue({
+          plan: options.userPlan ?? "FREE",
+          planExpiresAt: options.userPlanExpiresAt ?? null,
+        }),
+      },
+      practiceUsageLedger: {
+        count: vi.fn().mockResolvedValue(options.usageCount ?? 0),
+        create: vi.fn().mockResolvedValue({ id: "ledger-id" }),
       },
       simulationAttempt: {
         findFirst: vi.fn().mockResolvedValue(options.retrySource ?? null),
@@ -453,7 +466,7 @@ describe("Prisma attempt repository variation persistence", () => {
     };
   }
 
-  it("persists the variation id chosen by the selection callback", async () => {
+  it("persists the variation id chosen by the selection callback and writes to usage ledger", async () => {
     const { prisma, transaction } = createCreateAttemptPrisma({});
     const repository = createPrismaAttemptRepository(prisma);
     const repositoryInput = createRepositoryInput({});
@@ -470,6 +483,13 @@ describe("Prisma attempt repository variation persistence", () => {
         data: expect.objectContaining({ variationId: "tight-budget" }),
       }),
     );
+    expect(transaction.practiceUsageLedger.create).toHaveBeenCalledWith({
+      data: {
+        userId: input.userId,
+        attemptId: "22222222-2222-4222-8222-222222222222",
+        createdAt: input.currentTime,
+      },
+    });
     expect(result.attempt.variationId).toBe("tight-budget");
   });
 
@@ -507,5 +527,74 @@ describe("Prisma attempt repository variation persistence", () => {
         createRepositoryInput({ retryOfAttemptId: retrySourceId }),
       ),
     ).resolves.toEqual({ kind: "not_found" });
+  });
+
+  it("enforces weekly simulation quota atomically for FREE users", async () => {
+    const { prisma } = createCreateAttemptPrisma({
+      userPlan: "FREE",
+      usageCount: 3,
+    });
+    const repository = createPrismaAttemptRepository(prisma, {
+      FREE: 3,
+      PLUS: 10,
+      PRO: null,
+    });
+
+    const result = await repository.createAttempt(createRepositoryInput({}));
+    expect(result).toEqual({
+      kind: "rejected",
+      code: "PLAN_QUOTA_EXCEEDED",
+    });
+  });
+
+  it("allows starting practice when FREE user has remaining quota", async () => {
+    const { prisma, transaction } = createCreateAttemptPrisma({
+      userPlan: "FREE",
+      usageCount: 2,
+    });
+    const repository = createPrismaAttemptRepository(prisma, {
+      FREE: 3,
+      PLUS: 10,
+      PRO: null,
+    });
+
+    const result = await repository.createAttempt(createRepositoryInput({}));
+    expect(result.kind).toBe("created");
+    expect(transaction.practiceUsageLedger.create).toHaveBeenCalled();
+  });
+
+  it("enforces FREE quota when PLUS plan has expired", async () => {
+    const { prisma } = createCreateAttemptPrisma({
+      userPlan: "PLUS",
+      userPlanExpiresAt: new Date(input.currentTime.getTime() - 10_000),
+      usageCount: 3,
+    });
+    const repository = createPrismaAttemptRepository(prisma, {
+      FREE: 3,
+      PLUS: 10,
+      PRO: null,
+    });
+
+    const result = await repository.createAttempt(createRepositoryInput({}));
+    expect(result).toEqual({
+      kind: "rejected",
+      code: "PLAN_QUOTA_EXCEEDED",
+    });
+  });
+
+  it("allows unlimited practice for PRO users regardless of usage count", async () => {
+    const { prisma, transaction } = createCreateAttemptPrisma({
+      userPlan: "PRO",
+      usageCount: 50,
+    });
+    const repository = createPrismaAttemptRepository(prisma, {
+      FREE: 3,
+      PLUS: 10,
+      PRO: null,
+    });
+
+    const result = await repository.createAttempt(createRepositoryInput({}));
+    expect(result.kind).toBe("created");
+    expect(transaction.practiceUsageLedger.create).toHaveBeenCalled();
   });
 });

@@ -136,7 +136,10 @@ export const FILTER_CATEGORIES = [
 ] as const;
 
 export function normalizeCategory(category: string): string {
-  const upper = category.toUpperCase().trim().replace(/[\s-]+/g, "_");
+  const upper = category
+    .toUpperCase()
+    .trim()
+    .replace(/[\s-]+/g, "_");
   if (upper === "NEGOTIATION" || upper === "SALARY_NEGOTIATION") {
     return "NEGOTIATION";
   }
@@ -172,7 +175,9 @@ export function normalizeCategory(category: string): string {
   return upper;
 }
 
-export function getScenarioMeta(scenario: PublicScenarioSummary): ScenarioVisualMeta {
+export function getScenarioMeta(
+  scenario: PublicScenarioSummary,
+): ScenarioVisualMeta {
   const byKey = SCENARIO_VISUAL_MAP[scenario.key];
   if (byKey) return byKey;
 

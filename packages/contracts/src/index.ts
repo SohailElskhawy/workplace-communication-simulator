@@ -64,7 +64,14 @@ export {
   type UniversalSkill,
 } from "./evaluation.js";
 export { HealthResponseSchema, type HealthResponse } from "./health.js";
-export { MeResponseSchema, type MeResponse } from "./me.js";
+export {
+  MeResponseSchema,
+  PlanEntitlementSchema,
+  PlanTierSchema,
+  type MeResponse,
+  type PlanEntitlement,
+  type PlanTier,
+} from "./me.js";
 export {
   HistoryItemScenarioSchema,
   HistoryItemSchema,

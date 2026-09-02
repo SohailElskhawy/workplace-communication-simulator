@@ -15,7 +15,10 @@ export function ScenarioBriefingCard({ scenario }: ScenarioBriefingCardProps) {
   const context = scenario.context;
 
   return (
-    <section aria-label="Scenario Briefing and Context" className="glass-surface rounded-card p-6 sm:p-8 border border-border shadow-[4px_4px_0px_0px_#1a1a1a] space-y-6">
+    <section
+      aria-label="Scenario Briefing and Context"
+      className="glass-surface rounded-card p-6 sm:p-8 border border-border shadow-[4px_4px_0px_0px_#1a1a1a] space-y-6"
+    >
       <div className="border-b border-border/20 pb-3">
         <span className="font-meta text-xs uppercase tracking-widest text-muted-foreground font-bold block">
           Rehearsal Briefing

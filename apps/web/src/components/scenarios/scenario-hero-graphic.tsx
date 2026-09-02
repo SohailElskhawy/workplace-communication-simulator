@@ -15,9 +15,7 @@ export function ScenarioHeroGraphic({
 
   if (img) {
     return (
-      <div
-        className="relative w-full h-64 sm:h-80 md:h-96 rounded-card overflow-hidden border border-border select-none shadow-xs"
-      >
+      <div className="relative w-full h-64 sm:h-80 md:h-96 rounded-card overflow-hidden border border-border select-none shadow-xs">
         <Image
           src={img}
           alt={title}

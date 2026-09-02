@@ -45,4 +45,3 @@ export function createPrismaClient(
 ): PrismaClient {
   return createDatabaseConnection(databaseUrl, options).prisma;
 }
-

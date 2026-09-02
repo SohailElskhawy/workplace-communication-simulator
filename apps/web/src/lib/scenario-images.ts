@@ -30,8 +30,6 @@ const SCENARIO_IMAGE_MAP: Record<string, StaticImageData> = {
  * Returns the static image for a given scenario key,
  * or `null` if no image is available.
  */
-export function getScenarioImage(
-  scenarioKey: string,
-): StaticImageData | null {
+export function getScenarioImage(scenarioKey: string): StaticImageData | null {
   return SCENARIO_IMAGE_MAP[scenarioKey] ?? null;
 }

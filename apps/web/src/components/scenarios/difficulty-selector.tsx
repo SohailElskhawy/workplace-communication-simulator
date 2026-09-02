@@ -21,7 +21,8 @@ export const DIFFICULTY_OPTIONS: Record<Difficulty, DifficultyOption> = {
     key: "MEDIUM",
     title: "Medium",
     counterpart: "Realistic Pushback",
-    description: "Standard workplace objections and challenges unsupported claims.",
+    description:
+      "Standard workplace objections and challenges unsupported claims.",
   },
   HARD: {
     key: "HARD",

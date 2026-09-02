@@ -13,7 +13,9 @@ export function ObjectivesOutcomeSection({
   objectives,
   turnMap,
 }: ObjectivesOutcomeSectionProps) {
-  const achievedCount = objectives.filter((o) => o.status === "ACHIEVED").length;
+  const achievedCount = objectives.filter(
+    (o) => o.status === "ACHIEVED",
+  ).length;
 
   return (
     <section className="space-y-4">

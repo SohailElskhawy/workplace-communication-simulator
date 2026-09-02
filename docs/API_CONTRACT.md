@@ -90,12 +90,15 @@ VALIDATION_FAILED
 INVALID_ATTEMPT_STATE
 SESSION_LIMIT_REACHED
 TURN_ALREADY_PENDING
+REALTIME_TRANSCRIPT_PENDING
 AI_TIMEOUT
 AI_PROVIDER_ERROR
 TRANSCRIPTION_FAILED
 TTS_FAILED
 EVALUATION_FAILED
+PLAN_QUOTA_EXCEEDED
 RATE_LIMITED
+INTERNAL_ERROR
 ```
 
 Frontend logic must depend on error codes, not message text.
@@ -108,17 +111,30 @@ Frontend logic must depend on error codes, not message text.
 
 Purpose:
 - verify authentication;
-- ensure local User exists.
+- ensure local User exists;
+- expose server-authoritative plan entitlement, usage, and remaining quota.
 
 Response:
 
 ```json
 {
   "data": {
-    "id": "uuid"
+    "id": "uuid",
+    "entitlement": {
+      "plan": "FREE",
+      "effectivePlan": "FREE",
+      "expiresAt": null,
+      "simulationsLimit": 3,
+      "simulationsUsed": 1,
+      "simulationsRemaining": 2,
+      "windowStartsAt": "2026-08-26T10:00:00.000Z",
+      "windowEndsAt": "2026-09-02T10:00:00.000Z"
+    }
   }
 }
 ```
+
+Plan tiers: `FREE`, `PLUS`, `PRO`. If a PLUS or PRO plan has expired (`expiresAt <= currentTime`), `effectivePlan` is `FREE`.
 
 Do not return unnecessary Clerk profile data.
 
@@ -212,7 +228,15 @@ Rules:
   once at simulation start, persisted on the attempt, and never changed
   afterwards. `REALTIME` is only meaningful when the realtime voice feature
   is enabled; the simulation screen falls back to push-to-talk for a
-  persisted `REALTIME` attempt when the frontend flag is disabled.
+  persisted `REALTIME` attempt when the frontend flag is disabled;
+- server-authoritative quota is enforced atomically on creation:
+  - rolling 7-day simulation usage is queried from `PracticeUsageLedger`;
+  - FREE defaults to 3 simulations/week (configurable via environment);
+  - expired PLUS/PRO plans fall back to FREE tier limit;
+  - if weekly usage meets or exceeds the plan limit, returns `403 Forbidden`
+    with `PLAN_QUOTA_EXCEEDED`;
+  - on success, records the practice event in `PracticeUsageLedger`; deleting
+    attempts never restores usage.
 
 Response:
 

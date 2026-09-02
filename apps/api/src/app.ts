@@ -41,6 +41,7 @@ import { registerTtsRoutes } from "./modules/tts/tts-routes.js";
 import type { TtsService } from "./modules/tts/tts-service.js";
 import { registerVoiceRoutes } from "./modules/voice/voice-routes.js";
 import type { VoiceService } from "./modules/voice/voice-service.js";
+import type { EntitlementService } from "./modules/entitlements/entitlement-service.js";
 import {
   registerElevenLabsWebhookRoute,
   registerRealtimeVoiceRoutes,
@@ -51,6 +52,7 @@ import type { RealtimeTranscriptService } from "./modules/realtime/realtime-tran
 export interface AuthenticatedAppDependencies {
   attemptService: AttemptService;
   authenticationMiddleware: RequestHandler;
+  entitlementService?: EntitlementService;
   evaluationService: EvaluationService;
   historyService: HistoryService;
   progressService: ProgressService;
@@ -157,21 +159,46 @@ export function createApp(dependencies: AuthenticatedAppDependencies): Express {
     });
   }
 
-  app.get("/api/v1/me", async (request, response) => {
-    const authProviderUserId = dependencies.resolveAuthProviderUserId(request);
+  app.get("/api/v1/me", async (request, response, next) => {
+    try {
+      const authProviderUserId =
+        dependencies.resolveAuthProviderUserId(request);
 
-    if (!authProviderUserId) {
-      response
-        .status(401)
-        .json(unauthenticated(response.locals.requestId as string));
-      return;
+      if (!authProviderUserId) {
+        response
+          .status(401)
+          .json(unauthenticated(response.locals.requestId as string));
+        return;
+      }
+
+      const user =
+        await dependencies.userProvisioner.ensureUser(authProviderUserId);
+      const entitlement = dependencies.entitlementService
+        ? await dependencies.entitlementService.getUserEntitlement(user.id)
+        : {
+            plan: "FREE" as const,
+            effectivePlan: "FREE" as const,
+            expiresAt: null,
+            simulationsLimit: 3,
+            simulationsUsed: 0,
+            simulationsRemaining: 3,
+            windowStartsAt: new Date(
+              Date.now() - 7 * 24 * 60 * 60 * 1000,
+            ).toISOString(),
+            windowEndsAt: new Date().toISOString(),
+          };
+
+      const body: MeResponse = {
+        data: {
+          id: user.id,
+          entitlement,
+        },
+      };
+
+      response.status(200).json(body);
+    } catch (error) {
+      next(error);
     }
-
-    const user =
-      await dependencies.userProvisioner.ensureUser(authProviderUserId);
-    const body: MeResponse = { data: { id: user.id } };
-
-    response.status(200).json(body);
   });
 
   registerScenarioRoutes(app, dependencies.scenarioService);

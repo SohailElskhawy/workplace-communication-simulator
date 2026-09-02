@@ -7,14 +7,23 @@ datasource db {
   provider = "postgresql"
 }
 
-model User {
-  id                 String   @id @default(uuid()) @db.Uuid
-  authProviderUserId String   @unique
-  createdAt          DateTime @default(now()) @db.Timestamptz(3)
-  updatedAt          DateTime @updatedAt @db.Timestamptz(3)
+enum PlanTier {
+  FREE
+  PLUS
+  PRO
+}
 
-  simulationAttempts SimulationAttempt[]
-  aiUsageEvents       AiUsageEvent[]
+model User {
+  id                 String    @id @default(uuid()) @db.Uuid
+  authProviderUserId String    @unique
+  plan               PlanTier  @default(FREE)
+  planExpiresAt      DateTime? @db.Timestamptz(3)
+  createdAt          DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt          DateTime  @updatedAt @db.Timestamptz(3)
+
+  simulationAttempts   SimulationAttempt[]
+  aiUsageEvents        AiUsageEvent[]
+  practiceUsageLedgers PracticeUsageLedger[]
 }
 
 model Scenario {
@@ -110,6 +119,7 @@ model SimulationAttempt {
   aiUsageEvents     AiUsageEvent[]
   evaluation        Evaluation?
   realtimeConversations RealtimeConversation[]
+  practiceUsageLedgers PracticeUsageLedger[]
 
   @@index([userId, createdAt])
   @@index([userId, status])
@@ -205,3 +215,17 @@ model AiUsageEvent {
   @@index([attemptId, createdAt])
   @@index([operation, createdAt])
 }
+
+model PracticeUsageLedger {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  attemptId String?  @db.Uuid
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  user    User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attempt SimulationAttempt? @relation(fields: [attemptId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([attemptId])
+}
+

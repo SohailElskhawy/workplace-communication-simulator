@@ -28,7 +28,8 @@ describe("normalizeElevenLabsTranscript", () => {
       },
       {
         clientRequestId: "realtime:conv_example:4",
-        userText: "I delivered the migration. And I would like a specific range.",
+        userText:
+          "I delivered the migration. And I would like a specific range.",
         assistantText: "What range are you considering?",
         status: "COMPLETED",
       },

@@ -15,7 +15,10 @@ export default function RootError({
   }, [error]);
 
   return (
-    <main className="mx-auto max-w-xl p-6 sm:p-10 text-center font-sans" role="alert">
+    <main
+      className="mx-auto max-w-xl p-6 sm:p-10 text-center font-sans"
+      role="alert"
+    >
       <div className="glass-surface rounded-card p-8 border border-border shadow-brutal">
         <h1 className="font-display text-2xl font-bold uppercase tracking-tight text-foreground">
           This page could not be loaded

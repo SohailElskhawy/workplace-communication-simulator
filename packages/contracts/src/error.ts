@@ -11,6 +11,7 @@ export const ApiErrorCodeSchema = z.enum([
   "EVALUATION_FAILED",
   "TRANSCRIPTION_FAILED",
   "TTS_FAILED",
+  "PLAN_QUOTA_EXCEEDED",
   "RATE_LIMITED",
   "INTERNAL_ERROR",
 ]);

@@ -39,8 +39,8 @@ export function EvaluationFailureView({
             "The automated evaluation encountered an unexpected issue while analyzing the simulation."}
         </p>
         <p className="font-sans text-xs text-muted-foreground/80 mb-6 max-w-md leading-relaxed">
-          Your conversation transcript is safely preserved on the server. You can
-          retry generating your evaluation without losing any practice data.
+          Your conversation transcript is safely preserved on the server. You
+          can retry generating your evaluation without losing any practice data.
         </p>
 
         <div className="flex flex-wrap items-center justify-center gap-3 w-full sm:w-auto">

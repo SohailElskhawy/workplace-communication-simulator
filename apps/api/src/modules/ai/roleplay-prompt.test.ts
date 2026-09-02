@@ -180,7 +180,9 @@ describe("roleplay prompt", () => {
 
     const system = messages[0]?.content ?? "";
     expect(system).toContain("Turn-taking and noise handling:");
-    expect(system).toContain("Never comment on, acknowledge, or react to isolated coughing");
+    expect(system).toContain(
+      "Never comment on, acknowledge, or react to isolated coughing",
+    );
     expect(system).toContain("Preserve real speech and fillers");
     expect(system).toContain("Respect intentional interruptions");
   });

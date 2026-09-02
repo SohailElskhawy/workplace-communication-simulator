@@ -31,15 +31,18 @@ export function FinishSimulationDialog({
       <div className="space-y-4">
         {isTooShort ? (
           <div className="rounded-control border-2 border-amber-300 bg-amber-50 p-3.5 text-amber-950 text-xs leading-relaxed">
-            <strong>Note:</strong> You have not sent any messages yet. Finishing now will mark the attempt as ended without evaluation scores.
+            <strong>Note:</strong> You have not sent any messages yet. Finishing
+            now will mark the attempt as ended without evaluation scores.
           </div>
         ) : turnCount < 3 ? (
           <div className="rounded-control border border-border/40 bg-surface-subtle p-3.5 text-muted-foreground text-xs leading-relaxed">
-            You have exchanged {turnCount} turns. For richer skill analysis and inclusion in your progress profile, 3 or more turns are recommended.
+            You have exchanged {turnCount} turns. For richer skill analysis and
+            inclusion in your progress profile, 3 or more turns are recommended.
           </div>
         ) : (
           <div className="rounded-control border border-border/40 bg-surface-subtle p-3.5 text-muted-foreground text-xs leading-relaxed">
-            Your {turnCount} exchanged turns will be analyzed across universal skills and scenario-specific objectives.
+            Your {turnCount} exchanged turns will be analyzed across universal
+            skills and scenario-specific objectives.
           </div>
         )}
 

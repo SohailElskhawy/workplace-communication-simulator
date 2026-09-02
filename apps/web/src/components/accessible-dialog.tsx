@@ -84,7 +84,10 @@ export function AccessibleDialog({
         tabIndex={-1}
         className="w-full max-w-md rounded-card border-2 border-border bg-surface-solid p-6 shadow-brutal outline-none"
       >
-        <h2 id={titleId} className="font-display text-lg font-bold uppercase tracking-tight text-foreground">
+        <h2
+          id={titleId}
+          className="font-display text-lg font-bold uppercase tracking-tight text-foreground"
+        >
           {title}
         </h2>
         <p

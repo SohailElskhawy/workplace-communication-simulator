@@ -9,7 +9,8 @@ export type AttemptErrorCode =
   | "TRANSCRIPTION_FAILED"
   | "TTS_FAILED"
   | "EVALUATION_FAILED"
-  | "EVALUATION_IN_PROGRESS";
+  | "EVALUATION_IN_PROGRESS"
+  | "PLAN_QUOTA_EXCEEDED";
 
 const errorDetails: Record<
   AttemptErrorCode,
@@ -56,6 +57,10 @@ const errorDetails: Record<
   EVALUATION_IN_PROGRESS: {
     status: 409,
     message: "An evaluation is already in progress. Please try again shortly.",
+  },
+  PLAN_QUOTA_EXCEEDED: {
+    status: 403,
+    message: "Weekly simulation limit reached for your plan.",
   },
 };
 

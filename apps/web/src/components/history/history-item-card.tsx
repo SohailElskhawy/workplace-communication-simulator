@@ -104,7 +104,9 @@ export function HistoryItemCard({
               statusInfo.badgeClass,
             )}
           >
-            <span className={cn("h-1.5 w-1.5 rounded-full", statusInfo.dotClass)} />
+            <span
+              className={cn("h-1.5 w-1.5 rounded-full", statusInfo.dotClass)}
+            />
             {statusInfo.label}
           </span>
 
@@ -146,13 +148,15 @@ export function HistoryItemCard({
 
         {isCrossDifficultyRetry && (
           <p className="font-meta text-[11px] text-amber-800">
-            Cross-difficulty retry ({parentItem?.difficulty} → {item.difficulty}) · Non-equivalent comparison
+            Cross-difficulty retry ({parentItem?.difficulty} → {item.difficulty}
+            ) · Non-equivalent comparison
           </p>
         )}
 
         {isFailed && (
           <p className="font-sans text-xs text-muted-foreground">
-            The automated evaluation was incomplete. Your conversation transcript is safely preserved.
+            The automated evaluation was incomplete. Your conversation
+            transcript is safely preserved.
           </p>
         )}
 
@@ -165,19 +169,24 @@ export function HistoryItemCard({
 
       {/* Right Actions & Score */}
       <div className="flex flex-wrap items-center gap-4 self-end md:self-center">
-        {!isFailed && !isAbandoned && scoreBand && item.overallScore !== null && (
-          <div className="text-right pr-2">
-            <div className="font-meta text-[10px] uppercase font-bold text-muted-foreground">
-              Overall Score
+        {!isFailed &&
+          !isAbandoned &&
+          scoreBand &&
+          item.overallScore !== null && (
+            <div className="text-right pr-2">
+              <div className="font-meta text-[10px] uppercase font-bold text-muted-foreground">
+                Overall Score
+              </div>
+              <div className="flex items-baseline gap-1">
+                <span className="font-display text-2xl sm:text-3xl font-bold text-primary">
+                  {item.overallScore}
+                </span>
+                <span className="font-meta text-xs text-muted-foreground">
+                  / 100
+                </span>
+              </div>
             </div>
-            <div className="flex items-baseline gap-1">
-              <span className="font-display text-2xl sm:text-3xl font-bold text-primary">
-                {item.overallScore}
-              </span>
-              <span className="font-meta text-xs text-muted-foreground">/ 100</span>
-            </div>
-          </div>
-        )}
+          )}
 
         {/* Action Navigation */}
         {isActive ? (

@@ -5,7 +5,12 @@ import type { ProgressData } from "@kalemny/contracts";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
-import { ArrowRightIcon, RefreshIcon, StarIcon, TargetIcon } from "@/components/icons";
+import {
+  ArrowRightIcon,
+  RefreshIcon,
+  StarIcon,
+  TargetIcon,
+} from "@/components/icons";
 import { cn } from "@/lib/cn";
 import { SKILL_SCORE_KEYS } from "@/lib/constants";
 import { createApiClient } from "@/lib/api-client";
@@ -94,8 +99,8 @@ export default function ProgressPage() {
               See how your communication is changing.
             </h1>
             <p className="font-sans text-base sm:text-lg text-muted-foreground mt-2 leading-relaxed max-w-2xl">
-              Your skill profile reflects your recent completed practice sessions
-              and helps you decide what to work on next.
+              Your skill profile reflects your recent completed practice
+              sessions and helps you decide what to work on next.
             </p>
           </div>
 
@@ -168,9 +173,10 @@ export default function ProgressPage() {
               No Progress Profile Available Yet
             </h2>
             <p className="font-sans text-xs sm:text-sm text-muted-foreground max-w-md mx-auto mt-2 leading-relaxed">
-              Your progress profile is calculated dynamically from your latest up
-              to 5 eligible completed sessions. A practice session contributes
-              once you exchange at least 3 substantive dialogue turns.
+              Your progress profile is calculated dynamically from your latest
+              up to 5 eligible completed sessions. A practice session
+              contributes once you exchange at least 3 substantive dialogue
+              turns.
             </p>
             <div className="mt-6">
               <Link

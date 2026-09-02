@@ -21,7 +21,8 @@ export function BriefingSidebar({
   isOpenMobile,
   onToggleMobile,
 }: BriefingSidebarProps) {
-  const contextDesc = scenarioDetail?.context?.description ?? scenarioDetail?.summary;
+  const contextDesc =
+    scenarioDetail?.context?.description ?? scenarioDetail?.summary;
   const stakes = scenarioDetail?.context?.stakes;
 
   const briefingContent = (
@@ -52,9 +53,7 @@ export function BriefingSidebar({
           <span className="font-meta text-[10px] font-bold uppercase tracking-widest text-muted-foreground block">
             Situation Context
           </span>
-          <p className="text-muted-foreground leading-relaxed">
-            {contextDesc}
-          </p>
+          <p className="text-muted-foreground leading-relaxed">{contextDesc}</p>
         </div>
       )}
 
@@ -64,9 +63,7 @@ export function BriefingSidebar({
           <span className="font-meta text-[10px] font-bold uppercase tracking-widest text-muted-foreground block">
             Key Stakes
           </span>
-          <p className="text-muted-foreground leading-relaxed">
-            {stakes}
-          </p>
+          <p className="text-muted-foreground leading-relaxed">{stakes}</p>
         </div>
       )}
 

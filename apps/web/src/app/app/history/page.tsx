@@ -6,11 +6,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { HistoryItemCard } from "@/components/history/history-item-card";
-import {
-  ArrowRightIcon,
-  RefreshIcon,
-  SearchIcon,
-} from "@/components/icons";
+import { ArrowRightIcon, RefreshIcon, SearchIcon } from "@/components/icons";
 import { DeleteAttemptDialog } from "@/components/results/delete-attempt-dialog";
 import { ApiClientError, createApiClient } from "@/lib/api-client";
 import { cn } from "@/lib/cn";
@@ -236,7 +232,10 @@ export default function HistoryPage() {
       </header>
 
       {/* 2. Overview Metrics Cards */}
-      <section aria-label="History overview metrics" className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+      <section
+        aria-label="History overview metrics"
+        className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6"
+      >
         <div className="glass-surface p-6 rounded-card border border-border shadow-xs">
           <p className="font-meta text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">
             Completed Sessions
@@ -305,7 +304,10 @@ export default function HistoryPage() {
       )}
 
       {/* 3. Search and Filters Toolbar */}
-      <section aria-label="History search and filter controls" className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center justify-between">
+      <section
+        aria-label="History search and filter controls"
+        className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center justify-between"
+      >
         <div className="relative w-full sm:w-80 glass-surface rounded-control border border-border">
           <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
           <input
@@ -400,7 +402,11 @@ export default function HistoryPage() {
             <HistoryItemCard
               key={item.attemptId}
               item={item}
-              parentItem={item.retryOfAttemptId ? itemMap.get(item.retryOfAttemptId) ?? null : null}
+              parentItem={
+                item.retryOfAttemptId
+                  ? (itemMap.get(item.retryOfAttemptId) ?? null)
+                  : null
+              }
               onOpenDelete={setDeletingItem}
             />
           ))}
@@ -417,7 +423,9 @@ export default function HistoryPage() {
                 <RefreshIcon
                   className={cn("w-3.5 h-3.5", loadingMore && "animate-spin")}
                 />
-                <span>{loadingMore ? "Loading..." : "Load Older Sessions"}</span>
+                <span>
+                  {loadingMore ? "Loading..." : "Load Older Sessions"}
+                </span>
               </button>
             </div>
           )}

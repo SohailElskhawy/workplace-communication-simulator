@@ -83,7 +83,9 @@ export interface CreateAttemptRepositoryInput {
 }
 
 export type CreateAttemptRepositoryResult =
-  { kind: "created"; attempt: AttemptRecord } | { kind: "not_found" };
+  | { kind: "created"; attempt: AttemptRecord }
+  | { kind: "not_found" }
+  | { kind: "rejected"; code: AttemptErrorCode };
 
 export interface CreateTurnRepositoryInput {
   attemptId: string;
@@ -394,6 +396,9 @@ export function createAttemptService(
 
       if (result.kind === "not_found") {
         throw new AttemptError("NOT_FOUND");
+      }
+      if (result.kind === "rejected") {
+        throw new AttemptError(result.code);
       }
 
       const attempt = result.attempt;

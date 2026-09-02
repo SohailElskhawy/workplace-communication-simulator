@@ -23,7 +23,11 @@ function Frame({
 export function LoadingState({ label = "Loading…" }: { label?: string }) {
   return (
     <Frame live>
-      <div role="status" aria-busy="true" className="flex flex-col items-center justify-center">
+      <div
+        role="status"
+        aria-busy="true"
+        className="flex flex-col items-center justify-center"
+      >
         <span
           className="inline-block h-6 w-6 animate-spin rounded-full border-3 border-primary border-r-transparent motion-reduce:animate-none"
           aria-hidden="true"
@@ -47,8 +51,12 @@ export function EmptyState({
 }) {
   return (
     <Frame>
-      <h2 className="font-display text-lg sm:text-xl font-bold uppercase tracking-tight text-foreground">{title}</h2>
-      <p className="mt-2 font-sans text-sm text-muted-foreground leading-relaxed">{description}</p>
+      <h2 className="font-display text-lg sm:text-xl font-bold uppercase tracking-tight text-foreground">
+        {title}
+      </h2>
+      <p className="mt-2 font-sans text-sm text-muted-foreground leading-relaxed">
+        {description}
+      </p>
       <Link
         href={href}
         className="mt-5 inline-flex min-h-11 items-center rounded-control bg-primary px-5 py-2.5 font-display text-xs sm:text-sm font-bold uppercase tracking-wider text-primary-foreground border border-border brutalist-interactive"
@@ -71,8 +79,12 @@ export function ErrorState({
   return (
     <Frame live>
       <div role="alert" className="flex flex-col items-center">
-        <h2 className="font-display text-lg sm:text-xl font-bold uppercase tracking-tight text-foreground">{title}</h2>
-        <p className="mt-2 font-sans text-sm text-muted-foreground leading-relaxed">{description}</p>
+        <h2 className="font-display text-lg sm:text-xl font-bold uppercase tracking-tight text-foreground">
+          {title}
+        </h2>
+        <p className="mt-2 font-sans text-sm text-muted-foreground leading-relaxed">
+          {description}
+        </p>
         {onRetry ? (
           <button
             type="button"

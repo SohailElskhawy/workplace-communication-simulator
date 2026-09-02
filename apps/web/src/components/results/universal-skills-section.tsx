@@ -1,7 +1,11 @@
 import type { SkillScores } from "@kalemny/contracts";
 
 import { cn } from "@/lib/cn";
-import { getScoreBand, getSkillMetadata, UNIVERSAL_SKILLS_META } from "@/lib/score-utils";
+import {
+  getScoreBand,
+  getSkillMetadata,
+  UNIVERSAL_SKILLS_META,
+} from "@/lib/score-utils";
 import { SKILL_SCORE_KEYS } from "@/lib/constants";
 
 export interface UniversalSkillsSectionProps {

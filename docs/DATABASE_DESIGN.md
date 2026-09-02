@@ -25,6 +25,7 @@ SimulationAttempt
 ConversationTurn
 Evaluation
 AiUsageEvent
+PracticeUsageLedger
 ```
 
 No separate `Progress` table.
@@ -39,13 +40,16 @@ Progress is calculated from completed evaluations.
 User
 - id                  UUID PK
 - authProviderUserId  string UNIQUE
+- plan                enum (FREE, PLUS, PRO, default FREE)
+- planExpiresAt       timestamp nullable
 - createdAt           timestamp
 - updatedAt           timestamp
 ```
 
 Purpose:
 - maps Clerk identity to application data;
-- owns simulation attempts.
+- stores server-authoritative plan tier and optional expiration;
+- owns simulation attempts and practice usage records.
 
 Do not duplicate Clerk profile data unless later required.
 
@@ -53,6 +57,7 @@ Relation:
 
 ```text
 User 1 ─── * SimulationAttempt
+User 1 ─── * PracticeUsageLedger
 ```
 
 ---
@@ -477,11 +482,34 @@ Never store:
 
 ---
 
+## 13a. PracticeUsageLedger
+
+Stores immutable practice simulation events for server-authoritative entitlement enforcement.
+
+```text
+PracticeUsageLedger
+- id               UUID PK
+- userId           UUID FK → User (CASCADE)
+- attemptId        UUID FK → SimulationAttempt nullable (SET NULL)
+- createdAt        timestamp
+```
+
+Rules:
+- an entry is inserted atomically when an attempt is created;
+- weekly usage is calculated via a rolling 7-day window (`createdAt >= now - 7 days`);
+- no cron jobs or billing infrastructure;
+- deleting a `SimulationAttempt` sets `attemptId` to `null` on the ledger entry but does **not** delete the ledger row;
+- deleting attempts does not restore simulation quota.
+
+---
+
 ## 14. Relationships
 
 ```text
 User
-  └── SimulationAttempt[]
+  ├── SimulationAttempt[]
+  ├── PracticeUsageLedger[]
+  └── AiUsageEvent[]
 
 Scenario
   └── SimulationAttempt[]
@@ -489,6 +517,7 @@ Scenario
 SimulationAttempt
   ├── ConversationTurn[]
   ├── RealtimeConversation[]
+  ├── PracticeUsageLedger[] (onDelete: SetNull)
   ├── Evaluation?            (1:0..1)
   ├── AiUsageEvent[]
   └── retryOfAttempt?        (self-reference)
@@ -556,6 +585,9 @@ ConversationTurn(attemptId, sequence)
 RealtimeConversation(conversationId)
 RealtimeConversation(attemptId)
 
+PracticeUsageLedger(userId, createdAt)
+PracticeUsageLedger(attemptId)
+
 Evaluation(attemptId)
 
 AiUsageEvent(attemptId, createdAt)
@@ -577,6 +609,8 @@ Evaluation
 attempt-linked AiUsageEvent
 ```
 
+`PracticeUsageLedger.attemptId` is set to `NULL` via `SET NULL`, preserving the usage record so attempt deletion never restores practice quota.
+
 Retry descendants should **not** be silently deleted unless explicitly requested.
 
 If an attempt referenced by `retryOfAttemptId` is deleted, choose a safe FK behavior during implementation, preferably:
@@ -587,7 +621,7 @@ SET NULL
 
 so later attempts remain valid.
 
-Deleting user data should eventually cascade through owned attempts.
+Deleting user data should eventually cascade through owned attempts and practice usage records.
 
 ---
 

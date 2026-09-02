@@ -217,10 +217,18 @@ describe("pairLiveTranscriptEntries", () => {
   it("pairs standard user and agent turns, skipping initial agent greeting", () => {
     const entries: LiveTranscriptEntry[] = [
       { id: "agent:1", role: "agent", text: "Thanks for joining us today." },
-      { id: "user:1", role: "user", text: "I'd like to discuss my compensation." },
+      {
+        id: "user:1",
+        role: "user",
+        text: "I'd like to discuss my compensation.",
+      },
       { id: "agent:2", role: "agent", text: "Sure, let's talk about it." },
       { id: "user:2", role: "user", text: "I'm looking for a 10% raise." },
-      { id: "agent:3", role: "agent", text: "We can review your achievements." },
+      {
+        id: "agent:3",
+        role: "agent",
+        text: "We can review your achievements.",
+      },
     ];
 
     expect(pairLiveTranscriptEntries(entries)).toEqual([
@@ -238,14 +246,19 @@ describe("pairLiveTranscriptEntries", () => {
   it("groups consecutive user utterances into a single user turn", () => {
     const entries: LiveTranscriptEntry[] = [
       { id: "agent:1", role: "agent", text: "Opening message" },
-      { id: "user:1", role: "user", text: "I've been at the company for 2 years," },
+      {
+        id: "user:1",
+        role: "user",
+        text: "I've been at the company for 2 years,",
+      },
       { id: "user:2", role: "user", text: "and I led the migration project." },
       { id: "agent:2", role: "agent", text: "That is great work." },
     ];
 
     expect(pairLiveTranscriptEntries(entries)).toEqual([
       {
-        userText: "I've been at the company for 2 years, and I led the migration project.",
+        userText:
+          "I've been at the company for 2 years, and I led the migration project.",
         assistantText: "That is great work.",
       },
     ]);
@@ -328,6 +341,8 @@ describe("isNonverbalNoise", () => {
     expect(isNonverbalNoise("Um, uh, well, let's talk.")).toBe(false);
     expect(isNonverbalNoise("Wait, hold on.")).toBe(false);
     expect(isNonverbalNoise("Uh-huh")).toBe(false);
-    expect(isNonverbalNoise("*coughs* Excuse me, here is my idea.")).toBe(false);
+    expect(isNonverbalNoise("*coughs* Excuse me, here is my idea.")).toBe(
+      false,
+    );
   });
 });

@@ -52,10 +52,7 @@ export function ConversationOrb({
 
   return (
     <div
-      className={cn(
-        "relative flex items-center justify-center",
-        className,
-      )}
+      className={cn("relative flex items-center justify-center", className)}
       aria-hidden="true"
     >
       {/* Outer ripple rings while the counterpart speaks */}

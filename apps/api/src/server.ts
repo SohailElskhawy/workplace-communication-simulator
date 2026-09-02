@@ -28,6 +28,11 @@ import { createPrismaVoiceRepository } from "./modules/voice/prisma-voice-reposi
 import { createVoiceService } from "./modules/voice/voice-service.js";
 import { createPrismaTtsRepository } from "./modules/tts/prisma-tts-repository.js";
 import { createTtsService } from "./modules/tts/tts-service.js";
+import {
+  createEntitlementService,
+  createPrismaEntitlementRepository,
+} from "./modules/entitlements/entitlement-service.js";
+import type { PlanLimits } from "./modules/entitlements/entitlement-rules.js";
 import { createElevenLabsProvider } from "./modules/realtime/elevenlabs-provider.js";
 import { createPrismaRealtimeTranscriptRepository } from "./modules/realtime/prisma-realtime-transcript-repository.js";
 import { createRealtimeVoiceService } from "./modules/realtime/realtime-service.js";
@@ -77,7 +82,19 @@ const aiService = createAiService({
   ttsTimeoutMs: apiEnv.TTS_TIMEOUT_MS,
 });
 
-const attemptRepository = createPrismaAttemptRepository(prisma);
+const planLimits: PlanLimits = {
+  FREE: apiEnv.FREE_PLAN_WEEKLY_SIMULATION_LIMIT,
+  PLUS: apiEnv.PLUS_PLAN_WEEKLY_SIMULATION_LIMIT ?? null,
+  PRO: apiEnv.PRO_PLAN_WEEKLY_SIMULATION_LIMIT ?? null,
+};
+
+const entitlementRepository = createPrismaEntitlementRepository(prisma);
+const entitlementService = createEntitlementService(
+  entitlementRepository,
+  planLimits,
+);
+
+const attemptRepository = createPrismaAttemptRepository(prisma, planLimits);
 
 // Realtime voice bootstrap: enabled only when the server-only ElevenLabs
 // settings are configured. Absent configuration leaves text/STT/TTS flows
@@ -148,6 +165,7 @@ const app = createApp({
     publishableKey: apiEnv.CLERK_PUBLISHABLE_KEY,
     secretKey: apiEnv.CLERK_SECRET_KEY,
   }),
+  entitlementService,
   evaluationService,
   historyService,
   progressService,

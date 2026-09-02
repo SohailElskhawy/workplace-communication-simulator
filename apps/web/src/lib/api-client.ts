@@ -7,6 +7,7 @@ import {
   EvaluationResponseSchema,
   FinishAttemptResponseSchema,
   HistoryResponseSchema,
+  MeResponseSchema,
   ProgressResponseSchema,
   RealtimeSessionResponseSchema,
   ScenarioDetailResponseSchema,
@@ -22,6 +23,7 @@ import {
   type EvaluationResponse,
   type FinishAttemptResponse,
   type HistoryResponse,
+  type MeResponse,
   type ProgressData,
   type PublicScenarioDetail,
   type PublicScenarioSummary,
@@ -238,6 +240,18 @@ async function requestVoid(
 
 export function createApiClient(baseUrl: string) {
   return {
+    async fetchMe(token: string): Promise<MeResponse["data"]> {
+      return retryTransientRead(() =>
+        request(
+          baseUrl,
+          "/api/v1/me",
+          token,
+          { method: "GET" },
+          MeResponseSchema,
+        ),
+      );
+    },
+
     async fetchScenarios(token: string): Promise<PublicScenarioSummary[]> {
       return retryTransientRead(() =>
         request(

@@ -20,7 +20,10 @@ export interface UseApiQueryResult<T> {
 }
 
 export function useApiQuery<T>(
-  queryFn: (client: ReturnType<typeof createApiClient>, token: string) => Promise<T>,
+  queryFn: (
+    client: ReturnType<typeof createApiClient>,
+    token: string,
+  ) => Promise<T>,
   options: UseApiQueryOptions = {},
 ): UseApiQueryResult<T> {
   const { enabled = true, deps = [] } = options;
@@ -56,12 +59,19 @@ export function useApiQuery<T>(
       const result = await queryFnRef.current(client, token);
       setData(result);
     } catch (err: unknown) {
-      if (err && typeof err === "object" && "name" in err && err.name === "ApiClientError") {
+      if (
+        err &&
+        typeof err === "object" &&
+        "name" in err &&
+        err.name === "ApiClientError"
+      ) {
         const cErr = err as ApiClientError;
         setApiError(cErr);
         setError(cErr.message);
       } else {
-        setError(err instanceof Error ? err.message : "An unexpected error occurred.");
+        setError(
+          err instanceof Error ? err.message : "An unexpected error occurred.",
+        );
       }
     } finally {
       setLoading(false);
@@ -89,12 +99,21 @@ export function useApiQuery<T>(
         }
       } catch (err: unknown) {
         if (!isMounted) return;
-        if (err && typeof err === "object" && "name" in err && err.name === "ApiClientError") {
+        if (
+          err &&
+          typeof err === "object" &&
+          "name" in err &&
+          err.name === "ApiClientError"
+        ) {
           const cErr = err as ApiClientError;
           setApiError(cErr);
           setError(cErr.message);
         } else {
-          setError(err instanceof Error ? err.message : "An unexpected error occurred.");
+          setError(
+            err instanceof Error
+              ? err.message
+              : "An unexpected error occurred.",
+          );
         }
       } finally {
         if (isMounted) setLoading(false);

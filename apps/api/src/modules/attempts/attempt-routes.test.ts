@@ -166,6 +166,26 @@ describe("attempt endpoints", () => {
     });
   });
 
+  it("returns 403 PLAN_QUOTA_EXCEEDED when plan simulation limit is reached", async () => {
+    const { app } = createAttemptApp({
+      create: vi
+        .fn<AttemptService["create"]>()
+        .mockRejectedValue(new AttemptError("PLAN_QUOTA_EXCEEDED")),
+    });
+
+    const response = await request(app).post("/api/v1/attempts").send({
+      scenarioKey: "salary-negotiation",
+      difficulty: "MEDIUM",
+    });
+
+    expect(response.status).toBe(403);
+    const parsed = ApiErrorResponseSchema.parse(response.body);
+    expect(parsed.error.code).toBe("PLAN_QUOTA_EXCEEDED");
+    expect(parsed.error.message).toBe(
+      "Weekly simulation limit reached for your plan.",
+    );
+  });
+
   it("returns not found for a missing or non-owned attempt", async () => {
     const { app } = createAttemptApp({
       getOwned: async () => {
