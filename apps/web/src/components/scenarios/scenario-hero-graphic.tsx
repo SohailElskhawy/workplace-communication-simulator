@@ -15,7 +15,7 @@ export function ScenarioHeroGraphic({
 
   if (img) {
     return (
-      <div className="relative w-full h-64 sm:h-80 md:h-96 rounded-card overflow-hidden border border-border select-none shadow-xs">
+      <div className="relative w-full h-40 xs:h-48 sm:h-64 md:h-80 lg:h-96 rounded-card overflow-hidden border border-border select-none shadow-xs">
         <Image
           src={img}
           alt={title}
@@ -33,34 +33,34 @@ export function ScenarioHeroGraphic({
   return (
     <div
       aria-hidden="true"
-      className="relative w-full h-48 sm:h-60 md:h-64 glass-surface rounded-card overflow-hidden border border-border flex items-center justify-center select-none shadow-xs"
+      className="relative w-full h-36 xs:h-44 sm:h-56 md:h-64 glass-surface rounded-card overflow-hidden border border-border flex items-center justify-center select-none shadow-xs"
     >
       {/* Background Gradient & Dot Pattern */}
       <div className="absolute inset-0 bg-linear-to-br from-[#dfe3ff] via-[#fcf9f8] to-[#caf300]/30" />
       <div className="absolute inset-0 memphis-dot-grid opacity-60 pointer-events-none" />
 
       {/* Memphis Geometric Shapes */}
-      <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full border-2 border-border bg-[#0052ff]/10 pointer-events-none" />
-      <div className="absolute top-4 right-12 w-6 h-6 rounded-full border border-border bg-[#d4ff00] pointer-events-none shadow-[2px_2px_0px_0px_#1a1a1a]" />
-      <div className="absolute -bottom-6 -left-6 w-24 h-24 rounded-full border-2 border-border bg-[#ff6b6b]/15 pointer-events-none" />
-      <div className="absolute bottom-6 left-10 w-8 h-8 rotate-12 border border-border bg-[#0052ff] pointer-events-none shadow-[3px_3px_0px_0px_#1a1a1a]" />
+      <div className="absolute -top-8 -right-8 w-24 sm:w-32 h-24 sm:h-32 rounded-full border-2 border-border bg-[#0052ff]/10 pointer-events-none" />
+      <div className="absolute top-4 right-12 w-5 sm:w-6 h-5 sm:h-6 rounded-full border border-border bg-[#d4ff00] pointer-events-none shadow-[2px_2px_0px_0px_#1a1a1a]" />
+      <div className="absolute -bottom-6 -left-6 w-20 sm:w-24 h-20 sm:h-24 rounded-full border-2 border-border bg-[#ff6b6b]/15 pointer-events-none" />
+      <div className="absolute bottom-6 left-10 w-6 sm:w-8 h-6 sm:h-8 rotate-12 border border-border bg-[#0052ff] pointer-events-none shadow-[3px_3px_0px_0px_#1a1a1a]" />
 
       {/* Center Memphis Composition */}
-      <div className="relative z-10 flex flex-col items-center gap-3 text-center px-4">
+      <div className="relative z-10 flex flex-col items-center gap-2 sm:gap-3 text-center px-4">
         <div className="flex items-center gap-2">
-          <div className="w-12 h-12 rounded-control bg-primary text-primary-foreground border border-border brutalist-shadow flex items-center justify-center">
-            <span className="font-display text-xl font-extrabold uppercase">
+          <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-control bg-primary text-primary-foreground border border-border brutalist-shadow flex items-center justify-center">
+            <span className="font-display text-base sm:text-xl font-extrabold uppercase">
               {title.charAt(0)}
             </span>
           </div>
-          <div className="w-8 h-8 rounded-full bg-[#c7ef00] border border-border flex items-center justify-center">
-            <div className="w-2.5 h-2.5 rounded-full bg-[#171e00]" />
+          <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-[#c7ef00] border border-border flex items-center justify-center">
+            <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-[#171e00]" />
           </div>
-          <div className="w-10 h-10 rounded-control bg-[#ffdddb] border border-border rotate-6 flex items-center justify-center">
-            <div className="w-4 h-4 border border-border rotate-45 bg-[#b8373b]" />
+          <div className="w-7 h-7 sm:w-10 sm:h-10 rounded-control bg-[#ffdddb] border border-border rotate-6 flex items-center justify-center">
+            <div className="w-3 h-3 sm:w-4 sm:h-4 border border-border rotate-45 bg-[#b8373b]" />
           </div>
         </div>
-        <div className="font-meta text-xs uppercase tracking-widest text-muted-foreground font-semibold">
+        <div className="font-meta text-[10px] sm:text-xs uppercase tracking-widest text-muted-foreground font-semibold truncate max-w-[200px] sm:max-w-none">
           {scenarioKey.replace(/-/g, " ")}
         </div>
       </div>

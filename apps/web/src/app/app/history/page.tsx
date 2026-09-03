@@ -199,21 +199,21 @@ export default function HistoryPage() {
   );
 
   return (
-    <div className="w-full max-w-container-max mx-auto px-4 sm:px-6 md:px-8 py-8 space-y-10 font-sans pb-24">
+    <div className="w-full max-w-container-max mx-auto px-3 sm:px-6 md:px-8 py-4 sm:py-8 space-y-6 sm:space-y-10 font-sans pb-24">
       {/* 1. Hero Section */}
-      <header className="relative space-y-4 max-w-4xl">
-        <div className="inline-block px-3 py-1 border border-border rounded-full bg-surface-subtle">
-          <span className="font-meta text-xs uppercase tracking-widest text-muted-foreground font-bold">
+      <header className="relative space-y-3 sm:space-y-4 max-w-4xl">
+        <div className="inline-block px-2.5 py-0.5 sm:px-3 sm:py-1 border border-border rounded-full bg-surface-subtle">
+          <span className="font-meta text-[10px] sm:text-xs uppercase tracking-widest text-muted-foreground font-bold">
             Practice History
           </span>
         </div>
 
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
           <div>
-            <h1 className="font-display text-2xl sm:text-4xl md:text-5xl font-bold uppercase tracking-tight text-foreground leading-[1.15]">
+            <h1 className="font-display text-xl sm:text-3xl md:text-5xl font-bold uppercase tracking-tight text-foreground leading-[1.15]">
               Every conversation is another rep.
             </h1>
-            <p className="font-sans text-base sm:text-lg text-muted-foreground mt-2 leading-relaxed max-w-2xl">
+            <p className="font-sans text-xs sm:text-base md:text-lg text-muted-foreground mt-1 sm:mt-2 leading-relaxed max-w-2xl">
               Revisit past simulations, review your performance data, and jump
               back into challenging scenarios to improve your score.
             </p>
@@ -222,7 +222,7 @@ export default function HistoryPage() {
           <div className="shrink-0 self-start sm:self-center">
             <Link
               href="/app"
-              className="inline-flex items-center gap-2 rounded-control bg-primary px-5 py-2.5 font-display text-xs sm:text-sm font-bold uppercase tracking-wider text-primary-foreground border border-border shadow-[4px_4px_0px_0px_#1a1a1a] brutalist-interactive"
+              className="inline-flex items-center gap-2 rounded-control bg-primary px-4 py-2 sm:px-5 sm:py-2.5 font-display text-xs sm:text-sm font-bold uppercase tracking-wider text-primary-foreground border border-border shadow-[3px_3px_0px_0px_#1a1a1a] sm:shadow-[4px_4px_0px_0px_#1a1a1a] brutalist-interactive whitespace-nowrap"
             >
               <span>Browse Scenarios</span>
               <ArrowRightIcon className="w-3.5 h-3.5" />
@@ -234,31 +234,31 @@ export default function HistoryPage() {
       {/* 2. Overview Metrics Cards */}
       <section
         aria-label="History overview metrics"
-        className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6"
+        className="grid grid-cols-3 gap-2 sm:gap-6"
       >
-        <div className="glass-surface p-6 rounded-card border border-border shadow-xs">
-          <p className="font-meta text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">
-            Completed Sessions
+        <div className="glass-surface p-3 sm:p-6 rounded-card border border-border shadow-xs">
+          <p className="font-meta text-[10px] sm:text-xs font-bold text-muted-foreground uppercase tracking-wider mb-0.5 sm:mb-1 truncate">
+            Completed
           </p>
-          <p className="font-display text-3xl sm:text-4xl font-bold text-foreground">
+          <p className="font-display text-xl sm:text-4xl font-bold text-foreground">
             {completedCount}
           </p>
         </div>
 
-        <div className="glass-surface p-6 rounded-card border border-border shadow-xs">
-          <p className="font-meta text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">
-            Scenarios Practiced
+        <div className="glass-surface p-3 sm:p-6 rounded-card border border-border shadow-xs">
+          <p className="font-meta text-[10px] sm:text-xs font-bold text-muted-foreground uppercase tracking-wider mb-0.5 sm:mb-1 truncate">
+            Scenarios
           </p>
-          <p className="font-display text-3xl sm:text-4xl font-bold text-foreground">
+          <p className="font-display text-xl sm:text-4xl font-bold text-foreground">
             {scenariosCount}
           </p>
         </div>
 
-        <div className="glass-surface p-6 rounded-card border border-border shadow-xs">
-          <p className="font-meta text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">
-            Total Rehearsals
+        <div className="glass-surface p-3 sm:p-6 rounded-card border border-border shadow-xs">
+          <p className="font-meta text-[10px] sm:text-xs font-bold text-muted-foreground uppercase tracking-wider mb-0.5 sm:mb-1 truncate">
+            Total Reps
           </p>
-          <p className="font-display text-3xl sm:text-4xl font-bold text-primary">
+          <p className="font-display text-xl sm:text-4xl font-bold text-primary">
             {items.length}
           </p>
         </div>
@@ -266,7 +266,7 @@ export default function HistoryPage() {
 
       {/* Success Notification Banner */}
       {successMessage && (
-        <div className="flex items-center justify-between rounded-control border border-border bg-[#d4ff00]/20 p-4 font-meta text-xs text-[#171e00] shadow-xs">
+        <div className="flex items-center justify-between rounded-control border border-border bg-[#d4ff00]/20 p-3 sm:p-4 font-meta text-xs text-[#171e00] shadow-xs">
           <span>{successMessage}</span>
           <button
             type="button"
@@ -283,10 +283,10 @@ export default function HistoryPage() {
       {error && (
         <div
           role="alert"
-          className="rounded-card border-2 border-alert bg-alert/10 p-6 shadow-xs flex items-start justify-between gap-4"
+          className="rounded-card border-2 border-alert bg-alert/10 p-4 sm:p-6 shadow-xs flex items-start justify-between gap-4"
         >
           <div>
-            <h2 className="font-display text-base font-bold uppercase tracking-wide text-alert">
+            <h2 className="font-display text-sm sm:text-base font-bold uppercase tracking-wide text-alert">
               Unable to load history
             </h2>
             <p className="font-sans text-xs sm:text-sm text-foreground/80 mt-1">
@@ -296,7 +296,7 @@ export default function HistoryPage() {
           <button
             type="button"
             onClick={() => void reloadHistory()}
-            className="shrink-0 rounded-control bg-alert px-4 py-2 font-display text-xs font-bold uppercase tracking-wider text-white shadow-2xs hover:opacity-90 cursor-pointer"
+            className="shrink-0 rounded-control bg-alert px-3 py-1.5 sm:px-4 sm:py-2 font-display text-xs font-bold uppercase tracking-wider text-white shadow-2xs hover:opacity-90 cursor-pointer"
           >
             Try Again
           </button>
@@ -306,10 +306,10 @@ export default function HistoryPage() {
       {/* 3. Search and Filters Toolbar */}
       <section
         aria-label="History search and filter controls"
-        className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center justify-between"
+        className="flex flex-col sm:flex-row gap-2.5 sm:gap-4 items-stretch sm:items-center justify-between"
       >
         <div className="relative w-full sm:w-80 glass-surface rounded-control border border-border">
-          <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
+          <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground w-3.5 h-3.5 sm:w-4 sm:h-4" />
           <input
             type="text"
             id="history-search-input"
@@ -317,17 +317,17 @@ export default function HistoryPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search scenario history..."
-            className="w-full bg-transparent border-none pl-10 pr-4 py-2.5 font-sans text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus:outline-none rounded-control"
+            className="w-full bg-transparent border-none pl-9 sm:pl-10 pr-4 py-2 sm:py-2.5 font-sans text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus:outline-none rounded-control"
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <select
             id="history-difficulty-filter"
             aria-label="Filter by difficulty"
             value={selectedDifficulty}
             onChange={(e) => setSelectedDifficulty(e.target.value)}
-            className="glass-surface px-3 py-2 rounded-control font-meta text-xs bg-surface-subtle border border-border text-foreground focus:outline-none cursor-pointer"
+            className="flex-1 sm:flex-none glass-surface px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-control font-meta text-[11px] sm:text-xs bg-surface-subtle border border-border text-foreground focus:outline-none cursor-pointer"
           >
             <option value="ALL">All Difficulties</option>
             <option value="EASY">Easy</option>
@@ -340,7 +340,7 @@ export default function HistoryPage() {
             aria-label="Filter by simulation status"
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
-            className="glass-surface px-3 py-2 rounded-control font-meta text-xs bg-surface-subtle border border-border text-foreground focus:outline-none cursor-pointer"
+            className="flex-1 sm:flex-none glass-surface px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-control font-meta text-[11px] sm:text-xs bg-surface-subtle border border-border text-foreground focus:outline-none cursor-pointer"
           >
             <option value="ALL">All Statuses</option>
             <option value="COMPLETED">Completed</option>

@@ -350,7 +350,7 @@ export function ScenarioLibraryView({
   return (
     <div className="w-full pb-16">
       {/* Header Intro with Memphis Accents & Hero Spotlight */}
-      <header className="relative py-8 sm:py-12 md:py-16 mb-8 sm:mb-12 border-b border-border/15">
+      <header className="relative py-6 sm:py-12 md:py-16 mb-6 sm:mb-12 border-b border-border/15">
         {/* Decorative Memphis Elements */}
         <div
           aria-hidden="true"
@@ -365,9 +365,9 @@ export function ScenarioLibraryView({
           className="absolute top-12 sm:top-20 left-[10%] sm:left-[14%] w-10 sm:w-12 h-10 sm:h-12 bg-success rotate-12 hidden md:block pointer-events-none"
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
-          <div className="lg:col-span-7 space-y-4">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 border border-border rounded-full bg-surface-subtle font-meta text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-center relative z-10">
+          <div className="lg:col-span-7 space-y-3 sm:space-y-4">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 border border-border rounded-full bg-surface-subtle font-meta text-[11px] sm:text-xs uppercase tracking-wider text-muted-foreground font-semibold">
               <SparklesIcon className="w-3.5 h-3.5 text-primary" />
               <span>Workplace Rehearsal Lab</span>
             </div>
@@ -375,7 +375,7 @@ export function ScenarioLibraryView({
             <h1 className="font-display text-2xl sm:text-4xl md:text-5xl lg:text-[46px] font-bold text-foreground leading-[1.12] tracking-tight">
               Practice the conversations you usually avoid.
             </h1>
-            <p className="font-sans text-base sm:text-lg text-muted-foreground leading-relaxed max-w-xl">
+            <p className="font-sans text-sm sm:text-base md:text-lg text-muted-foreground leading-relaxed max-w-xl">
               Choose a realistic workplace scenario or generate a custom
               interview from your CV to rehearse under pressure before the real
               conversation happens.
@@ -384,25 +384,25 @@ export function ScenarioLibraryView({
 
           {/* Eye-catching Custom Interview Spotlight Card */}
           <div className="lg:col-span-5 w-full">
-            <div className="relative overflow-hidden rounded-card p-6 sm:p-7 border-2 border-primary/50 bg-linear-to-br from-primary/15 via-surface to-surface-raised shadow-[6px_6px_0px_0px_#1a1a1a] transition-all hover:shadow-[8px_8px_0px_0px_#1a1a1a] hover:-translate-x-0.5 hover:-translate-y-0.5">
-              <div className="absolute top-0 right-0 bg-primary text-primary-foreground font-meta text-[10px] font-bold px-3 py-1 rounded-bl-card border-b border-l border-border uppercase tracking-widest flex items-center gap-1 shadow-2xs">
+            <div className="relative overflow-hidden rounded-card p-4 sm:p-7 border-2 border-primary/50 bg-linear-to-br from-primary/15 via-surface to-surface-raised shadow-[4px_4px_0px_0px_#1a1a1a] sm:shadow-[6px_6px_0px_0px_#1a1a1a] transition-all hover:shadow-[8px_8px_0px_0px_#1a1a1a] hover:-translate-x-0.5 hover:-translate-y-0.5">
+              <div className="absolute top-0 right-0 bg-primary text-primary-foreground font-meta text-[9px] sm:text-[10px] font-bold px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-bl-card border-b border-l border-border uppercase tracking-widest flex items-center gap-1 shadow-2xs">
                 <SparklesIcon className="w-3 h-3" />
                 <span>AI Role Simulator</span>
               </div>
 
-              <div className="flex items-center gap-2.5 mb-2.5">
-                <span className="flex h-8 w-8 items-center justify-center rounded-control bg-primary/20 text-primary border border-primary/30 text-base font-bold shadow-2xs">
+              <div className="flex items-center gap-2 sm:gap-2.5 mb-2 sm:mb-2.5">
+                <span className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-control bg-primary/20 text-primary border border-primary/30 text-sm sm:text-base font-bold shadow-2xs">
                   💼
                 </span>
-                <span className="font-meta text-xs font-bold uppercase tracking-wider text-primary">
+                <span className="font-meta text-[11px] sm:text-xs font-bold uppercase tracking-wider text-primary">
                   Custom Interview
                 </span>
               </div>
 
-              <h2 className="font-display text-lg sm:text-xl font-bold uppercase tracking-tight text-foreground mb-2">
+              <h2 className="font-display text-base sm:text-xl font-bold uppercase tracking-tight text-foreground mb-1.5 sm:mb-2">
                 Targeting a Specific Job?
               </h2>
-              <p className="font-sans text-xs sm:text-sm text-muted-foreground mb-5 leading-relaxed">
+              <p className="font-sans text-xs sm:text-sm text-muted-foreground mb-4 sm:mb-5 leading-relaxed">
                 Upload your CV PDF and job description to generate a
                 hyper-realistic practice simulation tailored to your background.
               </p>
@@ -410,11 +410,11 @@ export function ScenarioLibraryView({
               <button
                 type="button"
                 onClick={() => setCreateCustomOpen(true)}
-                className="w-full inline-flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-control bg-primary text-primary-foreground font-display text-xs sm:text-sm font-bold uppercase tracking-wider border border-border shadow-[3px_3px_0px_0px_#1a1a1a] brutalist-interactive cursor-pointer select-none"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:px-5 sm:py-3.5 rounded-control bg-primary text-primary-foreground font-display text-xs sm:text-sm font-bold uppercase tracking-wider border border-border shadow-[2px_2px_0px_0px_#1a1a1a] sm:shadow-[3px_3px_0px_0px_#1a1a1a] brutalist-interactive cursor-pointer select-none"
               >
-                <SparklesIcon className="w-4 h-4" />
+                <SparklesIcon className="w-3.5 h-3.5" />
                 <span>Create Custom Interview</span>
-                <ArrowRightIcon className="w-4 h-4" />
+                <ArrowRightIcon className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
@@ -423,9 +423,9 @@ export function ScenarioLibraryView({
 
       {/* Optional Notice if using fallback */}
       {errorMessage && (
-        <div className="mb-8 rounded-card border border-alert bg-alert/10 p-4 sm:p-5 text-foreground flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="font-bold text-alert">Notice:</span>
+        <div className="mb-6 sm:mb-8 rounded-card border border-alert bg-alert/10 p-3.5 sm:p-5 text-foreground flex items-center justify-between">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <span className="font-bold text-alert text-xs sm:text-sm">Notice:</span>
             <span className="text-xs sm:text-sm text-muted-foreground">
               {errorMessage} Showing curated offline practice scenarios.
             </span>
@@ -436,9 +436,9 @@ export function ScenarioLibraryView({
       {/* Filter Row & Custom Scenario CTA */}
       <section
         aria-label="Filter scenarios by category"
-        className="mb-6 sm:mb-12 flex flex-wrap items-center justify-between gap-3 pt-1 pb-2"
+        className="mb-6 sm:mb-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1 pb-2"
       >
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 overflow-x-auto pb-1 sm:pb-0 sm:flex-wrap scrollbar-none w-full sm:w-auto">
           {FILTER_CATEGORIES.map((category) => {
             const isActive = selectedFilter === category.key;
             return (
@@ -448,9 +448,9 @@ export function ScenarioLibraryView({
                 onClick={() => setSelectedFilter(category.key)}
                 aria-pressed={isActive}
                 className={cn(
-                  "px-3.5 sm:px-6 py-2 sm:py-2.5 rounded-full border border-border font-meta text-xs sm:text-sm transition-all duration-200 ease-out cursor-pointer select-none whitespace-nowrap",
+                  "px-3 sm:px-5 py-1.5 sm:py-2 rounded-full border border-border font-meta text-xs transition-all duration-200 ease-out cursor-pointer select-none whitespace-nowrap shrink-0",
                   isActive
-                    ? "bg-primary text-primary-foreground font-bold shadow-[2px_2px_0px_0px_#1a1a1a] sm:shadow-[4px_4px_0px_0px_#1a1a1a] -translate-x-0.5 -translate-y-0.5"
+                    ? "bg-primary text-primary-foreground font-bold shadow-[2px_2px_0px_0px_#1a1a1a] sm:shadow-[3px_3px_0px_0px_#1a1a1a] -translate-x-px -translate-y-px"
                     : "bg-surface-solid text-foreground font-medium hover:bg-surface-subtle hover:text-foreground",
                 )}
               >
@@ -463,22 +463,22 @@ export function ScenarioLibraryView({
         <button
           type="button"
           onClick={() => setCreateCustomOpen(true)}
-          className="inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border-2 border-primary/50 font-display text-xs sm:text-sm font-bold uppercase tracking-wider bg-surface-solid text-foreground hover:bg-primary hover:text-primary-foreground shadow-[3px_3px_0px_0px_#1a1a1a] hover:shadow-[1px_1px_0px_0px_#1a1a1a] hover:translate-x-0.5 hover:translate-y-0.5 transition-all cursor-pointer select-none"
+          className="self-start sm:self-auto inline-flex items-center gap-1.5 px-3.5 sm:px-5 py-1.5 sm:py-2 rounded-full border-2 border-primary/50 font-display text-xs sm:text-sm font-bold uppercase tracking-wider bg-surface-solid text-foreground hover:bg-primary hover:text-primary-foreground shadow-[2px_2px_0px_0px_#1a1a1a] sm:shadow-[3px_3px_0px_0px_#1a1a1a] hover:translate-x-0.5 hover:translate-y-0.5 transition-all cursor-pointer select-none shrink-0"
         >
-          <SparklesIcon className="w-4 h-4 text-primary" />
+          <SparklesIcon className="w-3.5 h-3.5 text-primary" />
           <span>+ Custom Interview</span>
         </button>
       </section>
 
       {/* Featured Scenario (when All is selected) */}
       {featuredScenario && (
-        <section aria-label="Featured scenario" className="mb-12 sm:mb-16">
+        <section aria-label="Featured scenario" className="mb-10 sm:mb-16">
           {(() => {
             const meta = getScenarioMeta(featuredScenario);
             return (
-              <div className="relative glass-surface rounded-card p-6 sm:p-8 md:p-10 flex flex-col md:flex-row gap-6 md:gap-8 items-center group transition-all duration-200 ease-out hover:shadow-[8px_8px_0px_0px_#1a1a1a] hover:-translate-x-0.5 hover:-translate-y-0.5 overflow-hidden">
+              <div className="relative glass-surface rounded-card p-4 sm:p-8 md:p-10 flex flex-col md:flex-row gap-5 md:gap-8 items-center group transition-all duration-200 ease-out hover:shadow-[8px_8px_0px_0px_#1a1a1a] hover:-translate-x-0.5 hover:-translate-y-0.5 overflow-hidden">
                 {/* Popular Starting Point Badge */}
-                <div className="absolute top-0 right-0 bg-success text-success-foreground font-meta text-[11px] sm:text-xs px-4 py-1.5 rounded-bl-card rounded-tr-card border-b border-l border-border uppercase tracking-wider font-bold shadow-2xs">
+                <div className="absolute top-0 right-0 bg-success text-success-foreground font-meta text-[10px] sm:text-xs px-3 sm:px-4 py-1 sm:py-1.5 rounded-bl-card border-b border-l border-border uppercase tracking-wider font-bold shadow-2xs">
                   Popular Starting Point
                 </div>
 
@@ -506,7 +506,7 @@ export function ScenarioLibraryView({
                       <div className="absolute inset-0 flex items-center justify-center mix-blend-overlay opacity-60">
                         {renderScenarioIcon(
                           meta.iconName,
-                          "w-20 h-20 md:w-28 md:h-28 text-white",
+                          "w-16 h-16 md:w-28 md:h-28 text-white",
                         )}
                       </div>
                     </div>
@@ -515,37 +515,37 @@ export function ScenarioLibraryView({
 
                 {/* Content */}
                 <div className="flex-1 w-full">
-                  <div className="font-meta text-xs text-muted-foreground uppercase tracking-widest mb-2 sm:mb-3">
+                  <div className="font-meta text-[11px] sm:text-xs text-muted-foreground uppercase tracking-widest mb-1.5 sm:mb-3">
                     {meta.categoryLabel}
                   </div>
-                  <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold uppercase tracking-tight text-foreground mb-3 sm:mb-4">
+                  <h2 className="font-display text-xl sm:text-3xl md:text-4xl font-bold uppercase tracking-tight text-foreground mb-2 sm:mb-4">
                     {featuredScenario.title}
                   </h2>
-                  <p className="font-sans text-sm sm:text-base text-muted-foreground mb-6 max-w-xl leading-relaxed">
+                  <p className="font-sans text-xs sm:text-base text-muted-foreground mb-4 sm:mb-6 max-w-xl leading-relaxed">
                     {featuredScenario.summary}
                   </p>
 
-                  <div className="flex flex-wrap gap-2 mb-8 items-center">
+                  <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-6 sm:mb-8 items-center">
                     {meta.tags.map((tag) => (
                       <span
                         key={tag}
-                        className="px-3 py-1 rounded-full border border-border bg-surface-raised font-meta text-xs text-foreground"
+                        className="px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full border border-border bg-surface-raised font-meta text-[11px] sm:text-xs text-foreground"
                       >
                         {tag}
                       </span>
                     ))}
-                    <span className="px-3 py-1 rounded-full border border-border bg-surface-raised flex items-center gap-1.5 font-meta text-xs text-foreground">
-                      <BarChartIcon className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span className="px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full border border-border bg-surface-raised flex items-center gap-1.5 font-meta text-[11px] sm:text-xs text-foreground">
+                      <BarChartIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-muted-foreground" />
                       Difficulty: {meta.difficulty}
                     </span>
                   </div>
 
                   <Link
                     href={`/app/scenarios/${encodeURIComponent(featuredScenario.key)}`}
-                    className="inline-flex items-center gap-2 rounded-control bg-primary px-6 sm:px-8 py-3.5 sm:py-4 font-display text-xs sm:text-sm font-bold uppercase tracking-wide text-primary-foreground border border-border shadow-[4px_4px_0px_0px_#1a1a1a] hover:shadow-[2px_2px_0px_0px_#1a1a1a] hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none active:translate-x-1 active:translate-y-1 transition-all duration-200 ease-out"
+                    className="inline-flex items-center gap-2 rounded-control bg-primary px-5 sm:px-8 py-2.5 sm:py-4 font-display text-xs sm:text-sm font-bold uppercase tracking-wide text-primary-foreground border border-border shadow-[3px_3px_0px_0px_#1a1a1a] sm:shadow-[4px_4px_0px_0px_#1a1a1a] hover:shadow-[2px_2px_0px_0px_#1a1a1a] hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none active:translate-x-1 active:translate-y-1 transition-all duration-200 ease-out"
                   >
                     Start Simulation
-                    <ArrowRightIcon className="w-4 h-4" />
+                    <ArrowRightIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </Link>
                 </div>
               </div>
@@ -556,8 +556,8 @@ export function ScenarioLibraryView({
 
       {/* Scenario Grid */}
       {gridScenarios.length > 0 ? (
-        <section aria-label="Available scenarios" className="mb-12 sm:mb-16">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+        <section aria-label="Available scenarios" className="mb-10 sm:mb-16">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
             {/* Dedicated Custom Scenario Creation Tile */}
             {(selectedFilter === "ALL" || selectedFilter === "CUSTOM") && (
               <div
@@ -570,43 +570,43 @@ export function ScenarioLibraryView({
                     setCreateCustomOpen(true);
                   }
                 }}
-                className="relative rounded-card p-6 flex flex-col justify-between border-2 border-dashed border-primary/50 bg-linear-to-br from-primary/10 via-surface to-surface-raised shadow-xs hover:border-primary hover:shadow-[6px_6px_0px_0px_#1a1a1a] hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all duration-200 ease-out cursor-pointer group select-none min-h-[340px]"
+                className="relative rounded-card p-4 sm:p-6 flex flex-col justify-between border-2 border-dashed border-primary/50 bg-linear-to-br from-primary/10 via-surface to-surface-raised shadow-xs hover:border-primary hover:shadow-[6px_6px_0px_0px_#1a1a1a] hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all duration-200 ease-out cursor-pointer group select-none min-h-[280px] sm:min-h-[340px]"
               >
                 <div className="w-full">
-                  <div className="flex items-center justify-between gap-2 mb-4">
-                    <span className="font-meta text-xs uppercase tracking-widest text-primary font-bold bg-primary/15 border border-primary/30 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                  <div className="flex items-center justify-between gap-2 mb-3 sm:mb-4">
+                    <span className="font-meta text-[10px] sm:text-xs uppercase tracking-widest text-primary font-bold bg-primary/15 border border-primary/30 px-2 py-0.5 rounded-full flex items-center gap-1">
                       <SparklesIcon className="w-3 h-3" />
                       Tailored
                     </span>
-                    <span className="font-meta text-[11px] px-2 py-0.5 rounded-full border border-border/40 bg-surface-raised font-bold text-foreground">
+                    <span className="font-meta text-[10px] sm:text-[11px] px-2 py-0.5 rounded-full border border-border/40 bg-surface-raised font-bold text-foreground">
                       Free Demo
                     </span>
                   </div>
 
-                  <div className="h-28 mb-5 rounded-control border border-border/60 bg-primary/10 flex flex-col items-center justify-center gap-2 group-hover:bg-primary/15 transition-colors">
-                    <div className="w-12 h-12 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-primary text-xl group-hover:scale-110 transition-transform">
+                  <div className="h-24 sm:h-28 mb-3.5 sm:mb-5 rounded-control border border-border/60 bg-primary/10 flex flex-col items-center justify-center gap-1.5 group-hover:bg-primary/15 transition-colors">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-primary text-lg sm:text-xl group-hover:scale-110 transition-transform">
                       💼
                     </div>
-                    <span className="font-meta text-[11px] uppercase tracking-wider text-primary font-bold">
+                    <span className="font-meta text-[10px] sm:text-[11px] uppercase tracking-wider text-primary font-bold">
                       AI Resume Simulator
                     </span>
                   </div>
 
-                  <h3 className="font-display text-lg sm:text-xl font-bold uppercase tracking-tight text-foreground mb-2 group-hover:text-primary transition-colors">
+                  <h3 className="font-display text-base sm:text-xl font-bold uppercase tracking-tight text-foreground mb-1.5 sm:mb-2 group-hover:text-primary transition-colors">
                     Build Custom Interview
                   </h3>
 
-                  <p className="font-sans text-sm text-muted-foreground leading-relaxed line-clamp-3">
+                  <p className="font-sans text-xs sm:text-sm text-muted-foreground leading-relaxed line-clamp-3">
                     Upload your CV & job description to practice interview
                     questions tailored to your exact background.
                   </p>
                 </div>
 
-                <div className="w-full pt-4 border-t border-border/15 flex items-center justify-between mt-auto">
+                <div className="w-full pt-3 sm:pt-4 border-t border-border/15 flex items-center justify-between mt-auto">
                   <span className="font-meta text-xs font-bold text-primary group-hover:underline underline-offset-4">
                     Create New →
                   </span>
-                  <span className="inline-flex items-center gap-1.5 rounded-control bg-primary px-3.5 py-1.5 font-display text-xs font-bold uppercase tracking-wider text-primary-foreground border border-border shadow-2xs group-hover:shadow-[2px_2px_0px_0px_#1a1a1a] transition-all">
+                  <span className="inline-flex items-center gap-1.5 rounded-control bg-primary px-3 py-1 sm:px-3.5 sm:py-1.5 font-display text-xs font-bold uppercase tracking-wider text-primary-foreground border border-border shadow-2xs group-hover:shadow-[2px_2px_0px_0px_#1a1a1a] transition-all">
                     <span>Build</span>
                     <SparklesIcon className="w-3 h-3" />
                   </span>
@@ -619,10 +619,10 @@ export function ScenarioLibraryView({
               return (
                 <article
                   key={scenario.key}
-                  className="relative glass-surface rounded-card p-6 flex flex-col group transition-all duration-200 ease-out hover:shadow-[6px_6px_0px_0px_#1a1a1a] hover:-translate-x-0.5 hover:-translate-y-0.5 overflow-hidden"
+                  className="relative glass-surface rounded-card p-4 sm:p-6 flex flex-col group transition-all duration-200 ease-out hover:shadow-[6px_6px_0px_0px_#1a1a1a] hover:-translate-x-0.5 hover:-translate-y-0.5 overflow-hidden"
                 >
                   {scenario.isCustom && (
-                    <div className="absolute top-0 right-0 bg-primary text-primary-foreground font-meta text-[10px] px-3 py-1 rounded-bl-card rounded-tr-card border-b border-l border-border uppercase tracking-wider font-bold shadow-2xs z-20">
+                    <div className="absolute top-0 right-0 bg-primary text-primary-foreground font-meta text-[9px] sm:text-[10px] px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-bl-card border-b border-l border-border uppercase tracking-wider font-bold shadow-2xs z-20">
                       Custom
                     </div>
                   )}
@@ -631,7 +631,7 @@ export function ScenarioLibraryView({
                   {(() => {
                     const img = getScenarioImage(scenario.key);
                     return img ? (
-                      <div className="h-32 mb-5 sm:mb-6 rounded-control border border-border relative overflow-hidden shadow-xs">
+                      <div className="h-28 sm:h-32 mb-4 sm:mb-6 rounded-control border border-border relative overflow-hidden shadow-xs">
                         <Image
                           src={img}
                           alt={scenario.title}
@@ -644,7 +644,7 @@ export function ScenarioLibraryView({
                     ) : (
                       <div
                         className={cn(
-                          "h-32 mb-5 sm:mb-6 rounded-control border border-border relative overflow-hidden flex items-center justify-center shadow-xs bg-linear-to-br",
+                          "h-28 sm:h-32 mb-4 sm:mb-6 rounded-control border border-border relative overflow-hidden flex items-center justify-center shadow-xs bg-linear-to-br",
                           meta.gradientClass,
                         )}
                       >
@@ -652,7 +652,7 @@ export function ScenarioLibraryView({
                         <div className="relative z-10">
                           {renderScenarioIcon(
                             meta.iconName,
-                            "w-12 h-12 text-white/70",
+                            "w-10 h-10 sm:w-12 sm:h-12 text-white/70",
                           )}
                         </div>
                       </div>
@@ -660,24 +660,24 @@ export function ScenarioLibraryView({
                   })()}
 
                   {/* Category */}
-                  <div className="font-meta text-xs text-muted-foreground uppercase tracking-widest mb-2">
+                  <div className="font-meta text-[10px] sm:text-xs text-muted-foreground uppercase tracking-widest mb-1.5 sm:mb-2">
                     {meta.categoryLabel}
                   </div>
 
                   {/* Title */}
-                  <h3 className="font-display text-lg sm:text-xl font-bold uppercase tracking-tight text-foreground mb-3 leading-snug group-hover:text-primary transition-colors duration-200">
+                  <h3 className="font-display text-base sm:text-xl font-bold uppercase tracking-tight text-foreground mb-2 sm:mb-3 leading-snug group-hover:text-primary transition-colors duration-200">
                     {scenario.title}
                   </h3>
 
                   {/* Summary */}
-                  <p className="font-sans text-sm text-muted-foreground mb-6 grow leading-relaxed line-clamp-3">
+                  <p className="font-sans text-xs sm:text-sm text-muted-foreground mb-4 sm:mb-6 grow leading-relaxed line-clamp-3">
                     {scenario.summary}
                   </p>
 
                   {/* Card Footer */}
-                  <div className="flex items-center justify-between border-t border-border/15 pt-4 mt-auto">
+                  <div className="flex items-center justify-between border-t border-border/15 pt-3 sm:pt-4 mt-auto">
                     <div className="flex items-center gap-2">
-                      <span className="font-meta text-[11px] px-2.5 py-1 rounded-control bg-surface-raised border border-border/30 text-foreground">
+                      <span className="font-meta text-[10px] sm:text-[11px] px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-control bg-surface-raised border border-border/30 text-foreground">
                         Diff: {meta.difficulty}
                       </span>
                       {scenario.isCustom && (
@@ -702,7 +702,7 @@ export function ScenarioLibraryView({
                       className="font-meta text-xs sm:text-sm font-bold text-primary flex items-center gap-1 group-hover:underline underline-offset-4"
                     >
                       View scenario
-                      <ArrowRightIcon className="w-4 h-4" />
+                      <ArrowRightIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </Link>
                   </div>
                 </article>
@@ -712,39 +712,39 @@ export function ScenarioLibraryView({
         </section>
       ) : selectedFilter === "CUSTOM" ? (
         /* Dedicated Empty State for Custom Filter */
-        <div className="glass-surface rounded-card p-12 text-center my-8 border-2 border-dashed border-primary/40 bg-primary/5">
-          <div className="w-12 h-12 rounded-full bg-primary/20 text-primary border border-primary/30 flex items-center justify-center text-xl mx-auto mb-4 font-bold">
+        <div className="glass-surface rounded-card p-6 sm:p-12 text-center my-6 sm:my-8 border-2 border-dashed border-primary/40 bg-primary/5">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/20 text-primary border border-primary/30 flex items-center justify-center text-lg sm:text-xl mx-auto mb-3 sm:mb-4 font-bold">
             💼
           </div>
-          <p className="font-display text-xl font-bold uppercase tracking-tight text-foreground mb-2">
+          <p className="font-display text-lg sm:text-xl font-bold uppercase tracking-tight text-foreground mb-2">
             No custom scenarios created yet
           </p>
-          <p className="text-sm text-muted-foreground max-w-md mx-auto mb-6 leading-relaxed">
+          <p className="text-xs sm:text-sm text-muted-foreground max-w-md mx-auto mb-5 sm:mb-6 leading-relaxed">
             Upload your CV and target job description to generate your first
             personalized interview rehearsal simulation.
           </p>
           <button
             type="button"
             onClick={() => setCreateCustomOpen(true)}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-control bg-primary text-primary-foreground font-display text-xs sm:text-sm font-bold uppercase tracking-wider border border-border shadow-[4px_4px_0px_0px_#1a1a1a] hover:shadow-[2px_2px_0px_0px_#1a1a1a] hover:translate-x-0.5 hover:translate-y-0.5 transition-all cursor-pointer"
+            className="inline-flex items-center gap-2 px-5 py-2.5 sm:px-6 sm:py-3 rounded-control bg-primary text-primary-foreground font-display text-xs sm:text-sm font-bold uppercase tracking-wider border border-border shadow-[3px_3px_0px_0px_#1a1a1a] sm:shadow-[4px_4px_0px_0px_#1a1a1a] hover:shadow-[2px_2px_0px_0px_#1a1a1a] hover:translate-x-0.5 hover:translate-y-0.5 transition-all cursor-pointer"
           >
-            <SparklesIcon className="w-4 h-4" />
+            <SparklesIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             <span>Create Custom Interview</span>
           </button>
         </div>
       ) : (
         /* Empty State for other filters */
-        <div className="glass-surface rounded-card p-12 text-center my-8">
-          <p className="font-display text-lg font-bold text-foreground mb-2">
+        <div className="glass-surface rounded-card p-6 sm:p-12 text-center my-6 sm:my-8">
+          <p className="font-display text-base sm:text-lg font-bold text-foreground mb-2">
             No scenarios found
           </p>
-          <p className="text-sm text-muted-foreground mb-6">
+          <p className="text-xs sm:text-sm text-muted-foreground mb-5 sm:mb-6">
             There are no scenarios matching the selected category filter.
           </p>
           <button
             type="button"
             onClick={() => setSelectedFilter("ALL")}
-            className="px-6 py-2.5 rounded-control bg-surface-solid border border-border font-meta text-xs font-bold text-foreground shadow-[2px_2px_0px_0px_#1a1a1a] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all duration-200 ease-out cursor-pointer"
+            className="px-5 py-2 sm:px-6 sm:py-2.5 rounded-control bg-surface-solid border border-border font-meta text-xs font-bold text-foreground shadow-[2px_2px_0px_0px_#1a1a1a] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all duration-200 ease-out cursor-pointer"
           >
             Show All Scenarios
           </button>
@@ -754,25 +754,25 @@ export function ScenarioLibraryView({
       {/* Bottom CTA Section */}
       <section
         aria-label="Guided warm-up recommendation"
-        className="mt-16 sm:mt-24 mb-8 sm:mb-12"
+        className="mt-12 sm:mt-24 mb-6 sm:mb-12"
       >
-        <div className="relative overflow-hidden bg-primary-muted/30 backdrop-blur-md border border-border rounded-card p-8 sm:p-12 text-center shadow-[8px_8px_0px_0px_#1a1a1a]">
+        <div className="relative overflow-hidden bg-primary-muted/30 backdrop-blur-md border border-border rounded-card p-5 sm:p-12 text-center shadow-[4px_4px_0px_0px_#1a1a1a] sm:shadow-[8px_8px_0px_0px_#1a1a1a]">
           <div
             aria-hidden="true"
             className="absolute -top-10 -left-10 w-32 h-32 bg-primary rounded-full mix-blend-multiply opacity-20 blur-xl pointer-events-none"
           />
-          <h3 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-3 sm:mb-4 relative z-10">
+          <h3 className="font-display text-xl sm:text-3xl md:text-4xl font-bold text-foreground mb-2 sm:mb-4 relative z-10">
             Not sure where to start?
           </h3>
-          <p className="font-sans text-sm sm:text-base md:text-lg text-muted-foreground max-w-xl mx-auto mb-6 sm:mb-8 relative z-10 leading-relaxed">
+          <p className="font-sans text-xs sm:text-base md:text-lg text-muted-foreground max-w-xl mx-auto mb-5 sm:mb-8 relative z-10 leading-relaxed">
             The most common request we see is navigating compensation
             conversations. Jump into a guided warm-up.
           </p>
           <Link
             href="/app/scenarios/salary-negotiation"
-            className="relative z-10 px-6 sm:px-8 py-3.5 sm:py-4 bg-surface-solid text-foreground font-display text-xs sm:text-sm font-bold uppercase tracking-wider border border-border shadow-[4px_4px_0px_0px_#1a1a1a] hover:shadow-[2px_2px_0px_0px_#1a1a1a] hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none active:translate-x-1 active:translate-y-1 transition-all duration-200 ease-out inline-flex items-center gap-2 rounded-control"
+            className="relative z-10 px-5 sm:px-8 py-3 sm:py-4 bg-surface-solid text-foreground font-display text-xs sm:text-sm font-bold uppercase tracking-wider border border-border shadow-[3px_3px_0px_0px_#1a1a1a] sm:shadow-[4px_4px_0px_0px_#1a1a1a] hover:shadow-[2px_2px_0px_0px_#1a1a1a] hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none active:translate-x-1 active:translate-y-1 transition-all duration-200 ease-out inline-flex items-center gap-2 rounded-control"
           >
-            Try Salary Negotiation
+            <span>Try Salary Negotiation</span>
             <PlayIcon className="w-3.5 h-3.5 fill-foreground" />
           </Link>
         </div>

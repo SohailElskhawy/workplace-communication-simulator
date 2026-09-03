@@ -223,22 +223,23 @@ export default function ScenarioDetailPage() {
   }
 
   return (
-    <div className="w-full max-w-container-max mx-auto px-4 sm:px-6 md:px-8 py-8 space-y-10 font-sans pb-24">
+    <div className="w-full max-w-container-max mx-auto px-3 sm:px-6 md:px-8 py-4 sm:py-8 space-y-6 sm:space-y-10 font-sans pb-24">
       {/* 1. Top Navigation & Category */}
       <nav
         aria-label="Breadcrumb navigation"
-        className="flex items-center justify-between"
+        className="flex items-center justify-between gap-2"
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
           <Link
             href="/app"
-            className="inline-flex items-center gap-1.5 font-meta text-xs font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
+            className="inline-flex items-center gap-1 font-meta text-xs font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors shrink-0"
           >
             <ArrowLeftIcon className="w-3.5 h-3.5" />
-            <span>All Scenarios</span>
+            <span className="hidden sm:inline">All Scenarios</span>
+            <span className="sm:hidden">All</span>
           </Link>
           <span className="text-border/40 font-meta text-xs">/</span>
-          <span className="font-meta text-xs uppercase tracking-widest text-primary font-bold">
+          <span className="font-meta text-[11px] sm:text-xs uppercase tracking-widest text-primary font-bold truncate">
             {getScenarioMeta(scenario).categoryLabel}
           </span>
         </div>
@@ -250,10 +251,11 @@ export default function ScenarioDetailPage() {
               setDeleteOpen(true);
               setDeleteError(null);
             }}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-control text-muted-foreground hover:text-alert hover:bg-alert/10 border border-border/40 font-meta text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-control text-muted-foreground hover:text-alert hover:bg-alert/10 border border-border/40 font-meta text-[11px] sm:text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer shrink-0"
           >
             <TrashIcon className="w-3.5 h-3.5" />
-            <span>Delete Scenario</span>
+            <span className="hidden sm:inline">Delete Scenario</span>
+            <span className="sm:hidden">Delete</span>
           </button>
         )}
       </nav>
@@ -262,11 +264,11 @@ export default function ScenarioDetailPage() {
       <ScenarioHeroGraphic scenarioKey={scenario.key} title={scenario.title} />
 
       {/* 3. Scenario Title & Overview */}
-      <header className="space-y-3">
-        <h1 className="font-display text-2xl sm:text-4xl md:text-5xl font-bold uppercase tracking-tight text-foreground leading-[1.15]">
+      <header className="space-y-2 sm:space-y-3">
+        <h1 className="font-display text-xl sm:text-3xl md:text-5xl font-bold uppercase tracking-tight text-foreground leading-[1.15]">
           {scenario.title}
         </h1>
-        <p className="font-sans text-base sm:text-lg text-muted-foreground max-w-3xl leading-relaxed">
+        <p className="font-sans text-xs sm:text-base md:text-lg text-muted-foreground max-w-3xl leading-relaxed">
           {scenario.summary}
         </p>
       </header>
@@ -294,19 +296,19 @@ export default function ScenarioDetailPage() {
       {startError && (
         <div
           role="alert"
-          className="rounded-control border-2 border-alert bg-alert/10 p-4 font-sans text-xs text-alert shadow-xs"
+          className="rounded-control border-2 border-alert bg-alert/10 p-3 sm:p-4 font-sans text-xs text-alert shadow-xs"
         >
           {startError}
         </div>
       )}
 
       {/* 6. Sticky CTA Bar */}
-      <div className="glass-surface rounded-card border-2 border-border p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-[6px_6px_0px_0px_#1a1a1a]">
+      <div className="glass-surface rounded-card border-2 border-border p-4 sm:p-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 shadow-[4px_4px_0px_0px_#1a1a1a] sm:shadow-[6px_6px_0px_0px_#1a1a1a]">
         <div>
-          <span className="font-meta text-xs uppercase tracking-wider text-muted-foreground font-bold block">
+          <span className="font-meta text-[10px] sm:text-xs uppercase tracking-wider text-muted-foreground font-bold block">
             Ready to Begin
           </span>
-          <p className="font-display text-base font-bold uppercase tracking-tight text-foreground">
+          <p className="font-display text-sm sm:text-base font-bold uppercase tracking-tight text-foreground">
             Rehearse at {selectedDifficulty} Difficulty
           </p>
         </div>
@@ -315,7 +317,7 @@ export default function ScenarioDetailPage() {
           type="button"
           onClick={handleStartSimulation}
           disabled={starting}
-          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-control bg-primary px-8 py-3.5 font-display text-sm font-bold uppercase tracking-wider text-primary-foreground border border-border brutalist-interactive cursor-pointer disabled:opacity-50"
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-control bg-primary px-6 py-2.5 sm:py-3.5 font-display text-xs sm:text-sm font-bold uppercase tracking-wider text-primary-foreground border border-border brutalist-interactive cursor-pointer disabled:opacity-50 text-center whitespace-nowrap"
         >
           {starting ? (
             <>

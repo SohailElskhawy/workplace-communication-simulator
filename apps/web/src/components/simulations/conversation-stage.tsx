@@ -97,12 +97,12 @@ export function ConversationStage({
 
   return (
     <section
-      className="flex flex-1 min-h-0 flex-col items-center justify-start sm:justify-center overflow-y-auto px-3 py-3 sm:px-8 sm:py-8"
+      className="flex flex-1 min-h-0 flex-col items-center justify-start sm:justify-center overflow-y-auto px-2.5 py-2.5 sm:px-8 sm:py-8"
       aria-label="Current conversation"
       aria-live="polite"
     >
       <div className="w-full max-w-2xl">
-        <div className="mb-3 flex items-center justify-between gap-3 sm:mb-7">
+        <div className="mb-2 flex items-center justify-between gap-2 sm:mb-6">
           <div className="hidden sm:flex items-center gap-2 text-muted-foreground">
             <SpeakingWithIcon
               className="h-4 w-4 text-primary"
@@ -115,33 +115,33 @@ export function ConversationStage({
           <button
             type="button"
             onClick={onOpenTranscript}
-            className="inline-flex items-center gap-1.5 rounded-control border border-border bg-surface-solid px-2.5 py-1.5 font-meta text-[11px] font-bold uppercase tracking-wider text-foreground brutalist-shadow-sm cursor-pointer hover:bg-surface-subtle"
+            className="inline-flex items-center gap-1.5 rounded-control border border-border bg-surface-solid px-2 sm:px-2.5 py-1 sm:py-1.5 font-meta text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-foreground brutalist-shadow-sm cursor-pointer hover:bg-surface-subtle"
             aria-label={`Open transcript with ${turnCount} turns`}
           >
-            <DocumentTextIcon className="h-3.5 w-3.5" aria-hidden="true" />
-            Transcript{" "}
+            <DocumentTextIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5" aria-hidden="true" />
+            <span>Transcript</span>{" "}
             <span className="text-muted-foreground">({turnCount})</span>
           </button>
         </div>
 
         <div className="rounded-card border-2 border-border bg-surface-solid shadow-brutal">
           {/* Conversation orb: the focal status indicator */}
-          <div className="flex flex-col items-center px-4 pt-4 pb-2 sm:px-8 sm:pt-10 sm:pb-6">
+          <div className="flex flex-col items-center px-3 pt-3 pb-2 sm:px-8 sm:pt-8 sm:pb-5">
             <ConversationOrb
               uiState={uiState}
               microphoneLevel={microphoneLevel}
-              className="h-16 w-16 xs:h-20 xs:w-20 sm:h-36 sm:w-36"
+              className="h-14 w-14 xs:h-18 xs:w-18 sm:h-32 sm:w-32"
             />
-            <p className="mt-3 sm:mt-5 font-meta text-xs font-bold uppercase tracking-widest text-foreground">
+            <p className="mt-2.5 sm:mt-4 font-meta text-[11px] sm:text-xs font-bold uppercase tracking-widest text-foreground">
               {status.label}
             </p>
-            <p className="mt-1 max-w-68 sm:max-w-sm text-center text-[11px] leading-relaxed text-muted-foreground sm:text-sm">
+            <p className="mt-0.5 max-w-68 sm:max-w-sm text-center text-[10px] leading-relaxed text-muted-foreground sm:text-xs">
               {status.detail}
             </p>
           </div>
 
-          <div className="hidden sm:flex items-center gap-3 border-t border-border/20 px-5 py-4 sm:px-8">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-border bg-primary text-primary-foreground">
+          <div className="hidden sm:flex items-center gap-3 border-t border-border/20 px-5 py-3 sm:px-8">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-border bg-primary text-primary-foreground">
               <SpeakingWithIcon className="h-4 w-4" aria-hidden="true" />
             </div>
             <div className="min-w-0">
@@ -155,19 +155,19 @@ export function ConversationStage({
           </div>
 
           {showLiveTranscript ? (
-            <div className="border-t border-border/20 px-5 py-6 sm:px-8 sm:py-7">
-              <div className="mb-3 flex items-center justify-between gap-2">
+            <div className="border-t border-border/20 px-4 py-4 sm:px-8 sm:py-6">
+              <div className="mb-2.5 flex items-center justify-between gap-2">
                 <p className="font-meta text-[10px] font-bold uppercase tracking-widest text-primary">
                   Live session transcript
                 </p>
-                <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 font-meta text-[10px] font-semibold uppercase tracking-wider text-primary">
+                <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 font-meta text-[9px] sm:text-[10px] font-semibold uppercase tracking-wider text-primary">
                   <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
                   Live voice
                 </span>
               </div>
               <div
                 ref={liveTranscriptScrollRef}
-                className="flex max-h-40 sm:max-h-64 flex-col gap-2.5 sm:gap-4 overflow-y-auto pr-1"
+                className="flex max-h-36 sm:max-h-64 flex-col gap-2 sm:gap-4 overflow-y-auto pr-1"
               >
                 {liveEntries.map((entry) => (
                   <div
@@ -179,7 +179,7 @@ export function ConversationStage({
                   >
                     <span
                       className={cn(
-                        "mb-1 font-meta text-[10px] font-bold uppercase tracking-wider",
+                        "mb-1 font-meta text-[9px] sm:text-[10px] font-bold uppercase tracking-wider",
                         entry.role === "agent"
                           ? "text-primary"
                           : "text-muted-foreground",
@@ -189,7 +189,7 @@ export function ConversationStage({
                     </span>
                     <div
                       className={cn(
-                        "max-w-[92%] rounded-card border border-border p-3 text-xs leading-relaxed shadow-2xs whitespace-pre-wrap",
+                        "max-w-[92%] rounded-card border border-border p-2.5 sm:p-3 text-xs leading-relaxed shadow-2xs whitespace-pre-wrap",
                         entry.role === "agent"
                           ? "rounded-tl-none bg-surface-subtle text-foreground"
                           : "rounded-tr-none bg-primary text-primary-foreground",
@@ -202,8 +202,8 @@ export function ConversationStage({
               </div>
             </div>
           ) : message ? (
-            <div className="border-t border-border/20 px-4 py-3 sm:px-8 sm:py-6">
-              <p className="font-sans text-sm leading-relaxed text-foreground sm:text-base md:text-lg sm:leading-relaxed whitespace-pre-wrap">
+            <div className="border-t border-border/20 px-3.5 py-3 sm:px-8 sm:py-5">
+              <p className="font-sans text-xs sm:text-base leading-relaxed text-foreground whitespace-pre-wrap">
                 {message.text}
               </p>
               <SpeechButton
@@ -216,12 +216,12 @@ export function ConversationStage({
               />
             </div>
           ) : (
-            <div className="border-t border-border/20 px-5 py-8 text-center text-muted-foreground">
+            <div className="border-t border-border/20 px-4 py-6 text-center text-muted-foreground">
               <RefreshIcon
-                className="mx-auto h-5 w-5 animate-spin text-primary"
+                className="mx-auto h-4 w-4 sm:h-5 sm:w-5 animate-spin text-primary"
                 aria-hidden="true"
               />
-              <p className="mt-3 font-sans text-sm">
+              <p className="mt-2 font-sans text-xs sm:text-sm">
                 Preparing the conversation…
               </p>
             </div>

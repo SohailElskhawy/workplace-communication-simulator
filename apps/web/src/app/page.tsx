@@ -106,23 +106,23 @@ export default function LandingPage() {
       />
 
       {/* 1. Public Top Navigation Bar */}
-      <header className="fixed top-0 left-0 right-0 z-50 px-4 sm:px-6 md:px-8 py-3.5 bg-surface/85 backdrop-blur-xl border-b border-border shadow-xs">
-        <div className="max-w-container-max mx-auto flex items-center justify-between gap-4">
+      <header className="fixed top-0 left-0 right-0 z-50 px-3 sm:px-6 md:px-8 py-2.5 sm:py-3.5 bg-surface/90 backdrop-blur-xl border-b border-border shadow-xs">
+        <div className="max-w-container-max mx-auto flex items-center justify-between gap-2 sm:gap-4">
           {/* Logo */}
           <Link
             href="/"
-            className="flex items-center gap-2.5 font-display font-bold tracking-tight text-foreground transition hover:opacity-90"
+            className="flex items-center gap-2 sm:gap-2.5 font-display font-bold tracking-tight text-foreground transition hover:opacity-90 shrink-0"
           >
-            <span className="flex h-8 w-8 items-center justify-center rounded-control border border-border bg-primary font-display font-extrabold text-primary-foreground shadow-[2px_2px_0px_0px_#1a1a1a]">
+            <span className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-control border border-border bg-primary font-display font-extrabold text-primary-foreground shadow-[2px_2px_0px_0px_#1a1a1a]">
               K
             </span>
-            <span className="text-lg font-bold tracking-tight">Kalemny</span>
+            <span className="text-base sm:text-lg font-bold tracking-tight">Kalemny</span>
           </Link>
 
           {/* Desktop Nav Links */}
           <nav
             aria-label="Public navigation"
-            className="hidden md:flex items-center gap-7 font-meta text-xs font-semibold text-muted-foreground uppercase tracking-wider"
+            className="hidden md:flex items-center gap-5 lg:gap-7 font-meta text-xs font-semibold text-muted-foreground uppercase tracking-wider"
           >
             <a
               href="#how-it-works"
@@ -157,14 +157,15 @@ export default function LandingPage() {
           </nav>
 
           {/* Nav Actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <Show when="signed-in">
               <Link
                 href="/app"
-                className="inline-flex items-center gap-2 rounded-control bg-primary px-4 py-2 font-display text-xs font-bold uppercase tracking-wider text-primary-foreground border border-border shadow-[3px_3px_0px_0px_#1a1a1a] brutalist-interactive"
+                className="inline-flex items-center gap-1.5 sm:gap-2 rounded-control bg-primary px-2.5 py-1.5 sm:px-4 sm:py-2 font-display text-[11px] sm:text-xs font-bold uppercase tracking-normal sm:tracking-wider text-primary-foreground border border-border shadow-[2px_2px_0px_0px_#1a1a1a] sm:shadow-[3px_3px_0px_0px_#1a1a1a] brutalist-interactive whitespace-nowrap"
               >
-                <span>Enter Simulator</span>
-                <ArrowRightIcon className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Enter Simulator</span>
+                <span className="sm:hidden">Simulator</span>
+                <ArrowRightIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               </Link>
               <UserButton />
             </Show>
@@ -173,7 +174,7 @@ export default function LandingPage() {
               <SignInButton mode="modal">
                 <button
                   type="button"
-                  className="hidden sm:inline-flex items-center rounded-control bg-surface px-4 py-2 font-display text-xs font-bold uppercase tracking-wider text-foreground border border-border shadow-[2px_2px_0px_0px_#1a1a1a] hover:bg-surface-subtle cursor-pointer"
+                  className="hidden sm:inline-flex items-center rounded-control bg-surface px-3.5 py-2 font-display text-xs font-bold uppercase tracking-wider text-foreground border border-border shadow-[2px_2px_0px_0px_#1a1a1a] hover:bg-surface-subtle cursor-pointer"
                 >
                   Sign In
                 </button>
@@ -182,10 +183,10 @@ export default function LandingPage() {
               <SignUpButton mode="modal">
                 <button
                   type="button"
-                  className="inline-flex items-center gap-1.5 rounded-control bg-primary px-4 py-2 font-display text-xs font-bold uppercase tracking-wider text-primary-foreground border border-border shadow-[3px_3px_0px_0px_#1a1a1a] brutalist-interactive cursor-pointer"
+                  className="inline-flex items-center gap-1 sm:gap-1.5 rounded-control bg-primary px-2.5 py-1.5 sm:px-4 sm:py-2 font-display text-[11px] sm:text-xs font-bold uppercase tracking-normal sm:tracking-wider text-primary-foreground border border-border shadow-[2px_2px_0px_0px_#1a1a1a] sm:shadow-[3px_3px_0px_0px_#1a1a1a] brutalist-interactive cursor-pointer whitespace-nowrap"
                 >
                   <span>Start Free</span>
-                  <ArrowRightIcon className="w-3.5 h-3.5" />
+                  <ArrowRightIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                 </button>
               </SignUpButton>
             </Show>
@@ -194,10 +195,10 @@ export default function LandingPage() {
             <button
               type="button"
               onClick={() => setMobileMenuOpen((prev) => !prev)}
-              className="md:hidden p-2 rounded-control border border-border bg-surface shadow-2xs"
+              className="md:hidden p-1.5 sm:p-2 rounded-control border border-border bg-surface shadow-2xs cursor-pointer text-foreground"
               aria-label="Toggle navigation menu"
             >
-              {mobileMenuOpen ? <CloseIcon /> : <MenuIcon />}
+              {mobileMenuOpen ? <CloseIcon className="w-4 h-4" /> : <MenuIcon className="w-4 h-4" />}
             </button>
           </div>
         </div>
@@ -206,7 +207,7 @@ export default function LandingPage() {
         {mobileMenuOpen && (
           <nav
             aria-label="Mobile navigation"
-            className="md:hidden pt-4 pb-3 border-t border-border mt-3 flex flex-col gap-3 font-meta text-xs font-semibold uppercase tracking-wider"
+            className="md:hidden pt-3 pb-2 border-t border-border/20 mt-2.5 flex flex-col gap-2.5 font-meta text-xs font-semibold uppercase tracking-wider"
           >
             <a
               href="#how-it-works"
@@ -243,12 +244,12 @@ export default function LandingPage() {
             >
               Pricing
             </a>
-            <div className="pt-2 border-t border-border/40 flex items-center justify-between">
+            <div className="pt-2 border-t border-border/20 flex items-center justify-between">
               <Show when="signed-out">
                 <SignInButton mode="modal">
                   <button
                     type="button"
-                    className="text-xs font-bold uppercase text-foreground py-1"
+                    className="text-xs font-bold uppercase text-foreground py-1 cursor-pointer"
                   >
                     Sign In
                   </button>

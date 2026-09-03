@@ -18,19 +18,19 @@ export function AttemptComparisonSection({
   comparison,
 }: AttemptComparisonSectionProps) {
   return (
-    <section className="glass-surface rounded-card border border-border p-6 sm:p-8 shadow-[6px_6px_0px_0px_#1a1a1a] space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/15 pb-4">
+    <section className="glass-surface rounded-card border border-border p-4 sm:p-8 shadow-[4px_4px_0px_0px_#1a1a1a] sm:shadow-[6px_6px_0px_0px_#1a1a1a] space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b border-border/15 pb-3 sm:pb-4">
         <div>
-          <div className="flex items-center gap-2.5">
-            <h2 className="font-display text-xl sm:text-2xl font-bold uppercase tracking-tight text-foreground">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+            <h2 className="font-display text-lg sm:text-2xl font-bold uppercase tracking-tight text-foreground">
               Attempt Comparison
             </h2>
             {comparison.comparable ? (
-              <span className="inline-flex items-center rounded-full bg-[#d4ff00]/20 border border-border px-3 py-0.5 font-meta text-xs font-bold text-[#171e00] uppercase tracking-wider">
+              <span className="inline-flex items-center rounded-full bg-[#d4ff00]/20 border border-border px-2.5 sm:px-3 py-0.5 font-meta text-[10px] sm:text-xs font-bold text-[#171e00] uppercase tracking-wider">
                 Same Difficulty ({comparison.currentDifficulty})
               </span>
             ) : (
-              <span className="inline-flex items-center rounded-full bg-amber-100 border border-amber-300 px-3 py-0.5 font-meta text-xs font-bold text-amber-900 uppercase tracking-wider">
+              <span className="inline-flex items-center rounded-full bg-amber-100 border border-amber-300 px-2.5 sm:px-3 py-0.5 font-meta text-[10px] sm:text-xs font-bold text-amber-900 uppercase tracking-wider">
                 Cross-Difficulty ({comparison.previousDifficulty} →{" "}
                 {comparison.currentDifficulty})
               </span>
@@ -46,18 +46,18 @@ export function AttemptComparisonSection({
 
       {/* Non-Equivalent Alert when difficulties differ */}
       {!comparison.comparable && (
-        <div className="rounded-control border-2 border-amber-300 bg-amber-50 p-4 sm:p-5 text-amber-950 space-y-1.5 shadow-2xs">
-          <div className="flex items-start gap-3">
-            <span className="text-xl">⚠️</span>
+        <div className="rounded-control border-2 border-amber-300 bg-amber-50 p-3.5 sm:p-5 text-amber-950 space-y-1.5 shadow-2xs">
+          <div className="flex items-start gap-2.5 sm:gap-3">
+            <span className="text-lg sm:text-xl">⚠️</span>
             <div className="space-y-1">
-              <h3 className="font-display text-sm font-bold uppercase tracking-wide text-amber-950">
+              <h3 className="font-display text-xs sm:text-sm font-bold uppercase tracking-wide text-amber-950">
                 Non-Equivalent Difficulty Comparison
               </h3>
               <p className="font-sans text-xs sm:text-sm leading-relaxed">
                 {comparison.nonEquivalentReason ??
                   "Previous attempt and current attempt were completed at different difficulty levels."}
               </p>
-              <p className="font-sans text-xs text-amber-900/80 leading-relaxed pt-1">
+              <p className="font-sans text-[11px] sm:text-xs text-amber-900/80 leading-relaxed pt-1">
                 Score changes across different difficulty settings do not
                 represent strict like-for-like improvement because counterpart
                 objections, resistance, and concession thresholds change.
@@ -68,9 +68,9 @@ export function AttemptComparisonSection({
       )}
 
       {/* Comparison Cards Grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {/* Overall Score Delta Card */}
-        <div className="rounded-card border border-border bg-surface-subtle p-5 shadow-xs flex flex-col justify-between">
+        <div className="rounded-card border border-border bg-surface-subtle p-3.5 sm:p-5 shadow-xs flex flex-col justify-between">
           <div>
             <span className="font-meta text-xs uppercase tracking-wider text-muted-foreground font-bold">
               Overall Score Change

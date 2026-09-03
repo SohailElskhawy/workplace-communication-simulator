@@ -70,7 +70,7 @@ export function AccessibleDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-3 sm:p-4 backdrop-blur-xs"
       onClick={(event) => {
         if (event.target === event.currentTarget) onCloseRef.current();
       }}
@@ -82,21 +82,21 @@ export function AccessibleDialog({
         aria-labelledby={titleId}
         aria-describedby={descriptionId}
         tabIndex={-1}
-        className="w-full max-w-md rounded-card border-2 border-border bg-surface-solid p-6 shadow-brutal outline-none"
+        className="w-full max-w-md max-h-[92dvh] flex flex-col rounded-card border-2 border-border bg-surface-solid p-4 sm:p-6 shadow-brutal outline-none overflow-y-auto"
       >
         <h2
           id={titleId}
-          className="font-display text-lg font-bold uppercase tracking-tight text-foreground"
+          className="font-display text-base sm:text-lg font-bold uppercase tracking-tight text-foreground"
         >
           {title}
         </h2>
         <p
           id={descriptionId}
-          className="mt-2.5 font-sans text-sm leading-relaxed text-muted-foreground"
+          className="mt-1.5 sm:mt-2.5 font-sans text-xs sm:text-sm leading-relaxed text-muted-foreground"
         >
           {description}
         </p>
-        <div className="mt-4">{children}</div>
+        <div className="mt-3.5 sm:mt-4">{children}</div>
       </div>
     </div>
   );
