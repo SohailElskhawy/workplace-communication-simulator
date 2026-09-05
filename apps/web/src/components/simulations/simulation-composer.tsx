@@ -76,18 +76,16 @@ export function SimulationComposer({
   const spaceHeldRef = useRef(false);
   const lastEnterHandledTimeRef = useRef(0);
 
-  const [reviewBeforeSend, setReviewBeforeSend] = useState(true);
-
-  useEffect(() => {
+  const [reviewBeforeSend, setReviewBeforeSend] = useState(() => {
+    if (typeof window === "undefined") return true;
     try {
-      const stored = localStorage.getItem("kalemny_voice_review_before_send");
-      if (stored === "false") {
-        setReviewBeforeSend(false);
-      }
+      return (
+        localStorage.getItem("kalemny_voice_review_before_send") !== "false"
+      );
     } catch {
-      // Ignore localStorage read errors
+      return true;
     }
-  }, []);
+  });
 
   const handleToggleReviewMode = () => {
     setReviewBeforeSend((prev) => {
