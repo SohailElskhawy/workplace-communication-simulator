@@ -171,19 +171,6 @@ export interface AttemptRepository {
     attemptId: string,
     userId: string,
   ): Promise<AttemptRecord | null>;
-  bindRealtimeConversation(
-    attemptId: string,
-    userId: string,
-    conversationId: string,
-    currentTime: Date,
-  ): Promise<"bound" | "not_found" | "invalid_state" | "expired">;
-  importRealtimeTranscript(input: {
-    attemptId: string;
-    userId: string;
-    conversationId: string;
-    turns: ReadonlyArray<{ userText: string; assistantText: string | null }>;
-    currentTime: Date;
-  }): Promise<"imported" | "not_found" | "invalid_state" | "limit_reached">;
   /**
    * Loads only the data required to build the roleplay prompt for the next
    * turn: difficulty, variation, scenario definition, and completed turns
@@ -246,12 +233,6 @@ export interface AttemptService {
     userId: string,
     attemptId: string,
   ): Promise<FinishAttemptResponse["data"]>;
-  importRealtimeTranscript(
-    userId: string,
-    attemptId: string,
-    conversationId: string,
-    turns: ReadonlyArray<{ userText: string; assistantText: string | null }>,
-  ): Promise<void>;
   delete(userId: string, attemptId: string): Promise<void>;
 }
 
@@ -398,7 +379,8 @@ export function createAttemptService(
   return {
     async create(userId, request) {
       const language = request.language ?? "en";
-      const dialect = language === "ar" ? (request.dialect ?? "EGYPTIAN") : null;
+      const dialect =
+        language === "ar" ? (request.dialect ?? "EGYPTIAN") : null;
       const retryOfAttemptId = request.retryOfAttemptId ?? null;
       const interactionMode = request.interactionMode ?? "PUSH_TO_TALK";
       const startedAt = clock();
@@ -540,22 +522,6 @@ export function createAttemptService(
       }
 
       return { id: result.id, status: result.status };
-    },
-
-    async importRealtimeTranscript(userId, attemptId, conversationId, turns) {
-      const result = await repository.importRealtimeTranscript({
-        attemptId,
-        userId,
-        conversationId,
-        turns,
-        currentTime: clock(),
-      });
-      if (result === "not_found") throw new AttemptError("NOT_FOUND");
-      if (result === "invalid_state")
-        throw new AttemptError("INVALID_ATTEMPT_STATE");
-      if (result === "limit_reached") {
-        throw new AttemptError("SESSION_LIMIT_REACHED");
-      }
     },
 
     async delete(userId, attemptId) {

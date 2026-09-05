@@ -52,8 +52,7 @@ function languageDirectiveLines(
     return [];
   }
 
-  const dialectLabel =
-    dialect === "GULF" ? "Gulf (خليجي)" : "Egyptian (مصري)";
+  const dialectLabel = dialect === "GULF" ? "Gulf (خليجي)" : "Egyptian (مصري)";
   return [
     "",
     "Language and dialect directive",
@@ -99,9 +98,8 @@ function conversationBriefLines(variation: ScenarioVariation): string[] {
 }
 
 /**
- * Builds the hidden roleplay system prompt. Shared by the text roleplay
- * provider and the realtime voice context endpoint so both surfaces use the
- * exact same scenario/persona/difficulty configuration.
+ * Builds the hidden roleplay system prompt used by the roleplay AI service
+ * so all attempts use the exact same scenario/persona/difficulty configuration.
  */
 export function buildRoleplaySystemPrompt(
   input: RoleplaySystemPromptInput,

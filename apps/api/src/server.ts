@@ -34,10 +34,6 @@ import {
   createPrismaEntitlementRepository,
 } from "./modules/entitlements/entitlement-service.js";
 import type { PlanLimits } from "./modules/entitlements/entitlement-rules.js";
-import { createElevenLabsProvider } from "./modules/realtime/elevenlabs-provider.js";
-import { createPrismaRealtimeTranscriptRepository } from "./modules/realtime/prisma-realtime-transcript-repository.js";
-import { createRealtimeVoiceService } from "./modules/realtime/realtime-service.js";
-import { createRealtimeTranscriptService } from "./modules/realtime/realtime-transcript-service.js";
 
 const rootEnvPath = resolve(process.cwd(), "../../.env");
 if (existsSync(rootEnvPath)) {
@@ -101,18 +97,6 @@ const scenarioService = createScenarioService(
 
 const attemptRepository = createPrismaAttemptRepository(prisma, planLimits);
 
-// Realtime voice bootstrap: enabled only when the server-only ElevenLabs
-// settings are configured. Absent configuration leaves text/STT/TTS flows
-// untouched and the realtime endpoints unregistered.
-const elevenLabsAgentId = apiEnv.ELEVENLABS_AGENT_ID;
-const elevenLabsProvider =
-  apiEnv.ELEVENLABS_API_KEY && elevenLabsAgentId
-    ? createElevenLabsProvider({
-        apiKey: apiEnv.ELEVENLABS_API_KEY,
-        agentId: elevenLabsAgentId,
-      })
-    : undefined;
-
 const attemptService = createAttemptService(
   attemptRepository,
   aiService,
@@ -143,27 +127,6 @@ const ttsService = createTtsService(
   new EdgeTtsProvider(),
 );
 
-// Realtime session bootstrap (voice service): requires the tool secret in
-// addition to the shared provider above. The transcript importer and pull
-// sync are created next to the provider; the public webhook route below
-// stays gated on the webhook secret.
-const elevenLabsToolSecret = apiEnv.ELEVENLABS_TOOL_SECRET;
-const realtimeVoiceService =
-  elevenLabsAgentId && elevenLabsProvider && elevenLabsToolSecret
-    ? createRealtimeVoiceService({
-        repository: attemptRepository,
-        elevenLabsProvider,
-        contextTokenSecret: elevenLabsToolSecret,
-        agentId: elevenLabsAgentId,
-      })
-    : undefined;
-const realtimeTranscriptService =
-  elevenLabsAgentId && apiEnv.ELEVENLABS_WEBHOOK_SECRET
-    ? createRealtimeTranscriptService(
-        createPrismaRealtimeTranscriptRepository(prisma),
-      )
-    : undefined;
-
 const app = createApp({
   attemptService,
   authenticationMiddleware: createClerkAuthenticationMiddleware({
@@ -179,18 +142,6 @@ const app = createApp({
   userProvisioner,
   voiceService,
   ttsService,
-  ...(realtimeVoiceService && elevenLabsToolSecret
-    ? { realtimeVoiceService, elevenLabsToolSecret }
-    : {}),
-  ...(elevenLabsAgentId &&
-  apiEnv.ELEVENLABS_WEBHOOK_SECRET &&
-  realtimeTranscriptService
-    ? {
-        elevenLabsAgentId,
-        elevenLabsWebhookSecret: apiEnv.ELEVENLABS_WEBHOOK_SECRET,
-        realtimeTranscriptService,
-      }
-    : {}),
 
   webOrigin: apiEnv.WEB_ORIGIN,
   logger,

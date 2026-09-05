@@ -128,33 +128,4 @@ describe("parseApiEnv", () => {
       parseApiEnv({ ...requiredEnvironment, TTS_MODEL: "" }),
     ).toThrow();
   });
-
-  it("treats ElevenLabs realtime settings as optional", () => {
-    const parsed = parseApiEnv(requiredEnvironment);
-    expect(parsed.ELEVENLABS_API_KEY).toBeUndefined();
-    expect(parsed.ELEVENLABS_AGENT_ID).toBeUndefined();
-    expect(parsed.ELEVENLABS_TOOL_SECRET).toBeUndefined();
-    expect(parsed.ELEVENLABS_WEBHOOK_SECRET).toBeUndefined();
-  });
-
-  it("accepts configured ElevenLabs realtime settings and drops empty values", () => {
-    const withRealtime = {
-      ...requiredEnvironment,
-      ELEVENLABS_API_KEY: "el-example",
-      ELEVENLABS_AGENT_ID: "agent_example",
-      ELEVENLABS_TOOL_SECRET: "tool-secret-example",
-      ELEVENLABS_WEBHOOK_SECRET: "webhook-secret-example",
-    };
-    const parsed = parseApiEnv(withRealtime);
-    expect(parsed.ELEVENLABS_API_KEY).toBe("el-example");
-    expect(parsed.ELEVENLABS_AGENT_ID).toBe("agent_example");
-    expect(parsed.ELEVENLABS_TOOL_SECRET).toBe("tool-secret-example");
-    expect(parsed.ELEVENLABS_WEBHOOK_SECRET).toBe("webhook-secret-example");
-
-    const emptyRealtime = parseApiEnv({
-      ...withRealtime,
-      ELEVENLABS_API_KEY: "",
-    });
-    expect(emptyRealtime.ELEVENLABS_API_KEY).toBeUndefined();
-  });
 });

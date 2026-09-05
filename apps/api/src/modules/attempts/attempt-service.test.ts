@@ -66,8 +66,6 @@ function createMemoryRepository(
   const usageEvents: Array<
     Parameters<AttemptRepository["finalizeRoleplayTurn"]>[0]
   > = [];
-  /** Bound realtime conversation IDs still awaiting canonical import. */
-  const realtimePending = new Map<string, string[]>();
   let nextAttempt = 1;
 
   const repository: AttemptRepository = {
@@ -250,10 +248,6 @@ function createMemoryRepository(
         return { kind: "not_found" };
       }
 
-      if ((realtimePending.get(attemptId) ?? []).length > 0) {
-        return { kind: "rejected", code: "REALTIME_TRANSCRIPT_PENDING" };
-      }
-
       if (attempt.turns.some((turn) => turn.status === "PENDING")) {
         return { kind: "rejected", code: "TURN_ALREADY_PENDING" };
       }
@@ -266,32 +260,6 @@ function createMemoryRepository(
           nextStatus === "EVALUATING" ? currentTime : null;
       }
       return { kind: "finished", id: attempt.id, status: attempt.status };
-    },
-
-    async bindRealtimeConversation(attemptId, userId) {
-      const attempt = attempts.get(attemptId);
-      return attempt && attempt.userId === userId ? "bound" : "not_found";
-    },
-
-    async importRealtimeTranscript({ attemptId, userId, turns }) {
-      const attempt = attempts.get(attemptId);
-      if (!attempt || attempt.userId !== userId) return "not_found";
-      if (attempt.status !== "ACTIVE") return "invalid_state";
-      if (attempt.turns.length + turns.length > 20) return "limit_reached";
-      for (const turn of turns) {
-        attempt.turns.push(
-          createTurn(attempt.turns.length + 1, {
-            clientRequestId: `realtime-test-${attempt.turns.length}`,
-            inputMethod: "VOICE",
-            userText: turn.userText,
-            assistantText: turn.assistantText,
-            status: turn.assistantText ? "COMPLETED" : "FAILED",
-            completedAt: turn.assistantText ? now : null,
-          }),
-        );
-      }
-      realtimePending.set(attemptId, []);
-      return "imported";
     },
 
     async deleteAttempt(attemptId, userId) {
@@ -308,7 +276,6 @@ function createMemoryRepository(
     attempts,
     repository,
     usageEvents,
-    realtimePending,
   };
 }
 
@@ -857,38 +824,6 @@ describe("attempt service", () => {
     });
   });
 
-  it("imports the live UI transcript before allowing finish", async () => {
-    const { repository, realtimePending } = createMemoryRepository();
-    const service = createAttemptService(
-      repository,
-      createSuccessfulAiService(),
-      () => now,
-    );
-    const attempt = await startAttempt(service);
-    realtimePending.set(attempt.id, ["conv_ui-transcript"]);
-
-    await expect(service.finish(ownerId, attempt.id)).rejects.toMatchObject({
-      code: "REALTIME_TRANSCRIPT_PENDING",
-    });
-
-    await service.importRealtimeTranscript(
-      ownerId,
-      attempt.id,
-      "conv_ui-transcript",
-      [
-        {
-          userText: "I would like to discuss my salary.",
-          assistantText: "Tell me more.",
-        },
-      ],
-    );
-
-    await expect(service.finish(ownerId, attempt.id)).resolves.toEqual({
-      id: attempt.id,
-      status: "EVALUATING",
-    });
-  });
-
   it("computes attempt comparison when both current and previous attempts are evaluated", async () => {
     const { attempts, repository } = createMemoryRepository();
     const service = createAttemptService(
@@ -1054,7 +989,12 @@ describe("attempt service", () => {
     it("creates Arabic attempt with default Egyptian dialect and Arabic opening message", async () => {
       const { repository } = createMemoryRepository();
       const aiService = createSuccessfulAiService();
-      const service = createAttemptService(repository, aiService, () => now, () => 0);
+      const service = createAttemptService(
+        repository,
+        aiService,
+        () => now,
+        () => 0,
+      );
 
       const attempt = await service.create(ownerId, {
         scenarioKey: "salary-negotiation",
@@ -1078,7 +1018,12 @@ describe("attempt service", () => {
     it("creates Arabic attempt with explicit Gulf dialect", async () => {
       const { repository } = createMemoryRepository();
       const aiService = createSuccessfulAiService();
-      const service = createAttemptService(repository, aiService, () => now, () => 0);
+      const service = createAttemptService(
+        repository,
+        aiService,
+        () => now,
+        () => 0,
+      );
 
       const attempt = await service.create(ownerId, {
         scenarioKey: "salary-negotiation",
@@ -1096,7 +1041,12 @@ describe("attempt service", () => {
     it("sets dialect to null when language is en even if a dialect was provided", async () => {
       const { repository } = createMemoryRepository();
       const aiService = createSuccessfulAiService();
-      const service = createAttemptService(repository, aiService, () => now, () => 0);
+      const service = createAttemptService(
+        repository,
+        aiService,
+        () => now,
+        () => 0,
+      );
 
       const attempt = await service.create(ownerId, {
         scenarioKey: "salary-negotiation",
@@ -1117,7 +1067,12 @@ describe("attempt service", () => {
     it("returns language and dialect in getOwned", async () => {
       const { repository } = createMemoryRepository();
       const aiService = createSuccessfulAiService();
-      const service = createAttemptService(repository, aiService, () => now, () => 0);
+      const service = createAttemptService(
+        repository,
+        aiService,
+        () => now,
+        () => 0,
+      );
 
       const created = await service.create(ownerId, {
         scenarioKey: "salary-negotiation",
@@ -1137,7 +1092,12 @@ describe("attempt service", () => {
     it("passes language and dialect to generateRoleplayReply on turn creation", async () => {
       const { repository } = createMemoryRepository();
       const aiService = createSuccessfulAiService();
-      const service = createAttemptService(repository, aiService, () => now, () => 0);
+      const service = createAttemptService(
+        repository,
+        aiService,
+        () => now,
+        () => 0,
+      );
 
       const attempt = await service.create(ownerId, {
         scenarioKey: "salary-negotiation",

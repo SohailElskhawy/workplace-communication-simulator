@@ -7,6 +7,7 @@
     "dev": "corepack pnpm --filter @kalemny/contracts build && tsx watch src/server.ts",
     "build": "corepack pnpm --filter @kalemny/contracts build && tsc -p tsconfig.build.json",
     "start": "node dist/server.js",
+    "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {

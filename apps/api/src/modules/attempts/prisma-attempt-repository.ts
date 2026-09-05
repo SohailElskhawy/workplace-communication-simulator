@@ -85,7 +85,9 @@ function mapAttempt(attempt: PrismaAttemptRecord): AttemptRecord {
       )
     : null;
 
-  const language = (attempt.language === "ar" ? "ar" : "en") as SupportedLanguage;
+  const language = (
+    attempt.language === "ar" ? "ar" : "en"
+  ) as SupportedLanguage;
   const dialect =
     language === "ar"
       ? ((attempt.dialect as ArabicDialect | null) ?? "EGYPTIAN")
@@ -250,136 +252,6 @@ export function createPrismaAttemptRepository(
       return attempt ? mapAttempt(attempt) : null;
     },
 
-    async bindRealtimeConversation(
-      attemptId,
-      userId,
-      conversationId,
-      currentTime,
-    ) {
-      try {
-        return await prisma.$transaction(async (transaction) => {
-          const owned = await lockOwnedAttempt(transaction, attemptId, userId);
-          if (!owned) return "not_found" as const;
-
-          const existing = await transaction.realtimeConversation.findUnique({
-            where: { conversationId },
-            select: { attemptId: true },
-          });
-          if (existing) {
-            return existing.attemptId === attemptId
-              ? ("bound" as const)
-              : ("not_found" as const);
-          }
-
-          const attempt = await transaction.simulationAttempt.findUniqueOrThrow(
-            {
-              where: { id: attemptId },
-              select: { status: true, expiresAt: true },
-            },
-          );
-          if (attempt.status !== "ACTIVE") return "invalid_state" as const;
-          if (currentTime.getTime() >= attempt.expiresAt.getTime()) {
-            return "expired" as const;
-          }
-
-          await transaction.realtimeConversation.create({
-            data: { attemptId, conversationId },
-          });
-          return "bound" as const;
-        });
-      } catch (error) {
-        if (!isUniqueConstraintViolation(error)) throw error;
-        const existing = await prisma.realtimeConversation.findUnique({
-          where: { conversationId },
-          select: { attemptId: true },
-        });
-        return existing?.attemptId === attemptId
-          ? ("bound" as const)
-          : ("not_found" as const);
-      }
-    },
-
-    async importRealtimeTranscript({
-      attemptId,
-      userId,
-      conversationId,
-      turns,
-      currentTime,
-    }) {
-      return prisma.$transaction(async (transaction) => {
-        const owned = await lockOwnedAttempt(transaction, attemptId, userId);
-        if (!owned) return "not_found" as const;
-
-        const attempt = await transaction.simulationAttempt.findUniqueOrThrow({
-          where: { id: attemptId },
-          select: { interactionMode: true, status: true },
-        });
-        if (
-          attempt.status !== "ACTIVE" ||
-          attempt.interactionMode !== "REALTIME"
-        ) {
-          return "invalid_state" as const;
-        }
-
-        const conversation = await transaction.realtimeConversation.findFirst({
-          where: { attemptId, conversationId },
-          select: { transcriptImportedAt: true },
-        });
-        // Do not allow a client to attach an arbitrary transcript to an
-        // attempt. The ElevenLabs-created ID must have been bound first.
-        if (!conversation) return "not_found" as const;
-        if (conversation.transcriptImportedAt) return "imported" as const;
-
-        const [aggregate, existingCount] = await Promise.all([
-          transaction.conversationTurn.aggregate({
-            where: { attemptId },
-            _max: { sequence: true },
-          }),
-          transaction.conversationTurn.count({ where: { attemptId } }),
-        ]);
-        if (existingCount + turns.length > 20) {
-          return "limit_reached" as const;
-        }
-
-        const existing = await transaction.conversationTurn.findMany({
-          where: { attemptId },
-          select: { clientRequestId: true },
-        });
-        const existingIds = new Set(
-          existing.map((turn) => turn.clientRequestId),
-        );
-        const missing = turns.filter(
-          (_turn, index) =>
-            !existingIds.has(`realtime:${conversationId}:ui:${index}`),
-        );
-        let sequence = aggregate._max.sequence ?? 0;
-
-        for (const [index, turn] of turns.entries()) {
-          if (!missing.includes(turn)) continue;
-          sequence += 1;
-          await transaction.conversationTurn.create({
-            data: {
-              attemptId,
-              sequence,
-              clientRequestId: `realtime:${conversationId}:ui:${index}`,
-              inputMethod: "VOICE",
-              userText: turn.userText,
-              assistantText: turn.assistantText,
-              status: turn.assistantText ? "COMPLETED" : "FAILED",
-              completedAt: turn.assistantText ? currentTime : null,
-            },
-          });
-        }
-
-        await transaction.realtimeConversation.updateMany({
-          where: { attemptId, conversationId, transcriptImportedAt: null },
-          data: { transcriptImportedAt: currentTime },
-        });
-
-        return "imported" as const;
-      });
-    },
-
     async findRoleplayContext({ attemptId, userId, beforeSequence }) {
       const attempt = await prisma.simulationAttempt.findFirst({
         where: { id: attemptId, userId },
@@ -409,7 +281,9 @@ export function createPrismaAttemptRepository(
         return null;
       }
 
-      const language = (attempt.language === "ar" ? "ar" : "en") as SupportedLanguage;
+      const language = (
+        attempt.language === "ar" ? "ar" : "en"
+      ) as SupportedLanguage;
       const dialect =
         language === "ar"
           ? ((attempt.dialect as ArabicDialect | null) ?? "EGYPTIAN")
@@ -652,33 +526,22 @@ export function createPrismaAttemptRepository(
           return { kind: "not_found" } as const;
         }
 
-        const [attempt, pendingTurn, pendingRealtimeTranscript] =
-          await Promise.all([
-            transaction.simulationAttempt.findUniqueOrThrow({
-              where: { id: attemptId },
-              select: {
-                id: true,
-                status: true,
-                _count: { select: { conversationTurns: true } },
-              },
-            }),
-            transaction.conversationTurn.findFirst({
-              where: { attemptId, status: "PENDING" },
-              select: { id: true },
-            }),
-            transaction.realtimeConversation.findFirst({
-              where: { attemptId, transcriptImportedAt: null },
-              select: { id: true },
-            }),
-          ]);
+        const [attempt, pendingTurn] = await Promise.all([
+          transaction.simulationAttempt.findUniqueOrThrow({
+            where: { id: attemptId },
+            select: {
+              id: true,
+              status: true,
+              _count: { select: { conversationTurns: true } },
+            },
+          }),
+          transaction.conversationTurn.findFirst({
+            where: { attemptId, status: "PENDING" },
+            select: { id: true },
+          }),
+        ]);
         if (pendingTurn) {
           return { kind: "rejected", code: "TURN_ALREADY_PENDING" } as const;
-        }
-        if (pendingRealtimeTranscript) {
-          return {
-            kind: "rejected",
-            code: "REALTIME_TRANSCRIPT_PENDING",
-          } as const;
         }
         const status = getFinishStatus(
           attempt.status,
