@@ -179,6 +179,8 @@ export function CustomInterviewWizard({
       const attempt = await client.createAttempt(token, {
         scenarioKey: generatedScenario.key,
         difficulty: selectedDifficulty,
+        language: "en",
+        dialect: undefined,
         retryOfAttemptId: null,
         interactionMode: selectedInteractionMode,
       });

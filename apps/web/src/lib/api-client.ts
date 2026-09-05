@@ -1,7 +1,6 @@
 import {
   ApiErrorResponseSchema,
   AttemptComparisonResponseSchema,
-  BindRealtimeConversationResponseSchema,
   AttemptDetailResponseSchema,
   CreateAttemptResponseSchema,
   CreateCustomScenarioResponseSchema,
@@ -10,13 +9,11 @@ import {
   HistoryResponseSchema,
   MeResponseSchema,
   ProgressResponseSchema,
-  RealtimeSessionResponseSchema,
   ScenarioDetailResponseSchema,
   ScenarioListResponseSchema,
   TranscriptionResponseSchema,
   TurnResponseSchema,
   type AttemptComparison,
-  type BindRealtimeConversationResponse,
   type AttemptDetailResponse,
   type CreateAttemptRequest,
   type CreateAttemptResponse,
@@ -28,7 +25,6 @@ import {
   type ProgressData,
   type PublicScenarioDetail,
   type PublicScenarioSummary,
-  type RealtimeSessionResponse,
   type TranscriptionData,
   type TurnResponse,
 } from "@kalemny/contracts";
@@ -377,38 +373,6 @@ export function createApiClient(baseUrl: string) {
       );
     },
 
-    /**
-     * Issues the short-lived ElevenLabs WebRTC conversation token and signed
-     * context token for the feature-flagged live conversation spike. Returns
-     * only public scenario data; hidden persona/prompt configuration is
-     * fetched by the voice agent through the tool-protected endpoint.
-     */
-    async createRealtimeSession(
-      token: string,
-      attemptId: string,
-    ): Promise<RealtimeSessionResponse["data"]> {
-      return request(
-        baseUrl,
-        `/api/v1/attempts/${encodeURIComponent(attemptId)}/realtime-session`,
-        token,
-        { method: "POST" },
-        RealtimeSessionResponseSchema,
-      );
-    },
-
-    async bindRealtimeConversation(
-      token: string,
-      attemptId: string,
-      conversationId: string,
-    ): Promise<BindRealtimeConversationResponse["data"]> {
-      return request(
-        baseUrl,
-        `/api/v1/attempts/${encodeURIComponent(attemptId)}/realtime-conversation`,
-        token,
-        { method: "POST", body: JSON.stringify({ conversationId }) },
-        BindRealtimeConversationResponseSchema,
-      );
-    },
 
     async submitRealtimeTranscript(
       token: string,

@@ -4,10 +4,10 @@
  */
 
 /**
- * Feature-flagged ElevenLabs live conversation spike. Enabled explicitly via
- * `NEXT_PUBLIC_ENABLE_REALTIME_VOICE=true`; the backend must also have its
- * optional `ELEVENLABS_*` settings configured for the endpoints to exist.
+ * @deprecated Realtime voice mode has been removed in favor of in-house neural voice.
+ * Always returns false.
  */
 export function isRealtimeVoiceEnabled(): boolean {
-  return process.env.NEXT_PUBLIC_ENABLE_REALTIME_VOICE === "true";
+  return false;
 }
+

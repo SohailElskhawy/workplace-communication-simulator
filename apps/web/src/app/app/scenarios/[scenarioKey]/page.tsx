@@ -2,9 +2,10 @@
 
 import { useAuth } from "@clerk/nextjs";
 import type {
+  ArabicDialect,
   Difficulty,
-  InteractionMode,
   PublicScenarioDetail,
+  SupportedLanguage,
 } from "@kalemny/contracts";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -19,20 +20,12 @@ import {
 import { ErrorState, LoadingState } from "@/components/route-state";
 import { DeleteCustomScenarioDialog } from "@/components/scenarios/delete-custom-scenario-dialog";
 import { DifficultySelector } from "@/components/scenarios/difficulty-selector";
-import { InteractionModeSelector } from "@/components/scenarios/interaction-mode-selector";
+import { LanguageDialectSelector } from "@/components/scenarios/language-dialect-selector";
 import { ScenarioBriefingCard } from "@/components/scenarios/scenario-briefing-card";
 import { ScenarioHeroGraphic } from "@/components/scenarios/scenario-hero-graphic";
 import { ApiClientError, createApiClient } from "@/lib/api-client";
-import { isRealtimeVoiceEnabled } from "@/lib/feature-flags";
 
 import { getScenarioMeta } from "../../scenario-library-view";
-
-// Build-time UI gate only; the backend endpoints remain separately gated by
-// the server-only ELEVENLABS_* settings.
-const realtimeVoiceEnabled = isRealtimeVoiceEnabled();
-const availableInteractionModes: InteractionMode[] = realtimeVoiceEnabled
-  ? ["PUSH_TO_TALK", "REALTIME"]
-  : ["PUSH_TO_TALK"];
 
 export default function ScenarioDetailPage() {
   const params = useParams();
@@ -46,11 +39,10 @@ export default function ScenarioDetailPage() {
   const [scenario, setScenario] = useState<PublicScenarioDetail | null>(null);
   const [selectedDifficulty, setSelectedDifficulty] =
     useState<Difficulty>("MEDIUM");
-  // Voice interaction mode chosen at simulation start and persisted on the
-  // attempt. Push-to-talk is the Release 1 default; realtime is offered only
-  // when the build-time feature flag is enabled.
-  const [selectedInteractionMode, setSelectedInteractionMode] =
-    useState<InteractionMode>("PUSH_TO_TALK");
+  const [selectedLanguage, setSelectedLanguage] =
+    useState<SupportedLanguage>("en");
+  const [selectedDialect, setSelectedDialect] =
+    useState<ArabicDialect>("EGYPTIAN");
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -156,8 +148,10 @@ export default function ScenarioDetailPage() {
       const attempt = await client.createAttempt(token, {
         scenarioKey: scenario.key,
         difficulty: selectedDifficulty,
+        language: selectedLanguage,
+        dialect: selectedLanguage === "ar" ? selectedDialect : undefined,
         retryOfAttemptId: null,
-        interactionMode: selectedInteractionMode,
+        interactionMode: "PUSH_TO_TALK",
       });
 
       router.push(`/app/simulations/${encodeURIComponent(attempt.id)}`);
@@ -283,14 +277,13 @@ export default function ScenarioDetailPage() {
         onSelectDifficulty={setSelectedDifficulty}
       />
 
-      {/* 5b. Interaction Mode Selection (realtime builds only) */}
-      {realtimeVoiceEnabled && (
-        <InteractionModeSelector
-          availableModes={availableInteractionModes}
-          selectedMode={selectedInteractionMode}
-          onSelectMode={setSelectedInteractionMode}
-        />
-      )}
+      {/* 5b. Language & Dialect Selection */}
+      <LanguageDialectSelector
+        language={selectedLanguage}
+        dialect={selectedDialect}
+        onSelectLanguage={setSelectedLanguage}
+        onSelectDialect={setSelectedDialect}
+      />
 
       {/* Start Simulation Error Alert (if any) */}
       {startError && (
@@ -309,7 +302,13 @@ export default function ScenarioDetailPage() {
             Ready to Begin
           </span>
           <p className="font-display text-sm sm:text-base font-bold uppercase tracking-tight text-foreground">
-            Rehearse at {selectedDifficulty} Difficulty
+            Rehearse in{" "}
+            {selectedLanguage === "ar"
+              ? selectedDialect === "EGYPTIAN"
+                ? "Egyptian Arabic"
+                : "Gulf Arabic"
+              : "English"}{" "}
+            at {selectedDifficulty} Difficulty
           </p>
         </div>
 

@@ -1,6 +1,5 @@
 "use client";
 
-import { useAuth } from "@clerk/nextjs";
 import {
   ConversationProvider,
   useConversationControls,
@@ -20,7 +19,6 @@ import {
   VolumeIcon,
   VolumeMuteIcon,
 } from "@/components/icons";
-import { createApiClient } from "@/lib/api-client";
 import {
   appendLiveTranscriptEntry,
   isLiveConversationActive,
@@ -213,10 +211,8 @@ function LiveConversationContainer({
 }
 
 function LiveConversationSession({
-  attemptId,
   startDisabled,
   onActiveChange,
-  onBindingPendingChange,
   onConversationIdChange,
   onUiStateChange,
   onMicrophoneLevelChange,
@@ -230,11 +226,7 @@ function LiveConversationSession({
   endingRef: React.RefObject<boolean>;
   onClearLiveTranscript: () => void;
 }) {
-  const { getToken } = useAuth();
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
-
-  const { startSession, endSession, getInputVolume } =
-    useConversationControls();
+  const { endSession, getInputVolume } = useConversationControls();
   const { status, message } = useConversationStatus();
   const { mode } = useConversationMode();
   const { isMuted, setMuted } = useConversationInput();
@@ -359,50 +351,8 @@ function LiveConversationSession({
         return;
       }
 
-      // 2. Server-issued short-lived tokens (ownership + ACTIVE validated).
-      const authToken = await getToken();
-      if (!authToken) throw new Error("Authentication token not available.");
-      const session = await createApiClient(apiUrl).createRealtimeSession(
-        authToken,
-        attemptId,
-      );
-      if (cancelledRef.current) {
-        onAwaitingStartChange(false);
-        return;
-      }
-
-      // 3. Start WebRTC. The conversation token encodes the agent; only the
-      // public dynamic variables cross the browser boundary.
-      startSession({
-        conversationToken: session.conversationToken,
-        dynamicVariables: {
-          opening_message: session.openingMessage,
-          secret__kalemny_context_token: session.contextToken,
-        },
-        // The installed React SDK exposes the provider-created conversation
-        // through this callback (its hook `startSession` is typed `void`).
-        // Bind its authoritative ID immediately; no browser identity or
-        // scenario data is included in this request.
-        onConversationCreated: (createdConversation: {
-          getId(): string;
-          endSession(): Promise<void>;
-        }) => {
-          const conversationId = createdConversation.getId();
-          onConversationIdChange(conversationId);
-          onBindingPendingChange(true);
-          void createApiClient(apiUrl)
-            .bindRealtimeConversation(authToken, attemptId, conversationId)
-            .catch((error: unknown) => {
-              void createdConversation.endSession();
-              setRequestError(
-                error instanceof Error
-                  ? error.message
-                  : "Failed to secure the live conversation.",
-              );
-            })
-            .finally(() => onBindingPendingChange(false));
-        },
-      });
+      // 2. Realtime voice has been removed in favor of in-house neural voice.
+      throw new Error("Realtime conversation is no longer supported.");
     } catch (error) {
       onAwaitingStartChange(false);
       if (!cancelledRef.current) {
@@ -414,16 +364,11 @@ function LiveConversationSession({
       }
     }
   }, [
-    apiUrl,
-    attemptId,
     endingRef,
-    getToken,
     onAwaitingStartChange,
-    onBindingPendingChange,
-    onConversationIdChange,
     onClearLiveTranscript,
+    onConversationIdChange,
     startDisabled,
-    startSession,
   ]);
 
   const handleEnd = useCallback(() => {

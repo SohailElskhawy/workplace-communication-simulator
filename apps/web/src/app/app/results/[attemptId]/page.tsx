@@ -330,6 +330,8 @@ export default function ResultsPage() {
       const newAttempt = await client.createAttempt(token, {
         scenarioKey: attempt.scenario.key,
         difficulty: selectedDifficulty,
+        language: attempt.language,
+        dialect: attempt.dialect ?? undefined,
         retryOfAttemptId: attempt.id,
         // A retry reproduces the same practice conditions, including the
         // interaction mode chosen for the source attempt.

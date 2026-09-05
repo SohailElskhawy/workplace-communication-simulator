@@ -361,72 +361,6 @@ describe("api-client", () => {
     expect(result).toBe(audio);
   });
 
-  it("requests a realtime session and returns public session data", async () => {
-    const mockData = {
-      data: {
-        attemptId: "123e4567-e89b-12d3-a456-426614174000",
-        agentId: "agent_123",
-        conversationToken: "conversationToken",
-        contextToken: "contextToken",
-        contextTokenExpiresAt: "2026-08-30T12:10:00.000Z",
-        scenario: {
-          key: "salary-negotiation",
-          version: 2,
-          title: "Salary Negotiation",
-        },
-        difficulty: "MEDIUM",
-        openingMessage: "Thanks for making time to talk.",
-        expiresAt: "2026-08-30T12:30:00.000Z",
-      },
-    };
-
-    vi.mocked(fetch).mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      json: async () => mockData,
-    } as Response);
-
-    const result = await client.createRealtimeSession(
-      token,
-      "123e4567-e89b-12d3-a456-426614174000",
-    );
-
-    expect(fetch).toHaveBeenCalledWith(
-      "https://api.test.kalemny.com/api/v1/attempts/123e4567-e89b-12d3-a456-426614174000/realtime-session",
-      expect.objectContaining({
-        headers: expect.any(Headers),
-        method: "POST",
-      }),
-    );
-    expect(result.conversationToken).toBe("conversationToken");
-    expect(result.contextToken).toBe("contextToken");
-    expect(result.openingMessage).toBe("Thanks for making time to talk.");
-  });
-
-  it("surfaces realtime session provider errors with stable codes", async () => {
-    vi.mocked(fetch).mockResolvedValueOnce({
-      ok: false,
-      status: 502,
-      json: async () => ({
-        error: {
-          code: "AI_PROVIDER_ERROR",
-          message: "The realtime provider is unavailable.",
-          requestId: "req-rt-1",
-        },
-      }),
-    } as Response);
-
-    await expect(
-      client.createRealtimeSession(
-        token,
-        "123e4567-e89b-12d3-a456-426614174000",
-      ),
-    ).rejects.toMatchObject({
-      name: "ApiClientError",
-      code: "AI_PROVIDER_ERROR",
-      status: 502,
-    });
-  });
 
   it("fetches me and plan entitlement data", async () => {
     const mockData = {
@@ -570,5 +504,58 @@ describe("api-client", () => {
         headers: expect.any(Headers),
       }),
     );
+  });
+
+  it("creates attempt with bilingual and dialect options", async () => {
+    const mockAttemptResponse = {
+      data: {
+        id: "6c81ce5b-79ac-4d33-9e22-58c5a264f12e",
+        status: "ACTIVE",
+        difficulty: "MEDIUM",
+        language: "ar",
+        dialect: "GULF",
+        interactionMode: "PUSH_TO_TALK",
+        scenario: {
+          key: "salary-negotiation",
+          version: 1,
+          title: "Salary Negotiation",
+        },
+        openingMessage: "مرحبا بك",
+        startedAt: "2026-09-05T10:00:00.000Z",
+        expiresAt: "2026-09-05T10:15:00.000Z",
+      },
+    };
+
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      status: 201,
+      json: async () => mockAttemptResponse,
+    } as Response);
+
+    const attempt = await client.createAttempt(token, {
+      scenarioKey: "salary-negotiation",
+      difficulty: "MEDIUM",
+      language: "ar",
+      dialect: "GULF",
+      retryOfAttemptId: null,
+      interactionMode: "PUSH_TO_TALK",
+    });
+
+    expect(fetch).toHaveBeenCalledWith(
+      "https://api.test.kalemny.com/api/v1/attempts",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          scenarioKey: "salary-negotiation",
+          difficulty: "MEDIUM",
+          language: "ar",
+          dialect: "GULF",
+          retryOfAttemptId: null,
+          interactionMode: "PUSH_TO_TALK",
+        }),
+      }),
+    );
+    expect(attempt.language).toBe("ar");
+    expect(attempt.dialect).toBe("GULF");
   });
 });
