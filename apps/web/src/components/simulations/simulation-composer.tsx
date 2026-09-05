@@ -3,7 +3,7 @@
 import { useAuth } from "@clerk/nextjs";
 import type { InputMethod } from "@kalemny/contracts";
 import { MAX_TURN_TEXT_LENGTH } from "@kalemny/contracts";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 
 import { CloseIcon, MicIcon, RefreshIcon, SendIcon } from "@/components/icons";
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
@@ -50,6 +50,28 @@ function formatRecordDuration(seconds: number): string {
   return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
+function subscribeVoiceReview(callback: () => void) {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener("storage", callback);
+  window.addEventListener("kalemny_voice_review_change", callback);
+  return () => {
+    window.removeEventListener("storage", callback);
+    window.removeEventListener("kalemny_voice_review_change", callback);
+  };
+}
+
+function getVoiceReviewSnapshot(): boolean {
+  try {
+    return localStorage.getItem("kalemny_voice_review_before_send") !== "false";
+  } catch {
+    return true;
+  }
+}
+
+function getVoiceReviewServerSnapshot(): boolean {
+  return true;
+}
+
 export function SimulationComposer({
   attemptId,
   composerText,
@@ -76,32 +98,20 @@ export function SimulationComposer({
   const spaceHeldRef = useRef(false);
   const lastEnterHandledTimeRef = useRef(0);
 
-  const [reviewBeforeSend, setReviewBeforeSend] = useState(true);
-
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem("kalemny_voice_review_before_send");
-      if (stored === "false") {
-        setReviewBeforeSend(false);
-      }
-    } catch {
-      // Ignore localStorage read errors
-    }
-  }, []);
+  const reviewBeforeSend = useSyncExternalStore(
+    subscribeVoiceReview,
+    getVoiceReviewSnapshot,
+    getVoiceReviewServerSnapshot,
+  );
 
   const handleToggleReviewMode = () => {
-    setReviewBeforeSend((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem(
-          "kalemny_voice_review_before_send",
-          String(next),
-        );
-      } catch {
-        // Ignore localStorage write errors
-      }
-      return next;
-    });
+    const next = !reviewBeforeSend;
+    try {
+      localStorage.setItem("kalemny_voice_review_before_send", String(next));
+      window.dispatchEvent(new Event("kalemny_voice_review_change"));
+    } catch {
+      // Ignore localStorage write errors
+    }
   };
 
   const {
@@ -247,7 +257,7 @@ export function SimulationComposer({
       const len = textareaRef.current.value.length;
       textareaRef.current.setSelectionRange(len, len);
     }
-  }, [hasVoiceDraft]);
+  }, [hasVoiceDraft, textareaRef]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
