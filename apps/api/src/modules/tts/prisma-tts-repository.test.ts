@@ -8,7 +8,9 @@ const userId = "22222222-2222-4222-8222-222222222222";
 const turnId = "33333333-3333-4333-8333-333333333333";
 
 const baseOpening = "Base definition opening message.";
+const baseOpeningAr = "رسالة افتتاحية للسيناريو بالعربية.";
 const variationOpening = "Variation opening message the learner saw.";
+const variationOpeningAr = "رسالة افتتاحية للمتغير بالعربية.";
 
 const definition = {
   key: "salary-negotiation",
@@ -27,11 +29,13 @@ const definition = {
     role: "Hiring manager",
     traits: ["professional"],
     communicationStyle: "Direct and fair.",
+    gender: "FEMALE" as const,
   },
   aiObjective: "Assess the candidate's negotiation.",
   motivations: ["Close a fair offer."],
   constraints: ["Stay within budget."],
   openingMessage: baseOpening,
+  openingMessageAr: baseOpeningAr,
   difficulties: {
     EASY: {
       cooperativeness: 5,
@@ -73,6 +77,7 @@ const definition = {
       id: "tight-budget",
       category: "BUDGET",
       openingMessage: variationOpening,
+      openingMessageAr: variationOpeningAr,
     },
   ],
 };
@@ -80,19 +85,28 @@ const definition = {
 function createPrismaStub(options: {
   variationId: string | null;
   status?: string;
+  language?: string;
+  dialect?: string | null;
 }) {
   return {
     simulationAttempt: {
       findFirst: vi.fn().mockResolvedValue({
         status: options.status ?? "ACTIVE",
         variationId: options.variationId,
+        language: options.language ?? "en",
+        dialect: options.dialect ?? null,
         scenario: { definition },
       }),
     },
     conversationTurn: {
       findFirst: vi.fn().mockResolvedValue({
         assistantText: "Stored assistant reply.",
-        attempt: { status: "ACTIVE" },
+        attempt: {
+          status: "ACTIVE",
+          language: options.language ?? "en",
+          dialect: options.dialect ?? null,
+          scenario: { definition },
+        },
       }),
     },
     aiUsageEvent: {
@@ -115,6 +129,34 @@ describe("PrismaTtsRepository", () => {
     expect(result).toEqual({
       assistantText: variationOpening,
       attemptStatus: "ACTIVE",
+      language: "en",
+      dialect: null,
+      personaRole: "Hiring manager",
+      personaGender: "FEMALE",
+    });
+  });
+
+  it("speaks the Arabic variation opening when attempt is in Arabic", async () => {
+    const prisma = createPrismaStub({
+      variationId: "tight-budget",
+      language: "ar",
+      dialect: "EGYPTIAN",
+    });
+    const repository = createPrismaTtsRepository(prisma);
+
+    const result = await repository.findOwnedSpeechTurn(
+      attemptId,
+      "opening",
+      userId,
+    );
+
+    expect(result).toEqual({
+      assistantText: variationOpeningAr,
+      attemptStatus: "ACTIVE",
+      language: "ar",
+      dialect: "EGYPTIAN",
+      personaRole: "Hiring manager",
+      personaGender: "FEMALE",
     });
   });
 
@@ -131,6 +173,10 @@ describe("PrismaTtsRepository", () => {
     expect(result).toEqual({
       assistantText: baseOpening,
       attemptStatus: "ACTIVE",
+      language: "en",
+      dialect: null,
+      personaRole: "Hiring manager",
+      personaGender: "FEMALE",
     });
   });
 
@@ -147,11 +193,19 @@ describe("PrismaTtsRepository", () => {
     expect(result).toEqual({
       assistantText: baseOpening,
       attemptStatus: "ACTIVE",
+      language: "en",
+      dialect: null,
+      personaRole: "Hiring manager",
+      personaGender: "FEMALE",
     });
   });
 
-  it("returns the stored assistant text for a regular turn", async () => {
-    const prisma = createPrismaStub({ variationId: "tight-budget" });
+  it("returns the stored assistant text and metadata for a regular turn", async () => {
+    const prisma = createPrismaStub({
+      variationId: "tight-budget",
+      language: "ar",
+      dialect: "GULF",
+    });
     const repository = createPrismaTtsRepository(prisma);
 
     const result = await repository.findOwnedSpeechTurn(
@@ -163,6 +217,10 @@ describe("PrismaTtsRepository", () => {
     expect(result).toEqual({
       assistantText: "Stored assistant reply.",
       attemptStatus: "ACTIVE",
+      language: "ar",
+      dialect: "GULF",
+      personaRole: "Hiring manager",
+      personaGender: "FEMALE",
     });
     expect(prisma.simulationAttempt.findFirst).not.toHaveBeenCalled();
   });

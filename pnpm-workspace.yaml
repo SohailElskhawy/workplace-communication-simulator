@@ -6,5 +6,6 @@ allowBuilds:
   "@prisma/engines": true
   "@sentry/cli": true
   esbuild: true
+  msedge-tts: false
   prisma: true
   unrs-resolver: true

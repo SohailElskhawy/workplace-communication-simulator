@@ -27,6 +27,7 @@ import { createLocalUserProvisioner } from "./modules/users/provision-local-user
 import { createPrismaVoiceRepository } from "./modules/voice/prisma-voice-repository.js";
 import { createVoiceService } from "./modules/voice/voice-service.js";
 import { createPrismaTtsRepository } from "./modules/tts/prisma-tts-repository.js";
+import { EdgeTtsProvider } from "./modules/tts/edge-tts-provider.js";
 import { createTtsService } from "./modules/tts/tts-service.js";
 import {
   createEntitlementService,
@@ -139,7 +140,7 @@ const voiceService = createVoiceService(
 
 const ttsService = createTtsService(
   createPrismaTtsRepository(prisma),
-  aiService,
+  new EdgeTtsProvider(),
 );
 
 // Realtime session bootstrap (voice service): requires the tool secret in

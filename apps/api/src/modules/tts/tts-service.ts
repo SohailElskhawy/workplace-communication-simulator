@@ -1,12 +1,12 @@
-import type { AiService } from "../ai/ai-service.js";
-import { AiProviderError } from "../ai/openrouter-provider.js";
 import { AttemptError } from "../attempts/attempt-errors.js";
+import type { TtsProvider } from "./tts-provider.js";
 import type { TtsRepository } from "./tts-repository.js";
 
 export interface SpeechResult {
   audio: Buffer;
   contentType: string;
 }
+
 export interface TtsService {
   generate(
     userId: string,
@@ -17,7 +17,7 @@ export interface TtsService {
 
 export function createTtsService(
   repository: TtsRepository,
-  aiService: AiService,
+  ttsProvider: TtsProvider,
 ): TtsService {
   return {
     async generate(userId, attemptId, turnId) {
@@ -33,30 +33,50 @@ export function createTtsService(
       ) {
         throw new AttemptError("INVALID_ATTEMPT_STATE");
       }
+
+      const model = ttsProvider.model ?? "edge-tts";
+      const startTime = Date.now();
+
       try {
-        const result = await aiService.generateSpeech(turn.assistantText);
+        const result = await ttsProvider.generateSpeech({
+          text: turn.assistantText,
+          language: turn.language ?? "en",
+          dialect: turn.dialect,
+          gender: turn.personaGender,
+          timeoutMs: 15000,
+        });
+
         await repository.recordUsage({
           userId,
           attemptId,
-          model: aiService.ttsModel,
+          provider: "edge-tts",
+          model,
           status: "SUCCESS",
           latencyMs: result.latencyMs,
-          estimatedCost: result.estimatedCost,
+          estimatedCost: 0,
           errorCode: null,
         });
+
         return { audio: result.audio, contentType: result.contentType };
       } catch (error) {
+        const latencyMs = Date.now() - startTime;
         const errorCode =
-          error instanceof AiProviderError ? error.code : "TTS_FAILED";
+          error instanceof Error &&
+          error.message.toLowerCase().includes("timed out")
+            ? "AI_TIMEOUT"
+            : ((error as { code?: string })?.code ?? "TTS_FAILED");
+
         await repository.recordUsage({
           userId,
           attemptId,
-          model: aiService.ttsModel,
+          provider: "edge-tts",
+          model,
           status: "FAILED",
-          latencyMs: error instanceof AiProviderError ? error.latencyMs : 0,
+          latencyMs,
           estimatedCost: null,
           errorCode,
         });
+
         throw new AttemptError("TTS_FAILED");
       }
     },
