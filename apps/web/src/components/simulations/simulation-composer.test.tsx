@@ -575,4 +575,46 @@ describe("SimulationComposer", () => {
       expect(onChangeText).toHaveBeenCalledWith("Reviewable voice message");
     });
   });
+
+  describe("Arabic RTL support", () => {
+    it("renders textarea with dir='rtl', Arabic placeholder, and text-right alignment", () => {
+      const props = createProps({
+        language: "ar",
+        inputMode: "TEXT",
+      });
+
+      render(<SimulationComposer {...props} />);
+
+      const textarea = screen.getByRole("textbox", {
+        name: /اكتب ردك/i,
+      });
+
+      expect(textarea.getAttribute("dir")).toBe("rtl");
+      expect(textarea.getAttribute("placeholder")).toBe("اكتب ردك هنا...");
+      expect(textarea.className).toContain("text-right");
+      expect(screen.getByRole("button", { name: /إرسال الرد/i })).toBeTruthy();
+    });
+
+    it("renders voice review textarea with Arabic direction and placeholders", () => {
+      const props = createProps({
+        language: "ar",
+        inputMode: "VOICE",
+        hasVoiceDraft: true,
+        composerText: "مسودة صوتية",
+      });
+
+      render(<SimulationComposer {...props} />);
+
+      const textarea = screen.getByRole("textbox", {
+        name: /راجع وعدّل ردك قبل الإرسال/i,
+      });
+
+      expect(textarea.getAttribute("dir")).toBe("rtl");
+      expect(textarea.getAttribute("placeholder")).toBe("اكتب ردك هنا...");
+      expect(textarea.className).toContain("text-right");
+      expect(
+        screen.getByRole("button", { name: /إعادة التسجيل/i }),
+      ).toBeTruthy();
+    });
+  });
 });

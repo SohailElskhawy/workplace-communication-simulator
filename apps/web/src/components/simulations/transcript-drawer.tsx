@@ -27,6 +27,8 @@ export interface TranscriptDrawerProps {
   onClose: () => void;
   onRetryTurn: (turnId: string) => void;
   onRetryPending: () => void;
+  language?: "en" | "ar";
+  isRtl?: boolean;
 }
 
 export function TranscriptDrawer({
@@ -42,7 +44,11 @@ export function TranscriptDrawer({
   onClose,
   onRetryTurn,
   onRetryPending,
+  language,
+  isRtl,
 }: TranscriptDrawerProps) {
+  const rtl = isRtl ?? language === "ar";
+
   useEffect(() => {
     if (!open) return;
 
@@ -61,27 +67,32 @@ export function TranscriptDrawer({
         type="button"
         className="absolute inset-0 cursor-default bg-foreground/15 backdrop-blur-[1px]"
         onClick={onClose}
-        aria-label="Close transcript"
+        aria-label={rtl ? "إغلاق النص" : "Close transcript"}
       />
       <aside
-        className="relative ms-auto flex h-full w-full max-w-xl flex-col border-s border-border bg-surface-solid shadow-brutal"
-        aria-label="Conversation transcript"
+        className={cn(
+          "relative flex h-full w-full max-w-xl flex-col border-border bg-surface-solid shadow-brutal",
+          rtl ? "me-auto border-e" : "ms-auto border-s",
+        )}
+        dir={rtl ? "rtl" : "ltr"}
+        aria-label={rtl ? "نص المحادثة" : "Conversation transcript"}
       >
         <div className="flex items-center justify-between gap-3 border-b border-border p-4 sm:p-5">
           <div>
             <p className="font-display text-base font-bold uppercase tracking-tight text-foreground">
-              Conversation transcript
+              {rtl ? "نص المحادثة" : "Conversation transcript"}
             </p>
             <p className="mt-0.5 font-meta text-[10px] uppercase tracking-widest text-muted-foreground">
-              {turns.length} saved learner{" "}
-              {turns.length === 1 ? "turn" : "turns"}
+              {rtl
+                ? `${turns.length} جولة مسجلة للمتعلم`
+                : `${turns.length} saved learner ${turns.length === 1 ? "turn" : "turns"}`}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
             className="flex h-9 w-9 items-center justify-center rounded-control border border-border bg-surface-subtle text-foreground brutalist-shadow-sm cursor-pointer hover:bg-surface-raised"
-            aria-label="Close transcript"
+            aria-label={rtl ? "إغلاق النص" : "Close transcript"}
           >
             <CloseIcon className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -93,6 +104,7 @@ export function TranscriptDrawer({
               role={counterpartRole}
               text={openingMessage}
               counterpart
+              isRtl={rtl}
               speech={<SpeechButton attemptId={attemptId} turnId="opening" />}
             />
           )}
@@ -106,12 +118,17 @@ export function TranscriptDrawer({
 
             return (
               <div key={turn.id} className="space-y-3">
-                <TranscriptMessage role="You" text={turn.userText} />
+                <TranscriptMessage
+                  role={rtl ? "أنت" : "You"}
+                  text={turn.userText}
+                  isRtl={rtl}
+                />
                 {hasAssistantText && (
                   <TranscriptMessage
                     role={counterpartRole}
                     text={turn.assistantText ?? ""}
                     counterpart
+                    isRtl={rtl}
                     speech={
                       <SpeechButton attemptId={attemptId} turnId={turn.id} />
                     }
@@ -125,12 +142,15 @@ export function TranscriptDrawer({
                         aria-hidden="true"
                       />
                       <p className="font-display text-xs font-bold uppercase tracking-wide">
-                        Counterpart response unavailable
+                        {rtl
+                          ? "رد المحاور غير متوفر"
+                          : "Counterpart response unavailable"}
                       </p>
                     </div>
                     <p className="mt-2 text-xs leading-relaxed text-foreground/80">
-                      Your response was saved. Retry the counterpart response
-                      without retyping.
+                      {rtl
+                        ? "تم حفظ ردك. أعد محاولة استلام رد المحاور دون الحاجة لإعادة الكتابة."
+                        : "Your response was saved. Retry the counterpart response without retyping."}
                     </p>
                     <button
                       type="button"
@@ -142,7 +162,13 @@ export function TranscriptDrawer({
                         className={cn("h-3 w-3", retrying && "animate-spin")}
                         aria-hidden="true"
                       />
-                      {retrying ? "Retrying…" : "Retry response"}
+                      {retrying
+                        ? rtl
+                          ? "جارٍ إعادة المحاولة..."
+                          : "Retrying…"
+                        : rtl
+                          ? "إعادة محاولة الرد"
+                          : "Retry response"}
                     </button>
                   </div>
                 )}
@@ -152,14 +178,20 @@ export function TranscriptDrawer({
 
           {pendingTurn && sendingTurn && (
             <div className="space-y-3">
-              <TranscriptMessage role="You · Sending" text={pendingTurn.text} />
+              <TranscriptMessage
+                role={rtl ? "أنت · جارٍ الإرسال" : "You · Sending"}
+                text={pendingTurn.text}
+                isRtl={rtl}
+              />
               <div className="flex items-center gap-2 rounded-control border border-border/30 bg-surface-subtle p-3 text-muted-foreground">
                 <RefreshIcon
                   className="h-3.5 w-3.5 animate-spin text-primary"
                   aria-hidden="true"
                 />
                 <span className="font-meta text-[10px] uppercase tracking-wider">
-                  {counterpartRole} is responding
+                  {rtl
+                    ? `${counterpartRole} يقوم بالرد الآن...`
+                    : `${counterpartRole} is responding`}
                 </span>
               </div>
             </div>
@@ -168,7 +200,7 @@ export function TranscriptDrawer({
           {pendingError && pendingTurn && !sendingTurn && (
             <div className="rounded-control border-2 border-alert bg-alert/10 p-3 text-alert">
               <p className="font-display text-xs font-bold uppercase tracking-wide">
-                Message was not sent
+                {rtl ? "لم يتم إرسال الرسالة" : "Message was not sent"}
               </p>
               <p className="mt-2 text-xs leading-relaxed text-foreground/80">
                 {pendingError}
@@ -179,7 +211,7 @@ export function TranscriptDrawer({
                 className="mt-3 inline-flex items-center gap-1.5 rounded-control bg-alert px-3 py-1.5 font-display text-[11px] font-bold uppercase tracking-wider text-white brutalist-shadow-sm cursor-pointer"
               >
                 <RefreshIcon className="h-3 w-3" aria-hidden="true" />
-                Retry sending
+                {rtl ? "إعادة محاولة الإرسال" : "Retry sending"}
               </button>
             </div>
           )}
@@ -194,11 +226,13 @@ function TranscriptMessage({
   text,
   counterpart = false,
   speech,
+  isRtl = false,
 }: {
   role: string;
   text: string;
   counterpart?: boolean;
   speech?: React.ReactNode;
+  isRtl?: boolean;
 }) {
   return (
     <div
@@ -209,16 +243,19 @@ function TranscriptMessage({
         className={cn(
           "mb-1 font-meta text-[10px] font-bold uppercase tracking-wider",
           counterpart ? "text-primary" : "text-muted-foreground",
+          isRtl && "text-right",
         )}
       >
         {role}
       </span>
       <div
+        dir={isRtl ? "rtl" : "ltr"}
         className={cn(
           "role-bubble max-w-[92%] rounded-card border border-border-subtle p-3 text-xs leading-relaxed whitespace-pre-wrap",
           counterpart
             ? "bg-surface-subtle text-foreground"
             : "bg-primary text-primary-foreground",
+          isRtl && "text-right",
         )}
       >
         {text}

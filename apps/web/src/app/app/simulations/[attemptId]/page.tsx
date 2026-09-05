@@ -5,7 +5,6 @@ import type {
   AttemptDetailResponse,
   ConversationTurn,
   InputMethod,
-  InteractionMode,
   PublicScenarioDetail,
 } from "@kalemny/contracts";
 import { useParams, useRouter } from "next/navigation";
@@ -18,7 +17,6 @@ import {
   type SimulationUiState,
 } from "@/components/simulations/conversation-stage";
 import { FinishSimulationDialog } from "@/components/simulations/finish-simulation-dialog";
-import { LiveConversation } from "@/components/simulations/live-conversation";
 import { SimulationComposer } from "@/components/simulations/simulation-composer";
 import { SimulationHeader } from "@/components/simulations/simulation-header";
 import {
@@ -27,19 +25,8 @@ import {
 } from "@/components/simulations/transcript-drawer";
 import { ApiClientError, createApiClient } from "@/lib/api-client";
 import { isConversationInputDisabled } from "@/lib/conversation-input-state";
-import { isRealtimeVoiceEnabled } from "@/lib/feature-flags";
-import { resolveEffectiveInteractionMode } from "@/lib/interaction-mode";
-import {
-  pairLiveTranscriptEntries,
-  type LiveConversationUiState,
-  type LiveTranscriptEntry,
-} from "@/lib/live-conversation-state";
 import { isPersistedRoleplayFailure } from "@/lib/roleplay-recovery";
 import type { SpeechPlaybackStatus } from "@/lib/speech-playback-controller";
-
-// Build-time UI gate only; the backend endpoints remain separately gated by
-// the server-only ELEVENLABS_* settings.
-const realtimeVoiceEnabled = isRealtimeVoiceEnabled();
 
 export default function SimulationPage() {
   const params = useParams();
@@ -86,21 +73,6 @@ export default function SimulationPage() {
   const [microphoneLevel, setMicrophoneLevel] = useState(0);
   const [counterpartSpeechStatus, setCounterpartSpeechStatus] =
     useState<SpeechPlaybackStatus>("idle");
-
-  // Feature-flagged live conversation (ElevenLabs realtime spike).
-  const [liveActive, setLiveActive] = useState(false);
-  const [liveBindingPending, setLiveBindingPending] = useState(false);
-  const [liveUiState, setLiveUiState] =
-    useState<LiveConversationUiState>("disconnected");
-  const [liveConversationId, setLiveConversationId] = useState<string | null>(
-    null,
-  );
-  const savedLiveConversationIdRef = useRef<string | null>(null);
-  // Ephemeral live transcript (finalized realtime utterances). Submitted
-  // to the API when the learner finishes the simulation.
-  const [liveTranscript, setLiveTranscript] = useState<LiveTranscriptEntry[]>(
-    [],
-  );
 
   // Timer and Expiry state
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -291,108 +263,12 @@ export default function SimulationPage() {
     isLimitReached,
     sendingTurn,
   });
-  // While a live session is starting or connected, the text/push-to-talk
-  // composer is gated so the two input paths never overlap. The underlying
-  // text flow itself is unchanged.
-  const composerDisabled = isComposerDisabled || liveActive;
+  const composerDisabled = isComposerDisabled;
 
-  // The interaction mode chosen at simulation start and persisted on the
-  // attempt decides which voice path this screen initializes: push-to-talk
-  // (opening TTS + record/transcribe composer) or the realtime live
-  // conversation. Only the chosen mode is rendered.
-  const effectiveInteractionMode = useMemo<InteractionMode>(
-    () =>
-      resolveEffectiveInteractionMode({
-        persistedMode: attempt?.interactionMode ?? "PUSH_TO_TALK",
-        realtimeVoiceEnabled,
-      }),
-    [attempt?.interactionMode],
-  );
-  const isRealtimeMode = effectiveInteractionMode === "REALTIME";
+  const displayTurnCount = attempt?.turns.length ?? 0;
+  const drawerTurns = attempt?.turns ?? [];
 
-  const liveTurns = useMemo(
-    () => (isRealtimeMode ? pairLiveTranscriptEntries(liveTranscript) : []),
-    [isRealtimeMode, liveTranscript],
-  );
-  const displayTurnCount = Math.max(
-    attempt?.turns.length ?? 0,
-    liveTurns.length,
-  );
-
-  const drawerTurns = useMemo(() => {
-    if (!attempt) return [];
-    if (attempt.turns.length > 0) return attempt.turns;
-    if (!isRealtimeMode || liveTurns.length === 0) return [];
-
-    return liveTurns.map((turn, index) => ({
-      id: `live_${index}`,
-      attemptId: attempt.id,
-      sequence: index + 1,
-      inputMethod: "VOICE" as const,
-      userText: turn.userText,
-      assistantText: turn.assistantText,
-      status: turn.assistantText
-        ? ("COMPLETED" as const)
-        : ("PENDING" as const),
-      createdAt: new Date().toISOString(),
-      completedAt: turn.assistantText ? new Date().toISOString() : null,
-    }));
-  }, [attempt, isRealtimeMode, liveTurns]);
-
-  const persistLiveTranscript = useCallback(async () => {
-    if (!attemptId || !liveConversationId) return;
-    if (savedLiveConversationIdRef.current === liveConversationId) return;
-
-    const turns = pairLiveTranscriptEntries(liveTranscript);
-
-    const token = await getToken();
-    if (!token) throw new Error("Authentication token not available.");
-
-    const client = createApiClient(apiUrl);
-    await client.submitRealtimeTranscript(
-      token,
-      attemptId,
-      liveConversationId,
-      turns,
-    );
-    savedLiveConversationIdRef.current = liveConversationId;
-    setAttempt(await client.fetchAttempt(token, attemptId));
-  }, [apiUrl, attemptId, getToken, liveConversationId, liveTranscript]);
-
-  // The live transcript is already rendered from finalized SDK events. Save
-  // it as soon as the call disconnects, rather than relying on a later Finish
-  // click. Finish calls the same idempotent operation as a retry safety net.
-  useEffect(() => {
-    if (
-      !isRealtimeMode ||
-      liveUiState !== "disconnected" ||
-      liveActive ||
-      liveBindingPending ||
-      !liveConversationId
-    ) {
-      return;
-    }
-
-    void persistLiveTranscript().catch((error: unknown) => {
-      setGeneralError(
-        error instanceof Error
-          ? error.message
-          : "Failed to save the live conversation transcript.",
-      );
-    });
-  }, [
-    isRealtimeMode,
-    liveActive,
-    liveBindingPending,
-    liveConversationId,
-    liveUiState,
-    persistLiveTranscript,
-  ]);
-
-  // In realtime mode the live agent speaks the opening message when the
-  // session connects, so stored-turn TTS must never auto-play it a second
-  // time. Manual replay from the transcript remains available.
-  const autoPlayStageSpeech = autoPlaySpeech && !finishing && !isRealtimeMode;
+  const autoPlayStageSpeech = autoPlaySpeech && !finishing;
 
   const latestAssistantMessage = useMemo(() => {
     const latestTurnWithReply = [...(attempt?.turns ?? [])]
@@ -407,10 +283,6 @@ export default function SimulationPage() {
   }, [attempt?.turns]);
 
   const simulationUiState = useMemo<SimulationUiState>(() => {
-    // Live conversation drives the shared orb while active.
-    if (liveUiState === "listening") return "LISTENING";
-    if (liveUiState === "speaking") return "AI_SPEAKING";
-    if (liveUiState === "connecting") return "AI_THINKING";
     if (
       voiceStatus === "recording" ||
       voiceStatus === "requesting_permission"
@@ -428,13 +300,7 @@ export default function SimulationPage() {
     }
     if (hasVoiceDraft) return "REVIEWING";
     return "YOUR_TURN";
-  }, [
-    counterpartSpeechStatus,
-    hasVoiceDraft,
-    liveUiState,
-    sendingTurn,
-    voiceStatus,
-  ]);
+  }, [counterpartSpeechStatus, hasVoiceDraft, sendingTurn, voiceStatus]);
 
   const handleSendTurn = async (
     overrideText?: string,
@@ -564,11 +430,6 @@ export default function SimulationPage() {
       if (!token) throw new Error("Authentication token not available.");
 
       const client = createApiClient(apiUrl);
-
-      if (isRealtimeMode && liveConversationId) {
-        await persistLiveTranscript();
-      }
-
       await client.finishAttempt(token, attemptId);
 
       router.push(`/app/results/${encodeURIComponent(attemptId)}`);
@@ -604,8 +465,13 @@ export default function SimulationPage() {
     );
   }
 
+  const isRtl = attempt.language === "ar";
+
   return (
-    <div className="flex flex-col h-full w-full max-w-container-max mx-auto overflow-hidden font-sans bg-surface-solid sm:border-x sm:border-border">
+    <div
+      dir={isRtl ? "rtl" : "ltr"}
+      className="flex flex-col h-full w-full max-w-container-max mx-auto overflow-hidden font-sans bg-surface-solid sm:border-x sm:border-border"
+    >
       {/* 1. Header */}
       <SimulationHeader
         scenarioTitle={attempt.scenario.title}
@@ -613,9 +479,9 @@ export default function SimulationPage() {
         counterpartRole={counterpartRole}
         turnCount={displayTurnCount}
         elapsedSeconds={elapsedSeconds}
-        finishing={finishing || liveActive || liveBindingPending}
+        finishing={finishing}
         autoPlaySpeech={autoPlaySpeech}
-        showAutoPlayToggle={!isRealtimeMode}
+        showAutoPlayToggle={true}
         onToggleAutoPlay={() => setAutoPlaySpeech((prev) => !prev)}
         onOpenFinishDialog={() => setShowFinishDialog(true)}
         onOpenBriefing={() => setBriefingOpen(true)}
@@ -643,18 +509,18 @@ export default function SimulationPage() {
             <button
               type="button"
               onClick={() => setBriefingOpen(true)}
-              className="w-full flex items-center justify-between text-left font-meta text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer py-0.5"
+              className="w-full flex items-center justify-between text-start font-meta text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer py-0.5"
             >
               <span className="truncate mr-2">
                 <strong className="text-primary font-bold uppercase tracking-wider mr-1">
-                  Goal:
+                  {isRtl ? "الهدف:" : "Goal:"}
                 </strong>
                 <span className="text-foreground font-medium">
                   {userObjective}
                 </span>
               </span>
               <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full">
-                Briefing →
+                {isRtl ? "← التعليمات" : "Briefing →"}
               </span>
             </button>
           </div>
@@ -669,29 +535,14 @@ export default function SimulationPage() {
             autoPlaySpeech={autoPlayStageSpeech}
             cancelSpeechPlayback={
               finishing ||
-              liveActive ||
               voiceStatus === "requesting_permission" ||
               voiceStatus === "recording"
             }
             onSpeechStatusChange={setCounterpartSpeechStatus}
             microphoneLevel={microphoneLevel}
             onOpenTranscript={() => setTranscriptOpen(true)}
-            liveTranscript={liveTranscript}
+            language={attempt.language ?? "en"}
           />
-
-          {/* Only the mode chosen at simulation start is initialized. */}
-          {isRealtimeMode && (
-            <LiveConversation
-              attemptId={attempt.id}
-              startDisabled={isComposerDisabled || finishing}
-              onActiveChange={setLiveActive}
-              onBindingPendingChange={setLiveBindingPending}
-              onConversationIdChange={setLiveConversationId}
-              onUiStateChange={setLiveUiState}
-              onMicrophoneLevelChange={setMicrophoneLevel}
-              onTranscriptChange={setLiveTranscript}
-            />
-          )}
 
           <SimulationComposer
             attemptId={attempt.id}
@@ -707,6 +558,7 @@ export default function SimulationPage() {
             onInputModeChange={setInputMode}
             hasVoiceDraft={hasVoiceDraft}
             microphoneLevel={microphoneLevel}
+            language={attempt.language ?? "en"}
             onChangeText={setComposerText}
             onSendTurn={(text, method) => void handleSendTurn(text, method)}
             onVoiceStatusChange={setVoiceStatus}
@@ -733,6 +585,7 @@ export default function SimulationPage() {
                 void handleSendTurn(pendingTurn.text, pendingTurn.inputMethod);
               }
             }}
+            language={attempt.language ?? "en"}
           />
         </main>
       </div>

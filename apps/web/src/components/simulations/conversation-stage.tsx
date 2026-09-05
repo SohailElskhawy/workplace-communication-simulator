@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useMemo } from "react";
 
 import {
   DocumentTextIcon,
@@ -12,7 +12,6 @@ import { ConversationOrb } from "@/components/simulations/conversation-orb";
 import type { SimulationUiState } from "@/components/simulations/conversation-orb";
 import { cn } from "@/lib/cn";
 import type { SpeechPlaybackStatus } from "@/lib/speech-playback-controller";
-import type { LiveTranscriptEntry } from "@/lib/live-conversation-state";
 
 export type { SimulationUiState };
 
@@ -48,6 +47,40 @@ const stateCopy: Record<SimulationUiState, { label: string; detail: string }> =
     },
   };
 
+const arabicStateCopy: Record<
+  SimulationUiState,
+  { label: string; detail: string }
+> = {
+  YOUR_TURN: {
+    label: "دورك الآن",
+    detail: "تحدث أو اكتب ردك عندما تكون مستعداً.",
+  },
+  LISTENING: {
+    label: "جارٍ الاستماع",
+    detail: "نستمع إليك الآن. أفلت زر المسافة أو اضغط تم للتوقف.",
+  },
+  TRANSCRIBING: {
+    label: "جارٍ تحويل الصوت",
+    detail: "جارٍ تحويل تسجيلك إلى نص قابل للتعديل.",
+  },
+  REVIEWING: {
+    label: "راجع ردك",
+    detail: "عدّل النص إذا لزم الأمر قبل الإرسال.",
+  },
+  AI_THINKING: {
+    label: "جارٍ المعالجة",
+    detail: "المحاور يقوم بإعداد الرد الآن.",
+  },
+  AI_SPEAKING: {
+    label: "المحاور يتحدث — يمكنك المقاطعة",
+    detail: "اضغط على الميكروفون أو اضغط مع الاستمرار على المسافة للتحدث.",
+  },
+  MIC_ERROR: {
+    label: "الميكروفون غير متوفر",
+    detail: "تحقق من إذن الميكروفون أو تابع بكتابة ردك.",
+  },
+};
+
 export interface ConversationStageProps {
   attemptId: string;
   counterpartRole: string;
@@ -60,12 +93,8 @@ export interface ConversationStageProps {
   onSpeechStatusChange: (status: SpeechPlaybackStatus) => void;
   microphoneLevel: number;
   onOpenTranscript: () => void;
-  /**
-   * Ephemeral transcript of the current live voice session (finalized
-   * user/agent utterances). Never persisted; rendered instead of the single
-   * latest message while non-empty.
-   */
-  liveTranscript?: LiveTranscriptEntry[];
+  language?: "en" | "ar";
+  isRtl?: boolean;
 }
 
 export function ConversationStage({
@@ -80,24 +109,16 @@ export function ConversationStage({
   onSpeechStatusChange,
   microphoneLevel,
   onOpenTranscript,
-  liveTranscript,
+  language,
+  isRtl,
 }: ConversationStageProps) {
+  const rtl = isRtl ?? language === "ar";
   const message = useMemo(() => {
     if (latestAssistantMessage) return latestAssistantMessage;
     if (openingMessage) return { turnId: "opening", text: openingMessage };
     return null;
   }, [latestAssistantMessage, openingMessage]);
-  const status = stateCopy[uiState];
-
-  const liveEntries = liveTranscript ?? [];
-  const showLiveTranscript = liveEntries.length > 0;
-
-  // Keep the newest live utterance visible as the transcript grows.
-  const liveTranscriptScrollRef = useRef<HTMLDivElement | null>(null);
-  useEffect(() => {
-    const container = liveTranscriptScrollRef.current;
-    if (container) container.scrollTop = container.scrollHeight;
-  }, [showLiveTranscript, liveEntries.length]);
+  const status = rtl ? arabicStateCopy[uiState] : stateCopy[uiState];
 
   return (
     <section
@@ -106,32 +127,42 @@ export function ConversationStage({
       aria-live="polite"
     >
       <div className="w-full max-w-2xl">
-        <div className="mb-2 flex items-center justify-between gap-2 sm:mb-6">
+        <div
+          dir={rtl ? "rtl" : "ltr"}
+          className="mb-2 flex items-center justify-between gap-2 sm:mb-6"
+        >
           <div className="hidden sm:flex items-center gap-2 text-muted-foreground">
             <SpeakingWithIcon
               className="h-4 w-4 text-primary"
               aria-hidden="true"
             />
             <span className="font-meta text-[10px] font-bold uppercase tracking-widest">
-              In conversation with
+              {rtl ? "في محادثة مع" : "In conversation with"}
             </span>
           </div>
           <button
             type="button"
             onClick={onOpenTranscript}
             className="inline-flex items-center gap-1.5 rounded-control border border-border bg-surface-solid px-2 sm:px-2.5 py-1 sm:py-1.5 font-meta text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-foreground brutalist-shadow-sm cursor-pointer hover:bg-surface-subtle"
-            aria-label={`Open transcript with ${turnCount} turns`}
+            aria-label={
+              rtl
+                ? `فتح النص مع ${turnCount} جولات`
+                : `Open transcript with ${turnCount} turns`
+            }
           >
             <DocumentTextIcon
               className="h-3 w-3 sm:h-3.5 sm:w-3.5"
               aria-hidden="true"
             />
-            <span>Transcript</span>{" "}
+            <span>{rtl ? "النص الكامل" : "Transcript"}</span>{" "}
             <span className="text-muted-foreground">({turnCount})</span>
           </button>
         </div>
 
-        <div className="rounded-card border border-border-subtle bg-surface-solid shadow-xs">
+        <div
+          dir={rtl ? "rtl" : "ltr"}
+          className="rounded-card border border-border-subtle bg-surface-solid shadow-xs"
+        >
           {/* Conversation orb: the focal status indicator */}
           <div className="flex flex-col items-center px-3 pt-3 pb-2 sm:px-8 sm:pt-8 sm:pb-5">
             <ConversationOrb
@@ -156,61 +187,25 @@ export function ConversationStage({
                 {counterpartRole}
               </p>
               <p className="font-meta text-[10px] uppercase tracking-widest text-primary">
-                AI counterpart
+                {rtl ? "المحاور الآلي" : "AI counterpart"}
               </p>
             </div>
           </div>
 
-          {showLiveTranscript ? (
-            <div className="border-t border-border/20 px-4 py-4 sm:px-8 sm:py-6">
-              <div className="mb-2.5 flex items-center justify-between gap-2">
-                <p className="font-meta text-[10px] font-bold uppercase tracking-widest text-primary">
-                  Live session transcript
-                </p>
-                <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 font-meta text-[9px] sm:text-[10px] font-semibold uppercase tracking-wider text-primary">
-                  <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-                  Live voice
-                </span>
-              </div>
-              <div
-                ref={liveTranscriptScrollRef}
-                className="flex max-h-36 sm:max-h-64 flex-col gap-2 sm:gap-4 overflow-y-auto pr-1"
+          {message ? (
+            <div
+              dir={rtl ? "rtl" : "ltr"}
+              className={cn(
+                "border-t border-border/20 px-3.5 py-3 sm:px-8 sm:py-5",
+                rtl && "text-right",
+              )}
+            >
+              <p
+                className={cn(
+                  "font-sans text-xs sm:text-base leading-relaxed text-foreground whitespace-pre-wrap",
+                  rtl && "text-right",
+                )}
               >
-                {liveEntries.map((entry) => (
-                  <div
-                    key={entry.id}
-                    className="role-message"
-                    data-role={
-                      entry.role === "agent" ? "counterpart" : "learner"
-                    }
-                  >
-                    <span
-                      className={cn(
-                        "mb-1 font-meta text-[9px] sm:text-[10px] font-bold uppercase tracking-wider",
-                        entry.role === "agent"
-                          ? "text-primary"
-                          : "text-muted-foreground",
-                      )}
-                    >
-                      {entry.role === "agent" ? counterpartRole : "You"}
-                    </span>
-                    <div
-                      className={cn(
-                        "role-bubble max-w-[92%] rounded-card border border-border-subtle p-2.5 text-xs leading-relaxed whitespace-pre-wrap sm:p-3",
-                        entry.role === "agent"
-                          ? "bg-surface-subtle text-foreground"
-                          : "bg-primary text-primary-foreground",
-                      )}
-                    >
-                      {entry.text}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : message ? (
-            <div className="border-t border-border/20 px-3.5 py-3 sm:px-8 sm:py-5">
-              <p className="font-sans text-xs sm:text-base leading-relaxed text-foreground whitespace-pre-wrap">
                 {message.text}
               </p>
               <SpeechButton
@@ -229,7 +224,7 @@ export function ConversationStage({
                 aria-hidden="true"
               />
               <p className="mt-2 font-sans text-xs sm:text-sm">
-                Preparing the conversation…
+                {rtl ? "جارٍ تجهيز المحادثة..." : "Preparing the conversation…"}
               </p>
             </div>
           )}

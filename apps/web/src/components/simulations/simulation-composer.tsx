@@ -31,6 +31,7 @@ export interface SimulationComposerProps {
   hasVoiceDraft: boolean;
   /** Live microphone level (0–1) from the active recording; 0 when idle. */
   microphoneLevel: number;
+  language?: "en" | "ar";
   onChangeText: (text: string) => void;
   onSendTurn: (
     overrideText?: string,
@@ -86,12 +87,14 @@ export function SimulationComposer({
   onInputModeChange,
   hasVoiceDraft,
   microphoneLevel,
+  language,
   onChangeText,
   onSendTurn,
   onVoiceStatusChange,
   onVoiceTranscriptReady,
   onMicrophoneLevelChange,
 }: SimulationComposerProps) {
+  const isRtl = language === "ar";
   const { getToken } = useAuth();
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
   const prefersReducedMotion = usePrefersReducedMotion();
@@ -313,7 +316,10 @@ export function SimulationComposer({
   const isNearLimit = composerText.length >= MAX_TURN_TEXT_LENGTH * 0.9;
 
   return (
-    <footer className="border-t border-border bg-surface-solid px-2.5 pt-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] sm:p-5 shadow-xs shrink-0">
+    <footer
+      dir={isRtl ? "rtl" : "ltr"}
+      className="border-t border-border bg-surface-solid px-2.5 pt-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] sm:p-5 shadow-xs shrink-0"
+    >
       {/* General / Rate Limit Errors */}
       {generalError && (
         <div
@@ -335,7 +341,7 @@ export function SimulationComposer({
             type="button"
             onClick={clearError}
             className="p-1 rounded-control hover:bg-alert/20 cursor-pointer shrink-0"
-            aria-label="Dismiss voice error"
+            aria-label={isRtl ? "إغلاق رسالة الخطأ" : "Dismiss voice error"}
           >
             <CloseIcon className="w-3.5 h-3.5" />
           </button>
@@ -352,12 +358,12 @@ export function SimulationComposer({
             </span>
             <div className="flex flex-col min-w-0">
               <span className="font-display font-bold text-xs uppercase tracking-wider text-alert">
-                Recording Speech…
+                {isRtl ? "جارٍ تسجيل الصوت..." : "Recording Speech…"}
               </span>
               <span className="font-meta text-[10px] sm:text-[11px] text-muted-foreground truncate">
                 {formatRecordDuration(durationSeconds)} /{" "}
-                {formatRecordDuration(MAX_RECORDING_DURATION_SECONDS)} · Speak
-                clearly in English
+                {formatRecordDuration(MAX_RECORDING_DURATION_SECONDS)} ·{" "}
+                {isRtl ? "تحدث بوضوح" : "Speak clearly"}
               </span>
             </div>
           </div>
@@ -368,14 +374,14 @@ export function SimulationComposer({
               onClick={cancelRecording}
               className="px-2.5 py-1 rounded-control border border-border bg-surface-solid font-meta text-xs font-semibold text-muted-foreground hover:text-foreground cursor-pointer"
             >
-              Cancel
+              {isRtl ? "إلغاء" : "Cancel"}
             </button>
             <button
               type="button"
               onClick={() => void stopAndTranscribe()}
               className="px-3 py-1 rounded-control bg-alert text-white font-meta text-xs font-bold uppercase tracking-wider cursor-pointer brutalist-shadow-sm"
             >
-              Done Speaking
+              {isRtl ? "تم التحدث" : "Done Speaking"}
             </button>
           </div>
         </div>
@@ -386,7 +392,9 @@ export function SimulationComposer({
         <div className="mb-2.5 sm:mb-3 rounded-control border border-primary/30 bg-primary/5 p-2.5 sm:p-3 flex items-center gap-2.5 text-primary">
           <RefreshIcon className="w-4 h-4 animate-spin shrink-0" />
           <span className="font-meta text-xs font-semibold truncate">
-            Transcribing your voice with Whisper AI…
+            {isRtl
+              ? "جارٍ تحويل صوتك إلى نص..."
+              : "Transcribing your voice with Whisper AI…"}
           </span>
         </div>
       )}
@@ -394,16 +402,26 @@ export function SimulationComposer({
       {/* Expiry Alert */}
       {isExpired && (
         <div className="mb-2.5 sm:mb-3 rounded-control border border-amber-300 bg-amber-50 p-2 sm:p-2.5 font-meta text-xs text-amber-900">
-          This simulation has reached its time limit. You can finish your
-          rehearsal to view your evaluation.
+          {isRtl
+            ? "وصلت هذه المحاكاة إلى الحد الزمني. يمكنك إنهاء الجلسة لعرض تقييمك."
+            : "This simulation has reached its time limit. You can finish your rehearsal to view your evaluation."}
         </div>
       )}
 
       {/* Turn Limit Warning */}
       {isLimitReached && (
         <div className="mb-2.5 sm:mb-3 rounded-control border border-border bg-surface-subtle p-2 sm:p-2.5 font-meta text-xs text-foreground">
-          Maximum turns (20) reached. Please click{" "}
-          <strong>Finish Rehearsal</strong> above to review your score.
+          {isRtl ? (
+            <>
+              تم الوصول إلى الحد الأقصى للجولات (20). يُرجى الضغط على{" "}
+              <strong>إنهاء المحاكاة</strong> أعلاه لمراجعة نتيجتك.
+            </>
+          ) : (
+            <>
+              Maximum turns (20) reached. Please click{" "}
+              <strong>Finish Rehearsal</strong> above to review your score.
+            </>
+          )}
         </div>
       )}
 
@@ -414,59 +432,71 @@ export function SimulationComposer({
             onSendTurn();
           }
         }}
-        className="mx-auto flex w-full max-w-2xl flex-col gap-3"
+        className="flex flex-col gap-2.5 sm:gap-3"
       >
         {isTextInput ? (
           <>
             <div className="flex items-center justify-between gap-3 px-0.5">
-              <span className="font-meta text-[10px] font-bold uppercase tracking-widest text-primary">
-                {hasVoiceDraft && composerText.trim()
-                  ? "Review before sending"
-                  : "Type your response"}
+              <span className="font-meta text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                {isRtl ? "كتابة النص" : "Text response"}
               </span>
               <button
                 type="button"
                 onClick={switchToVoiceAndStart}
-                disabled={isComposerDisabled || isVoiceBusy}
-                aria-keyshortcuts="Space"
-                className="inline-flex min-h-11 items-center gap-2 rounded-control border border-border bg-surface-solid px-3 text-xs font-semibold text-foreground shadow-xs hover:bg-surface-subtle disabled:opacity-40"
+                disabled={isComposerDisabled}
+                className="inline-flex items-center gap-1.5 rounded-control border border-border bg-surface-solid px-2.5 py-1 font-meta text-[10px] font-bold uppercase tracking-wider text-foreground brutalist-shadow-sm cursor-pointer hover:bg-surface-subtle disabled:opacity-40"
+                aria-label={isRtl ? "التبديل إلى الصوت" : "Switch to voice input"}
               >
-                <MicIcon className="h-4 w-4 text-primary" aria-hidden="true" />
-                Push-to-talk
+                <MicIcon
+                  className="h-3.5 w-3.5 text-primary"
+                  aria-hidden="true"
+                />
+                {isRtl ? "تحدث بدلاً من ذلك" : "Speak instead"}
               </button>
             </div>
             <div className="relative">
               <label htmlFor="simulation-response-input" className="sr-only">
-                Type your response
+                {isRtl ? "اكتب ردك" : "Type your response"}
               </label>
               <textarea
                 id="simulation-response-input"
                 ref={textareaRef}
-                rows={3}
+                rows={2}
                 value={composerText}
+                dir={isRtl ? "rtl" : "ltr"}
                 onChange={(e) =>
                   onChangeText(e.target.value.slice(0, MAX_TURN_TEXT_LENGTH))
                 }
                 onKeyDown={handleKeyDown}
                 disabled={isComposerDisabled}
-                placeholder="Type or edit your response…"
-                className="w-full min-h-20 resize-none rounded-control border-2 border-border bg-surface-subtle p-3 pr-24 font-sans text-base sm:text-sm text-foreground placeholder:text-muted-foreground focus:bg-white focus:outline-none disabled:opacity-60"
+                placeholder={
+                  isRtl ? "اكتب ردك هنا..." : "Type or edit your response…"
+                }
+                className={cn(
+                  "w-full min-h-20 resize-none rounded-control border-2 border-border bg-surface-subtle p-3 font-sans text-base sm:text-sm text-foreground placeholder:text-muted-foreground focus:bg-white focus:outline-none disabled:opacity-60",
+                  isRtl ? "pl-24 pr-3 text-right" : "pr-24 pl-3 text-left",
+                )}
               />
               <button
                 type="submit"
                 disabled={
                   isComposerDisabled || isVoiceBusy || !composerText.trim()
                 }
-                className="absolute bottom-3 right-3 inline-flex h-10 items-center gap-1.5 rounded-control bg-primary px-3 text-primary-foreground border border-border disabled:opacity-40 cursor-pointer brutalist-shadow-sm"
-                aria-label="Send response"
+                className={cn(
+                  "absolute bottom-3 inline-flex h-10 items-center gap-1.5 rounded-control bg-primary px-3 text-primary-foreground border border-border disabled:opacity-40 cursor-pointer brutalist-shadow-sm",
+                  isRtl ? "left-3" : "right-3",
+                )}
+                aria-label={isRtl ? "إرسال الرد" : "Send response"}
               >
                 {sendingTurn ? (
                   <RefreshIcon className="h-3.5 w-3.5 animate-spin" />
                 ) : (
-                  <SendIcon className="h-3.5 w-3.5" />
+                  <SendIcon
+                    className={cn("h-3.5 w-3.5", isRtl && "scale-x-[-1]")}
+                  />
                 )}
                 <span className="font-meta text-[10px] font-bold uppercase tracking-wider">
-                  Send
+                  {isRtl ? "إرسال" : "Send"}
                 </span>
               </button>
             </div>
@@ -475,56 +505,80 @@ export function SimulationComposer({
           <>
             <div className="flex items-center justify-between gap-3 px-0.5">
               <span className="font-meta text-[10px] font-bold uppercase tracking-widest text-primary">
-                Review before sending
+                {isRtl ? "المراجعة قبل الإرسال" : "Review before sending"}
               </span>
               <button
                 type="button"
                 onClick={handleRecordAgain}
                 disabled={isComposerDisabled || isVoiceBusy}
                 className="inline-flex items-center gap-1.5 rounded-control border-2 border-border bg-surface-solid px-2.5 py-1.5 font-meta text-[10px] font-bold uppercase tracking-wider text-foreground brutalist-shadow-sm cursor-pointer hover:bg-surface-subtle disabled:opacity-40"
-                aria-label="Discard this transcript and record again"
+                aria-label={
+                  isRtl
+                    ? "تجاهل التسجيل وإعادة التسجيل"
+                    : "Discard this transcript and record again"
+                }
               >
                 <MicIcon
                   className="h-3.5 w-3.5 text-primary"
                   aria-hidden="true"
                 />
-                Record again
+                {isRtl ? "إعادة التسجيل" : "Record again"}
               </button>
             </div>
             <div className="relative">
               <label htmlFor="simulation-response-input" className="sr-only">
-                Review and edit your response before sending
+                {isRtl
+                  ? "راجع وعدّل ردك قبل الإرسال"
+                  : "Review and edit your response before sending"}
               </label>
               <textarea
                 id="simulation-response-input"
                 ref={textareaRef}
                 rows={3}
                 value={composerText}
+                dir={isRtl ? "rtl" : "ltr"}
                 onChange={(e) =>
                   onChangeText(e.target.value.slice(0, MAX_TURN_TEXT_LENGTH))
                 }
                 onKeyDown={handleKeyDown}
                 disabled={isComposerDisabled}
-                placeholder="Review or edit your spoken response…"
-                className="w-full min-h-20 resize-none rounded-control border-2 border-border bg-surface-subtle p-3 pr-24 font-sans text-base sm:text-sm text-foreground placeholder:text-muted-foreground focus:bg-white focus:outline-none disabled:opacity-60"
+                placeholder={
+                  isRtl
+                    ? "اكتب ردك هنا..."
+                    : "Review or edit your spoken response…"
+                }
+                className={cn(
+                  "w-full min-h-20 resize-none rounded-control border-2 border-border bg-surface-subtle p-3 font-sans text-base sm:text-sm text-foreground placeholder:text-muted-foreground focus:bg-white focus:outline-none disabled:opacity-60",
+                  isRtl ? "pl-24 pr-3 text-right" : "pr-24 pl-3 text-left",
+                )}
               />
               <button
                 type="submit"
                 disabled={
                   isComposerDisabled || isVoiceBusy || !composerText.trim()
                 }
-                className="absolute bottom-3 right-3 inline-flex h-10 items-center gap-1.5 rounded-control bg-primary px-3 text-primary-foreground border border-border disabled:opacity-40 cursor-pointer brutalist-shadow-sm"
-                aria-label="Send response"
+                className={cn(
+                  "absolute bottom-3 inline-flex h-10 items-center gap-1.5 rounded-control bg-primary px-3 text-primary-foreground border border-border disabled:opacity-40 cursor-pointer brutalist-shadow-sm",
+                  isRtl ? "left-3" : "right-3",
+                )}
+                aria-label={isRtl ? "إرسال الرد" : "Send response"}
               >
                 {sendingTurn ? (
                   <RefreshIcon className="h-3.5 w-3.5 animate-spin" />
                 ) : (
-                  <SendIcon className="h-3.5 w-3.5" />
+                  <SendIcon
+                    className={cn("h-3.5 w-3.5", isRtl && "scale-x-[-1]")}
+                  />
                 )}
                 <span className="font-meta text-[10px] font-bold uppercase tracking-wider">
-                  Send
+                  {isRtl ? "إرسال" : "Send"}
                 </span>
-                <kbd className="hidden sm:inline-block ml-1 rounded bg-surface-subtle px-1 py-0.5 text-[9px] font-mono text-foreground border border-border">
+                <kbd
+                  className={cn(
+                    "hidden sm:inline-block rounded bg-surface-subtle px-1 py-0.5 text-[9px] font-mono text-foreground border border-border",
+                    isRtl ? "mr-1" : "ml-1",
+                  )}
+                >
                   ↵
                 </kbd>
               </button>
@@ -567,11 +621,17 @@ export function SimulationComposer({
                     ? { transform: `scale(${micScale})` }
                     : undefined
                 }
-                aria-label="Speak your response"
+                aria-label={isRtl ? "تحدث بردك" : "Speak your response"}
               >
                 <MicIcon className="h-5 w-5" aria-hidden="true" />
                 <span className="font-display text-sm font-bold uppercase tracking-wider">
-                  {isRecording ? "Listening…" : "Tap to talk"}
+                  {isRecording
+                    ? isRtl
+                      ? "جارٍ الاستماع..."
+                      : "Listening…"
+                    : isRtl
+                      ? "اضغط للتحدث"
+                      : "Tap to talk"}
                 </span>
               </button>
             </div>
@@ -579,19 +639,27 @@ export function SimulationComposer({
               {reviewBeforeSend ? (
                 <>
                   <span className="hidden sm:inline">
-                    Hold Space to talk, release to review. Press Enter to send.
+                    {isRtl
+                      ? "اضغط مع الاستمرار على Space للتحدث، ثم أفلت للمراجعة. اضغط Enter للإرسال."
+                      : "Hold Space to talk, release to review. Press Enter to send."}
                   </span>
                   <span className="sm:hidden">
-                    Tap to talk, tap Done to review.
+                    {isRtl
+                      ? "اضغط للتحدث، ثم اضغط تم للمراجعة."
+                      : "Tap to talk, tap Done to review."}
                   </span>
                 </>
               ) : (
                 <>
                   <span className="hidden sm:inline">
-                    Hold Space to talk, release to send.
+                    {isRtl
+                      ? "اضغط مع الاستمرار على Space للتحدث، ثم أفلت للإرسال."
+                      : "Hold Space to talk, release to send."}
                   </span>
                   <span className="sm:hidden">
-                    Tap to talk, tap Done to send.
+                    {isRtl
+                      ? "اضغط للتحدث، ثم اضغط تم للإرسال."
+                      : "Tap to talk, tap Done to send."}
                   </span>
                 </>
               )}
@@ -615,14 +683,26 @@ export function SimulationComposer({
                   className={cn(
                     "inline-block h-3 w-3 sm:h-3.5 sm:w-3.5 transform rounded-full bg-white transition duration-150 ease-in-out shadow-xs",
                     reviewBeforeSend
-                      ? "translate-x-3.5 sm:translate-x-4"
-                      : "translate-x-0.5 sm:translate-x-1",
+                      ? isRtl
+                        ? "-translate-x-3.5 sm:-translate-x-4"
+                        : "translate-x-3.5 sm:translate-x-4"
+                      : isRtl
+                        ? "-translate-x-0.5 sm:-translate-x-1"
+                        : "translate-x-0.5 sm:translate-x-1",
                   )}
                 />
               </span>
               <span className="text-[11px] sm:text-xs text-muted-foreground select-none">
-                Review before sending
+                {isRtl ? "مراجعة الصوت قبل الإرسال" : "Review before sending"}
               </span>
+            </button>
+            <button
+              type="button"
+              onClick={switchToTextMode}
+              disabled={isComposerDisabled}
+              className="font-meta text-[11px] text-muted-foreground underline underline-offset-2 hover:text-foreground cursor-pointer disabled:opacity-40"
+            >
+              {isRtl ? "أو اكتب ردك بدلاً من ذلك" : "Or type your response instead"}
             </button>
           </div>
         )}
@@ -634,20 +714,25 @@ export function SimulationComposer({
             disabled={isComposerDisabled}
             className="self-center font-meta text-[10px] font-bold uppercase tracking-wider text-muted-foreground underline underline-offset-2 hover:text-foreground disabled:opacity-40 cursor-pointer"
           >
-            Type instead
+            {isRtl ? "الكتابة بدلاً من ذلك" : "Type instead"}
           </button>
         )}
 
         <div className="flex items-center justify-between font-meta text-[10px] sm:text-[11px] text-muted-foreground px-0.5 sm:px-1">
           <span className="truncate">
             {turnCount >= 1
-              ? `${turnCount} turns exchanged`
-              : "Your response starts the conversation"}
+              ? isRtl
+                ? `${turnCount} جولة متبادلة`
+                : `${turnCount} turns exchanged`
+              : isRtl
+                ? "ردك يبدأ المحادثة"
+                : "Your response starts the conversation"}
           </span>
           {isTextInput && (
             <span
               className={cn(
-                "shrink-0 ml-2",
+                "shrink-0",
+                isRtl ? "mr-2" : "ml-2",
                 isNearLimit && "text-alert font-bold",
               )}
             >
