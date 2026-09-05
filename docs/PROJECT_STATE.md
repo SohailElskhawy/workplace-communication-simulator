@@ -31,7 +31,7 @@ Deliver the complete loop:
 
 **Scenario → Simulation → Evaluation → Evidence-linked coaching → Retry → Progress**
 
-Release 1 is **English-only**.
+Release 1 supports **English (`en`)** and **Arabic (`ar`)** (with Egyptian and Gulf dialect options).
 
 Primary users:
 - university students entering professional environments;
@@ -393,6 +393,17 @@ corepack pnpm prisma:generate
 
 28. September 2 mobile responsiveness polish pass: fixed the landing page horizontal overflow (global `overflow-x: clip` on `html`/`body`, contained hero decorative shapes, `whitespace-nowrap` status pill, balanced heading wrapping via `h1–h3 { text-wrap: balance }`), and reduced oversized mobile typography everywhere while keeping tablet/desktop sizes unchanged: landing hero h1 30px→26px with tighter paragraph/button sizing, app/results page h1s 30px→24px, pricing heading and plan price, results overall score 60px→48px, auth panel heading. Made the simulation screen comfortable on small phones: simulation header finish button shows "Finish" (full label on `sm+`), conversation stage drops the duplicated mobile counterpart row and "In conversation with" label (both remain on desktop), smaller orb on phones (64px mobile → 80px `xs+` → 144px `sm+`; previously 80px mobile), tighter orb/status spacing, composer textarea now renders 16px text on mobile to prevent iOS focus auto-zoom, and the composer footer respects the iOS safe-area inset. Verified with strict typecheck, ESLint, and Prettier on touched files; no API, contract, lifecycle, or AI behavior changed.
 29. September 5 push-to-talk enter-to-send & auto-send toggle: improved simulation composer UX for push-to-talk mode. Added seamless keyboard-first send: unshifted Enter sends the message both from within the review textarea and globally on window (guarded against active modals, open dialogs, and other editable inputs; Shift+Enter inserts newline). Solved the review auto-focus timing issue by reactively focusing the textarea and positioning cursor at end upon transcript arrival. Added a mobile-responsive "Review before sending" accessible toggle persisted in localStorage via `useSyncExternalStore` (default: on). When toggled off, releasing Space (or tapping Done on touch devices) automatically submits the transcribed turn to the AI. Responsive UI adds desktop keyboard shortcut badges (`↵`) while keeping mobile views compact and uncluttered. Verified with 112 web unit tests passing (including 19 new tests for simulation composer), clean TypeScript, and 0 ESLint errors/warnings.
+30. September 5 custom voice architecture, internal Edge-TTS engine, and bilingual Arabic/English support (Milestone 15 - Complete):
+  - Replaced third-party ElevenLabs dependencies, webhooks, and database tables with an in-house custom voice architecture and zero-cost neural speech synthesis;
+  - Implemented `EdgeTtsProvider` using `msedge-tts` for studio-quality neural voices in Arabic (`ar-EG-SalmaNeural`, `ar-EG-ShakirNeural`, `ar-SA-ZariyahNeural`, `ar-SA-HamedNeural`) and English (`en-US-JennyNeural`, `en-US-GuyNeural`), featuring deterministic persona gender mapping, stage annotation stripping, and strict timeout cleanup;
+  - Added bilingual simulation attempt support with `SupportedLanguage` (`"en" | "ar"`) and `ArabicDialect` (`"EGYPTIAN" | "GULF"`), backed by database schema migration `20260905173713_add_language_and_remove_elevenlabs` on `SimulationAttempt` and dropping the `RealtimeConversation` table;
+  - Enforced database invariant: English attempts persist `dialect: null`, while Arabic attempts default to `"EGYPTIAN"` or persist `"GULF"`;
+  - Authored authentic, context-specific Egyptian Arabic opening messages (`openingMessageAr`) across all 6 curated workplace scenarios and 24 difficulty variations;
+  - Updated AI roleplay prompt to inject natural colloquial Arabic directives tailored to the learner's chosen dialect (Egyptian or Gulf), maintaining realistic workplace phrasing and idioms without stiff Modern Standard Arabic or machine translation artifacts;
+  - Added Neo-Brutalist `LanguageDialectSelector` to the scenario setup screen, with dynamic dialect cards when Arabic is selected;
+  - Implemented complete Arabic RTL layout support across the simulation workspace: `ConversationStage` (Arabic state copy and aligned bubbles), `TranscriptDrawer` (RTL drawer slide and Arabic turn roles), and `SimulationComposer` (RTL text direction, localized placeholders, and mirrored send button);
+  - Cleaned up obsolete realtime feature flags, routes, repositories, and uninstalled `@elevenlabs/react` from the monorepo;
+  - Verified with 467 tests across 70 test files passing, 100% clean monorepo typecheck, 0 ESLint warnings/errors, and successful Next.js production build.
 
 
 
