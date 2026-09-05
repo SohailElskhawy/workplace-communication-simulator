@@ -21,8 +21,8 @@ export function UniversalSkillsSection({
     <section className="space-y-3 sm:space-y-4">
       <div className="border-b border-border/20 pb-2.5 sm:pb-3 flex items-center justify-between">
         <div>
-          <h2 className="font-display text-lg sm:text-2xl font-bold uppercase tracking-tight text-foreground">
-            Universal Skills Breakdown
+          <h2 className="font-display text-2xl font-semibold text-foreground">
+            Five communication skills
           </h2>
           <p className="font-sans text-xs sm:text-sm text-muted-foreground mt-0.5">
             Detailed 0–100 benchmark scores across our core professional
@@ -47,13 +47,13 @@ export function UniversalSkillsSection({
               className={cn(
                 "glass-surface rounded-card p-3 sm:p-5 flex flex-col justify-between transition-all relative overflow-hidden",
                 isFocus
-                  ? "border-2 border-primary bg-primary/5 shadow-[3px_3px_0px_0px_#1a1a1a] sm:shadow-[4px_4px_0px_0px_#1a1a1a]"
-                  : "border border-border shadow-xs hover:border-border/80",
+                  ? "border border-primary/30 bg-primary-muted shadow-xs"
+                  : "border border-border-subtle bg-surface-solid shadow-xs hover:border-border",
               )}
             >
               {isFocus && (
-                <div className="absolute top-2 right-2 bg-[#d4ff00] text-[#171e00] font-meta text-[8px] sm:text-[9px] font-bold px-1.5 py-0.5 uppercase tracking-wider border border-border shadow-2xs">
-                  Target
+                <div className="absolute end-2 top-2 rounded-full border border-primary/20 bg-surface-solid px-2 py-1 text-[10px] font-semibold text-primary">
+                  Next focus
                 </div>
               )}
 
@@ -85,12 +85,9 @@ export function UniversalSkillsSection({
                 </p>
               </div>
 
-              <div className="w-full bg-surface-container-high h-1.5 sm:h-2 mt-3 sm:mt-4 border border-border/30 rounded-full overflow-hidden">
+              <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-surface-raised">
                 <div
-                  className={cn(
-                    "h-full rounded-full",
-                    isFocus ? "bg-primary" : band.progressClass,
-                  )}
+                  className="h-full rounded-full bg-primary"
                   style={{
                     width: `${Math.min(100, Math.max(0, score))}%`,
                   }}

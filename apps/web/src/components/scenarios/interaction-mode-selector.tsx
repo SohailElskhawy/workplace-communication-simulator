@@ -42,10 +42,13 @@ export function InteractionModeSelector({
   onSelectMode,
 }: InteractionModeSelectorProps) {
   return (
-    <section aria-label="Select interaction mode" className="space-y-3 sm:space-y-4">
+    <section
+      aria-label="Select interaction mode"
+      className="space-y-3 sm:space-y-4"
+    >
       <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
-        <h2 className="font-display text-lg sm:text-xl font-bold uppercase tracking-tight text-foreground">
-          Select Interaction Mode
+        <h2 className="font-display text-2xl font-semibold text-foreground">
+          Choose how to practice
         </h2>
         <span className="font-meta text-[11px] sm:text-xs text-muted-foreground">
           Chooses how you speak with your counterpart
@@ -65,10 +68,10 @@ export function InteractionModeSelector({
               onClick={() => onSelectMode(modeKey)}
               aria-pressed={isSelected}
               className={cn(
-                "glass-surface rounded-card p-3.5 sm:p-5 text-left border transition-all duration-200 ease-out relative flex flex-col justify-between cursor-pointer select-none",
+                "relative flex min-h-44 flex-col justify-between rounded-card border bg-surface-solid p-4 text-start shadow-xs transition sm:p-5",
                 isSelected
-                  ? "border-2 border-primary bg-primary/5 shadow-[3px_3px_0px_0px_#1a1a1a] sm:shadow-[4px_4px_0px_0px_#1a1a1a] -translate-x-0.5 -translate-y-0.5"
-                  : "border-border shadow-xs hover:border-border/80 hover:shadow-[2px_2px_0px_0px_#1a1a1a] hover:translate-x-0.5 hover:translate-y-0.5",
+                  ? "border-primary bg-primary-muted"
+                  : "border-border-subtle hover:border-border",
               )}
             >
               <div>
@@ -83,7 +86,7 @@ export function InteractionModeSelector({
                     />
                     <span
                       className={cn(
-                        "font-display text-base sm:text-lg font-bold uppercase tracking-tight",
+                        "font-display text-lg font-semibold",
                         isSelected ? "text-primary" : "text-foreground",
                       )}
                     >
@@ -91,11 +94,11 @@ export function InteractionModeSelector({
                     </span>
                   </span>
                   {isSelected ? (
-                    <span className="flex h-4.5 w-4.5 sm:h-5 sm:w-5 items-center justify-center rounded-full bg-primary text-primary-foreground border border-primary shrink-0">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
                       <CheckIcon className="w-2.5 h-2.5 sm:w-3 sm:h-3 stroke-3" />
                     </span>
                   ) : (
-                    <span className="h-4.5 w-4.5 sm:h-5 sm:w-5 rounded-full border border-border/30 bg-surface-subtle shrink-0" />
+                    <span className="h-5 w-5 shrink-0 rounded-full border border-border bg-surface-solid" />
                   )}
                 </div>
 
@@ -111,7 +114,7 @@ export function InteractionModeSelector({
               {modeKey === "PUSH_TO_TALK" && (
                 <div className="mt-3 sm:mt-4 pt-2 border-t border-border/10">
                   <span className="font-meta text-[9px] sm:text-[10px] uppercase font-bold text-primary">
-                    Recommended Default
+                    Recommended
                   </span>
                 </div>
               )}

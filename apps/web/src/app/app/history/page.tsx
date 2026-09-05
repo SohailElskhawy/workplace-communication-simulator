@@ -6,7 +6,12 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { HistoryItemCard } from "@/components/history/history-item-card";
-import { ArrowRightIcon, RefreshIcon, SearchIcon } from "@/components/icons";
+import {
+  ArrowRightIcon,
+  DocumentTextIcon,
+  RefreshIcon,
+  SearchIcon,
+} from "@/components/icons";
 import { DeleteAttemptDialog } from "@/components/results/delete-attempt-dialog";
 import { ApiClientError, createApiClient } from "@/lib/api-client";
 import { cn } from "@/lib/cn";
@@ -199,7 +204,10 @@ export default function HistoryPage() {
   );
 
   return (
-    <div className="w-full max-w-container-max mx-auto px-3 sm:px-6 md:px-8 py-4 sm:py-8 space-y-6 sm:space-y-10 font-sans pb-24">
+    <div
+      className="mx-auto w-full max-w-container-max space-y-8 pb-24 pt-8 sm:space-y-10 sm:pt-12"
+      data-od-id="history-screen"
+    >
       {/* 1. Hero Section */}
       <header className="relative space-y-3 sm:space-y-4 max-w-4xl">
         <div className="inline-block px-2.5 py-0.5 sm:px-3 sm:py-1 border border-border rounded-full bg-surface-subtle">
@@ -210,7 +218,7 @@ export default function HistoryPage() {
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
           <div>
-            <h1 className="font-display text-xl sm:text-3xl md:text-5xl font-bold uppercase tracking-tight text-foreground leading-[1.15]">
+            <h1 className="font-display text-4xl font-semibold leading-tight text-foreground sm:text-5xl">
               Every conversation is another rep.
             </h1>
             <p className="font-sans text-xs sm:text-base md:text-lg text-muted-foreground mt-1 sm:mt-2 leading-relaxed max-w-2xl">
@@ -221,11 +229,11 @@ export default function HistoryPage() {
 
           <div className="shrink-0 self-start sm:self-center">
             <Link
-              href="/app"
-              className="inline-flex items-center gap-2 rounded-control bg-primary px-4 py-2 sm:px-5 sm:py-2.5 font-display text-xs sm:text-sm font-bold uppercase tracking-wider text-primary-foreground border border-border shadow-[3px_3px_0px_0px_#1a1a1a] sm:shadow-[4px_4px_0px_0px_#1a1a1a] brutalist-interactive whitespace-nowrap"
+              href="/app/scenarios"
+              className="inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-control bg-primary px-4 text-sm font-semibold text-primary-foreground brutalist-interactive"
             >
               <span>Browse Scenarios</span>
-              <ArrowRightIcon className="w-3.5 h-3.5" />
+              <ArrowRightIcon className="directional-icon h-4 w-4" />
             </Link>
           </div>
         </div>
@@ -372,7 +380,7 @@ export default function HistoryPage() {
       {!loading && !error && filteredItems.length === 0 && (
         <div className="glass-surface rounded-card border border-border p-12 text-center shadow-[6px_6px_0px_0px_#1a1a1a]">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary text-2xl mb-4">
-            💬
+            <DocumentTextIcon className="h-6 w-6" aria-hidden="true" />
           </div>
           <h2 className="font-display text-xl font-bold uppercase tracking-tight text-foreground">
             {items.length === 0

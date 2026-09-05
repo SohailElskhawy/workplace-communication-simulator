@@ -24,7 +24,7 @@ const stateCopy: Record<SimulationUiState, { label: string; detail: string }> =
     },
     LISTENING: {
       label: "Listening",
-      detail: "Speak naturally, then choose Done speaking.",
+      detail: "We can hear you. Release Space or choose Done speaking.",
     },
     TRANSCRIBING: {
       label: "Transcribing",
@@ -35,12 +35,16 @@ const stateCopy: Record<SimulationUiState, { label: string; detail: string }> =
       detail: "Edit the transcript before you send it.",
     },
     AI_THINKING: {
-      label: "Thinking",
-      detail: "Your counterpart is considering your response.",
+      label: "Processing",
+      detail: "Your counterpart is preparing a response.",
     },
     AI_SPEAKING: {
-      label: "Speaking",
-      detail: "Your counterpart's voice is playing.",
+      label: "AI speaking — you can interrupt",
+      detail: "Tap the microphone or hold Space whenever you want the floor.",
+    },
+    MIC_ERROR: {
+      label: "Microphone unavailable",
+      detail: "Check permission or continue by typing your response.",
     },
   };
 
@@ -97,7 +101,7 @@ export function ConversationStage({
 
   return (
     <section
-      className="flex flex-1 min-h-0 flex-col items-center justify-start sm:justify-center overflow-y-auto px-2.5 py-2.5 sm:px-8 sm:py-8"
+      className="flex min-h-0 flex-1 flex-col items-center justify-start overflow-y-auto px-3 py-4 sm:justify-center sm:px-8 sm:py-8"
       aria-label="Current conversation"
       aria-live="polite"
     >
@@ -118,13 +122,16 @@ export function ConversationStage({
             className="inline-flex items-center gap-1.5 rounded-control border border-border bg-surface-solid px-2 sm:px-2.5 py-1 sm:py-1.5 font-meta text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-foreground brutalist-shadow-sm cursor-pointer hover:bg-surface-subtle"
             aria-label={`Open transcript with ${turnCount} turns`}
           >
-            <DocumentTextIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5" aria-hidden="true" />
+            <DocumentTextIcon
+              className="h-3 w-3 sm:h-3.5 sm:w-3.5"
+              aria-hidden="true"
+            />
             <span>Transcript</span>{" "}
             <span className="text-muted-foreground">({turnCount})</span>
           </button>
         </div>
 
-        <div className="rounded-card border-2 border-border bg-surface-solid shadow-brutal">
+        <div className="rounded-card border border-border-subtle bg-surface-solid shadow-xs">
           {/* Conversation orb: the focal status indicator */}
           <div className="flex flex-col items-center px-3 pt-3 pb-2 sm:px-8 sm:pt-8 sm:pb-5">
             <ConversationOrb
@@ -172,10 +179,10 @@ export function ConversationStage({
                 {liveEntries.map((entry) => (
                   <div
                     key={entry.id}
-                    className={cn(
-                      "flex flex-col",
-                      entry.role === "agent" ? "items-start" : "items-end",
-                    )}
+                    className="role-message"
+                    data-role={
+                      entry.role === "agent" ? "counterpart" : "learner"
+                    }
                   >
                     <span
                       className={cn(
@@ -189,10 +196,10 @@ export function ConversationStage({
                     </span>
                     <div
                       className={cn(
-                        "max-w-[92%] rounded-card border border-border p-2.5 sm:p-3 text-xs leading-relaxed shadow-2xs whitespace-pre-wrap",
+                        "role-bubble max-w-[92%] rounded-card border border-border-subtle p-2.5 text-xs leading-relaxed whitespace-pre-wrap sm:p-3",
                         entry.role === "agent"
-                          ? "rounded-tl-none bg-surface-subtle text-foreground"
-                          : "rounded-tr-none bg-primary text-primary-foreground",
+                          ? "bg-surface-subtle text-foreground"
+                          : "bg-primary text-primary-foreground",
                       )}
                     >
                       {entry.text}

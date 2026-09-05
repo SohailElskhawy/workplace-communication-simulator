@@ -21,7 +21,7 @@ export function AppLayoutShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <AppHeader />
-      <main id="main-content" className="flex-1 py-3 sm:py-8">
+      <main id="main-content" className="flex-1 pb-24 pt-3 sm:pb-0 sm:pt-8">
         <AppContainer>{children}</AppContainer>
       </main>
     </div>

@@ -13,7 +13,10 @@ export function GlassCard({
 }: GlassCardProps) {
   return (
     <Component
-      className={cn("glass-surface rounded-card p-5 sm:p-8", className)}
+      className={cn(
+        "rounded-card border border-border-subtle bg-surface-solid p-5 shadow-xs sm:p-8",
+        className,
+      )}
       {...props}
     />
   );

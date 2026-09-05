@@ -7,13 +7,11 @@ import { formatCoachingMomentType } from "@/lib/score-utils";
 export interface CoachingMomentsSectionProps {
   moments: CoachingMoment[];
   turnMap: Map<string, ConversationTurn>;
-  onOpenTranscriptAtTurn?: (turnId: string) => void;
 }
 
 export function CoachingMomentsSection({
   moments,
   turnMap,
-  onOpenTranscriptAtTurn,
 }: CoachingMomentsSectionProps) {
   return (
     <section className="space-y-3 sm:space-y-4">
@@ -46,10 +44,10 @@ export function CoachingMomentsSection({
               <div
                 key={idx}
                 className={cn(
-                  "glass-surface rounded-card p-3.5 sm:p-6 shadow-[3px_3px_0px_0px_#1a1a1a] sm:shadow-[4px_4px_0px_0px_#1a1a1a] flex flex-col gap-3 sm:gap-4 border transition-all",
-                  isStrength && "border-l-4 border-l-[#d4ff00]",
-                  isMissed && "border-l-4 border-l-[#ffb3b0]",
-                  !isStrength && !isMissed && "border-l-4 border-l-primary",
+                  "flex flex-col gap-3 rounded-card border border-border-subtle border-s-4 bg-surface-solid p-4 shadow-xs transition sm:gap-4 sm:p-6",
+                  isStrength && "border-s-success",
+                  isMissed && "border-s-alert/40",
+                  !isStrength && !isMissed && "border-s-primary",
                 )}
               >
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/15 pb-2.5 sm:pb-3">

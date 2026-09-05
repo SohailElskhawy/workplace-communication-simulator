@@ -116,7 +116,9 @@ export default function LandingPage() {
             <span className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-control border border-border bg-primary font-display font-extrabold text-primary-foreground shadow-[2px_2px_0px_0px_#1a1a1a]">
               K
             </span>
-            <span className="text-base sm:text-lg font-bold tracking-tight">Kalemny</span>
+            <span className="text-base sm:text-lg font-bold tracking-tight">
+              Kalemny
+            </span>
           </Link>
 
           {/* Desktop Nav Links */}
@@ -198,7 +200,11 @@ export default function LandingPage() {
               className="md:hidden p-1.5 sm:p-2 rounded-control border border-border bg-surface shadow-2xs cursor-pointer text-foreground"
               aria-label="Toggle navigation menu"
             >
-              {mobileMenuOpen ? <CloseIcon className="w-4 h-4" /> : <MenuIcon className="w-4 h-4" />}
+              {mobileMenuOpen ? (
+                <CloseIcon className="w-4 h-4" />
+              ) : (
+                <MenuIcon className="w-4 h-4" />
+              )}
             </button>
           </div>
         </div>
@@ -577,7 +583,7 @@ export default function LandingPage() {
                   </p>
                 </div>
 
-                <div className="w-full bg-surface-container-high h-2 rounded-full overflow-hidden border border-border/20">
+                <div className="w-full bg-surface-raised h-2 rounded-full overflow-hidden border border-border/20">
                   <div
                     className="h-full bg-primary rounded-full"
                     style={{ width: `${skill.score}%` }}

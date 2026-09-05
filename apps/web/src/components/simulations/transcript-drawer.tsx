@@ -56,10 +56,7 @@ export function TranscriptDrawer({
   if (!open) return null;
 
   return (
-    <div
-      className="absolute inset-0 z-30 flex justify-end"
-      aria-label="Transcript drawer"
-    >
+    <div className="absolute inset-0 z-30 flex" aria-label="Transcript drawer">
       <button
         type="button"
         className="absolute inset-0 cursor-default bg-foreground/15 backdrop-blur-[1px]"
@@ -67,7 +64,7 @@ export function TranscriptDrawer({
         aria-label="Close transcript"
       />
       <aside
-        className="relative flex h-full w-full max-w-xl flex-col border-l-2 border-border bg-surface-solid shadow-brutal"
+        className="relative ms-auto flex h-full w-full max-w-xl flex-col border-s border-border bg-surface-solid shadow-brutal"
         aria-label="Conversation transcript"
       >
         <div className="flex items-center justify-between gap-3 border-b border-border p-4 sm:p-5">
@@ -205,7 +202,8 @@ function TranscriptMessage({
 }) {
   return (
     <div
-      className={cn("flex flex-col", counterpart ? "items-start" : "items-end")}
+      className="role-message"
+      data-role={counterpart ? "counterpart" : "learner"}
     >
       <span
         className={cn(
@@ -217,10 +215,10 @@ function TranscriptMessage({
       </span>
       <div
         className={cn(
-          "max-w-[92%] rounded-card border border-border p-3 text-xs leading-relaxed shadow-2xs whitespace-pre-wrap",
+          "role-bubble max-w-[92%] rounded-card border border-border-subtle p-3 text-xs leading-relaxed whitespace-pre-wrap",
           counterpart
-            ? "rounded-tl-none bg-surface-subtle text-foreground"
-            : "rounded-tr-none bg-primary text-primary-foreground",
+            ? "bg-surface-subtle text-foreground"
+            : "bg-primary text-primary-foreground",
         )}
       >
         {text}

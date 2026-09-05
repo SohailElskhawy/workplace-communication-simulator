@@ -1,7 +1,6 @@
 import type { SpeechPlaybackStatus } from "./speech-playback-controller";
 
 export function isConversationInputDisabled({
-  counterpartSpeechStatus,
   finishing,
   isExpired,
   isLimitReached,
@@ -13,12 +12,5 @@ export function isConversationInputDisabled({
   isLimitReached: boolean;
   sendingTurn: boolean;
 }): boolean {
-  return (
-    sendingTurn ||
-    finishing ||
-    isExpired ||
-    isLimitReached ||
-    counterpartSpeechStatus === "loading" ||
-    counterpartSpeechStatus === "playing"
-  );
+  return sendingTurn || finishing || isExpired || isLimitReached;
 }

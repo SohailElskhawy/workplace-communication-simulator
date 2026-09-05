@@ -84,18 +84,21 @@ export default function ProgressPage() {
   }, [apiUrl, getToken, isLoaded, isSignedIn]);
 
   return (
-    <div className="w-full max-w-container-max mx-auto px-3 sm:px-6 md:px-8 py-4 sm:py-8 space-y-6 sm:space-y-10 font-sans pb-24">
+    <div
+      className="mx-auto w-full max-w-container-max space-y-8 pb-24 pt-8 sm:space-y-10 sm:pt-12"
+      data-od-id="progress-screen"
+    >
       {/* 1. Page Hero */}
       <header className="relative space-y-3 sm:space-y-4 max-w-4xl">
         <div className="inline-block px-2.5 py-0.5 sm:px-3 sm:py-1 border border-primary/20 rounded-full bg-primary/10">
-          <span className="font-meta text-[10px] sm:text-xs uppercase tracking-widest text-primary font-bold">
-            Your Progress
+          <span className="text-sm font-semibold text-primary">
+            Your progress
           </span>
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
           <div>
-            <h1 className="font-display text-xl sm:text-3xl md:text-5xl font-bold uppercase tracking-tight text-foreground leading-[1.15]">
+            <h1 className="font-display text-4xl font-semibold leading-tight text-foreground sm:text-5xl">
               See how your communication is changing.
             </h1>
             <p className="font-sans text-xs sm:text-base md:text-lg text-muted-foreground mt-1 sm:mt-2 leading-relaxed max-w-2xl">
@@ -104,13 +107,19 @@ export default function ProgressPage() {
             </p>
           </div>
 
-          <div className="shrink-0 self-start sm:self-center">
+          <div className="flex shrink-0 items-center gap-2 self-start sm:self-center">
             <Link
-              href="/app"
-              className="inline-flex items-center gap-2 rounded-control bg-primary px-4 py-2 sm:px-5 sm:py-2.5 font-display text-xs sm:text-sm font-bold uppercase tracking-wider text-primary-foreground border border-border shadow-[3px_3px_0px_0px_#1a1a1a] sm:shadow-[4px_4px_0px_0px_#1a1a1a] brutalist-interactive whitespace-nowrap"
+              href="/app/history"
+              className="inline-flex min-h-11 items-center rounded-control border border-border-subtle bg-surface-solid px-4 text-sm font-semibold text-foreground hover:bg-surface-subtle"
             >
-              <span>Practice Now</span>
-              <ArrowRightIcon className="w-3.5 h-3.5" />
+              Session history
+            </Link>
+            <Link
+              href="/app/scenarios"
+              className="inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-control bg-primary px-4 text-sm font-semibold text-primary-foreground brutalist-interactive"
+            >
+              <span>Practice now</span>
+              <ArrowRightIcon className="directional-icon h-4 w-4" />
             </Link>
           </div>
         </div>
@@ -166,8 +175,8 @@ export default function ProgressPage() {
         progress &&
         progress.eligibleSessionCount === 0 && (
           <div className="glass-surface rounded-card border border-border p-6 sm:p-12 text-center shadow-[4px_4px_0px_0px_#1a1a1a] sm:shadow-[6px_6px_0px_0px_#1a1a1a] max-w-3xl mx-auto">
-            <div className="mx-auto flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-full bg-primary/10 text-primary text-xl sm:text-2xl mb-3 sm:mb-4">
-              📊
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary-muted text-primary">
+              <TargetIcon className="h-6 w-6" aria-hidden="true" />
             </div>
             <h2 className="font-display text-lg sm:text-2xl font-bold uppercase tracking-tight text-foreground">
               No Progress Profile Available Yet
@@ -270,7 +279,7 @@ export default function ProgressPage() {
                       </p>
                     </div>
 
-                    <div className="w-full bg-surface-container-high h-1.5 sm:h-2 mt-3 sm:mt-4 border border-border/30 rounded-full overflow-hidden">
+                    <div className="w-full bg-surface-raised h-1.5 sm:h-2 mt-3 sm:mt-4 border border-border/30 rounded-full overflow-hidden">
                       <div
                         className={cn(
                           "h-full rounded-full",

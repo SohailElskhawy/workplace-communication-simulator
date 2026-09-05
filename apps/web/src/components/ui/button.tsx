@@ -6,9 +6,9 @@ type ButtonVariant = "primary" | "secondary" | "ghost";
 const variantClasses: Record<ButtonVariant, string> = {
   primary: "bg-primary text-primary-foreground brutalist-interactive",
   secondary:
-    "bg-surface-solid text-foreground brutalist-interactive hover:bg-surface-subtle",
+    "border border-border bg-surface-solid text-foreground shadow-xs hover:border-foreground/35 hover:bg-surface-subtle",
   ghost:
-    "border border-border bg-transparent text-foreground hover:bg-surface-subtle",
+    "border border-transparent bg-transparent text-foreground hover:border-border hover:bg-surface-subtle",
 };
 
 export function Button({
@@ -21,7 +21,7 @@ export function Button({
     <button
       type={type}
       className={cn(
-        "inline-flex min-h-11 items-center justify-center rounded-control px-4 py-2.5 font-display text-sm font-bold leading-none disabled:pointer-events-none disabled:opacity-50",
+        "inline-flex min-h-11 items-center justify-center gap-2 rounded-control px-4 py-2.5 text-sm font-semibold leading-none transition-colors disabled:pointer-events-none disabled:opacity-50",
         variantClasses[variant],
         className,
       )}

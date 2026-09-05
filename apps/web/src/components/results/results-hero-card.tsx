@@ -4,6 +4,7 @@ import type { AttemptDetailResponse, EvaluationData } from "@kalemny/contracts";
 import Link from "next/link";
 
 import {
+  ArrowLeftIcon,
   ArrowRightIcon,
   DocumentTextIcon,
   RefreshIcon,
@@ -48,9 +49,10 @@ export function ResultsHeroCard({
         <div className="flex items-center gap-1.5 sm:gap-2">
           <Link
             href="/app"
-            className="font-meta text-[11px] sm:text-xs text-muted-foreground hover:text-foreground font-semibold"
+            className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
           >
-            ← <span className="hidden sm:inline">Back to</span> Scenarios
+            <ArrowLeftIcon className="directional-icon h-4 w-4" />
+            <span className="hidden sm:inline">Back to</span> Practice
           </Link>
           <span className="text-border/40 font-meta text-xs">/</span>
           <span className="font-meta text-[10px] sm:text-xs uppercase tracking-wider text-muted-foreground font-bold">
@@ -62,7 +64,7 @@ export function ResultsHeroCard({
           <button
             type="button"
             onClick={onOpenTranscriptModal}
-            className="inline-flex items-center gap-1 sm:gap-1.5 rounded-control border border-border bg-surface-solid px-2.5 py-1 sm:px-3 sm:py-1.5 font-meta text-[11px] sm:text-xs font-bold uppercase tracking-wider text-foreground hover:bg-surface-subtle brutalist-shadow-sm cursor-pointer"
+            className="inline-flex min-h-11 items-center gap-2 rounded-control border border-border-subtle bg-surface-solid px-3 text-xs font-semibold text-foreground hover:bg-surface-subtle"
           >
             <DocumentTextIcon className="w-3.5 h-3.5" />
             <span>Transcript ({attempt.turns.length})</span>
@@ -72,7 +74,7 @@ export function ResultsHeroCard({
             type="button"
             onClick={onOpenDeleteModal}
             title="Delete rehearsal attempt"
-            className="inline-flex items-center justify-center rounded-control border border-border bg-surface-solid p-1.5 text-muted-foreground hover:text-alert hover:border-alert brutalist-shadow-sm cursor-pointer"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-control border border-border-subtle bg-surface-solid text-muted-foreground hover:border-alert/30 hover:bg-alert/5 hover:text-alert"
             aria-label="Delete rehearsal attempt"
           >
             <TrashIcon className="w-4 h-4" />
@@ -81,7 +83,10 @@ export function ResultsHeroCard({
       </div>
 
       {/* 2. Main Hero Score Card */}
-      <section className="glass-surface rounded-card border-2 border-border p-4 sm:p-8 shadow-[4px_4px_0px_0px_#1a1a1a] sm:shadow-[6px_6px_0px_0px_#1a1a1a]">
+      <section
+        className="rounded-card border border-border-subtle bg-surface-solid p-5 shadow-xs sm:p-8"
+        data-od-id="results-overview"
+      >
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 sm:gap-8">
           {/* Left: Scenario Info & Summary */}
           <div className="space-y-3 sm:space-y-4 max-w-2xl">
@@ -89,7 +94,7 @@ export function ResultsHeroCard({
               <span className="px-2 py-0.5 sm:px-2.5 sm:py-0.5 rounded-full border border-border font-meta text-[10px] sm:text-xs font-bold uppercase tracking-wider bg-surface-subtle text-foreground">
                 {attempt.difficulty}
               </span>
-              <span className="px-2 py-0.5 sm:px-2.5 sm:py-0.5 rounded-full border border-border font-meta text-[10px] sm:text-xs font-bold uppercase tracking-wider bg-[#d4ff00]/20 text-[#171e00]">
+              <span className="rounded-full border border-success/20 bg-success/10 px-2.5 py-1 text-xs font-semibold text-success">
                 Completed
               </span>
               <span className="font-meta text-[11px] sm:text-xs text-muted-foreground">
@@ -98,15 +103,15 @@ export function ResultsHeroCard({
             </div>
 
             <div>
-              <h1 className="font-display text-xl sm:text-3xl md:text-4xl font-bold uppercase tracking-tight text-foreground leading-[1.15]">
+              <h1 className="font-display text-3xl font-semibold leading-tight text-foreground sm:text-4xl">
                 {attempt.scenario.title}
               </h1>
             </div>
 
             {/* Executive AI Coaching Summary */}
-            <div className="bg-surface-subtle border border-border/30 p-3 sm:p-4 rounded-control space-y-1">
-              <span className="font-meta text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                Executive Coaching Summary
+            <div className="space-y-1 rounded-control border border-border-subtle bg-surface-subtle p-4">
+              <span className="text-xs font-semibold text-muted-foreground">
+                Coaching summary
               </span>
               <p className="font-sans text-xs sm:text-sm text-foreground leading-relaxed">
                 {evaluation.summary}
@@ -115,7 +120,7 @@ export function ResultsHeroCard({
           </div>
 
           {/* Right: Brutalist Score Pill & Composition */}
-          <div className="flex flex-col items-center sm:items-end justify-center shrink-0 border-t lg:border-t-0 lg:border-l border-border/20 pt-4 sm:pt-6 lg:pt-0 lg:pl-8 space-y-3 sm:space-y-4 w-full sm:w-auto">
+          <div className="flex w-full shrink-0 flex-col items-center justify-center space-y-4 border-t border-border-subtle pt-5 sm:w-auto sm:items-end lg:border-t-0 lg:border-s lg:ps-8 lg:pt-0">
             <div className="text-center lg:text-right">
               <span className="font-meta text-[11px] sm:text-xs font-bold uppercase tracking-widest text-muted-foreground block mb-0.5">
                 Overall Score
@@ -146,7 +151,7 @@ export function ResultsHeroCard({
                   {evaluation.universalScore} / 100
                 </strong>
               </div>
-              <div className="w-full bg-surface-container-high h-1.5 rounded-full overflow-hidden border border-border/20">
+              <div className="w-full bg-surface-raised h-1.5 rounded-full overflow-hidden border border-border/20">
                 <div
                   className="bg-primary h-full rounded-full"
                   style={{ width: `${evaluation.universalScore}%` }}
@@ -159,7 +164,7 @@ export function ResultsHeroCard({
                   {evaluation.scenarioScore} / 100
                 </strong>
               </div>
-              <div className="w-full bg-surface-container-high h-1.5 rounded-full overflow-hidden border border-border/20">
+              <div className="w-full bg-surface-raised h-1.5 rounded-full overflow-hidden border border-border/20">
                 <div
                   className="bg-emerald-600 h-full rounded-full"
                   style={{ width: `${evaluation.scenarioScore}%` }}
@@ -173,12 +178,16 @@ export function ResultsHeroCard({
                 type="button"
                 onClick={onOpenRetryModal}
                 disabled={retrying}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-control bg-primary px-5 py-2.5 sm:px-6 sm:py-3 font-display text-xs sm:text-sm font-bold uppercase tracking-wider text-primary-foreground border border-border shadow-xs brutalist-interactive cursor-pointer disabled:opacity-50 text-center whitespace-nowrap"
+                className="inline-flex min-h-12 w-full items-center justify-center gap-2 whitespace-nowrap rounded-control bg-primary px-6 text-sm font-semibold text-primary-foreground brutalist-interactive disabled:opacity-50"
+                data-od-id="retry-practice-button"
               >
                 <RefreshIcon
-                  className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4", retrying && "animate-spin")}
+                  className={cn(
+                    "w-3.5 h-3.5 sm:w-4 sm:h-4",
+                    retrying && "animate-spin",
+                  )}
                 />
-                <span>{retrying ? "Starting..." : "Retry Simulation"}</span>
+                <span>{retrying ? "Starting…" : "Retry this practice"}</span>
               </button>
             </div>
           </div>
@@ -186,7 +195,10 @@ export function ResultsHeroCard({
       </section>
 
       {/* 3. Next Focus Banner */}
-      <section className="glass-surface rounded-card border-2 border-primary bg-primary/5 p-4 sm:p-6 shadow-[3px_3px_0px_0px_#1a1a1a] sm:shadow-[4px_4px_0px_0px_#1a1a1a] flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 sm:gap-4">
+      <section
+        className="flex flex-col justify-between gap-4 rounded-card border border-primary/20 bg-primary-muted p-5 sm:flex-row sm:items-center sm:p-6"
+        data-od-id="next-focus"
+      >
         <div className="flex items-start gap-3 sm:gap-3.5">
           <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0 mt-0.5">
             <TargetIcon className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -194,7 +206,7 @@ export function ResultsHeroCard({
           <div>
             <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
               <span className="font-meta text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-primary">
-                Next Focus Opportunity
+                Next focus
               </span>
               <span className="font-meta text-xs text-border/40">·</span>
               <span className="font-display text-xs sm:text-sm font-bold text-foreground">
@@ -210,10 +222,10 @@ export function ResultsHeroCard({
         <button
           type="button"
           onClick={onOpenRetryModal}
-          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-control bg-primary px-4 py-2 font-display text-xs font-bold uppercase tracking-wider text-primary-foreground border border-border shrink-0 shadow-2xs brutalist-interactive cursor-pointer whitespace-nowrap"
+          className="inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-control border border-primary/20 bg-surface-solid px-4 text-sm font-semibold text-primary hover:border-primary/40 sm:w-auto"
         >
           <span>Focus in Retry</span>
-          <ArrowRightIcon className="w-3.5 h-3.5" />
+          <ArrowRightIcon className="directional-icon h-4 w-4" />
         </button>
       </section>
     </div>

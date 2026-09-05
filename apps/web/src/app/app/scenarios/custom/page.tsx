@@ -4,7 +4,7 @@ import { useAuth } from "@clerk/nextjs";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import { ArrowLeftIcon, SparklesIcon } from "@/components/icons";
+import { ArrowLeftIcon } from "@/components/icons";
 import { CustomInterviewWizard } from "@/components/scenarios/custom-interview-wizard";
 import { createApiClient } from "@/lib/api-client";
 
@@ -43,53 +43,87 @@ export default function CustomScenarioPage() {
   }, [getToken, isLoaded, isSignedIn]);
 
   return (
-    <div className="w-full max-w-3xl mx-auto px-4 sm:px-6 md:px-8 py-8 space-y-8 font-sans pb-24">
-      {/* 1. Breadcrumb Navigation */}
+    <div
+      className="mx-auto w-full max-w-4xl space-y-10 pb-20 pt-8 sm:pt-12"
+      data-od-id="interview-prep-screen"
+    >
       <nav
         aria-label="Breadcrumb navigation"
         className="flex items-center gap-2"
       >
         <Link
           href="/app"
-          className="inline-flex items-center gap-1.5 font-meta text-xs font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
+          className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
-          <ArrowLeftIcon className="w-3.5 h-3.5" />
-          <span>All Scenarios</span>
+          <ArrowLeftIcon className="directional-icon h-4 w-4" />
+          <span>Practice library</span>
         </Link>
-        <span className="text-border/40 font-meta text-xs">/</span>
-        <span className="font-meta text-xs uppercase tracking-widest text-primary font-bold">
-          Custom Interview
+        <span className="text-border">/</span>
+        <span className="text-sm font-semibold text-foreground">
+          Interview prep
         </span>
       </nav>
 
-      {/* 2. Header Intro */}
-      <header className="space-y-3 border-b border-border/15 pb-6">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary font-meta text-xs font-bold uppercase tracking-wider">
-          <SparklesIcon className="w-3.5 h-3.5" />
-          <span>Tailored Rehearsal</span>
-        </div>
-
-        <h1 className="font-display text-2xl sm:text-4xl md:text-5xl font-bold uppercase tracking-tight text-foreground leading-[1.15]">
-          Create Custom Interview
+      <header
+        className="max-w-3xl space-y-4"
+        data-od-id="interview-prep-heading"
+      >
+        <p className="text-sm font-semibold text-primary">
+          Prepare for your real interview
+        </p>
+        <h1 className="font-display text-4xl font-semibold leading-tight text-foreground sm:text-5xl">
+          Turn the role you want into a practice conversation.
         </h1>
-
-        <p className="font-sans text-base sm:text-lg text-muted-foreground leading-relaxed">
-          Upload your CV and paste your target job description. Our AI creates
-          an owner-scoped, realistic interview simulation grounded exclusively
-          in your real achievements and candidate background.
+        <p className="max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+          Add your CV and the job description. Kalemny creates a personalized
+          interview grounded in the experience and requirements you provide.
         </p>
       </header>
 
-      {/* 3. Interactive Wizard Card */}
-      <div className="glass-surface rounded-card border-2 border-border p-6 sm:p-8 shadow-[6px_6px_0px_0px_#1a1a1a]">
+      <ol
+        className="grid gap-3 sm:grid-cols-3"
+        aria-label="Interview preparation steps"
+      >
+        {[
+          { number: "1", title: "Upload your CV", detail: "PDF, up to 5MB" },
+          {
+            number: "2",
+            title: "Add the job description",
+            detail: "Role and requirements",
+          },
+          {
+            number: "3",
+            title: "Practice your interview",
+            detail: "Personalized questions",
+          },
+        ].map(({ number, title, detail }) => (
+          <li
+            key={number}
+            className="rounded-card border border-border-subtle bg-surface-solid p-4"
+          >
+            <span className="font-mono text-xs font-semibold text-primary">
+              {number.padStart(2, "0")}
+            </span>
+            <p className="mt-3 text-sm font-semibold text-foreground">
+              {title}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
+          </li>
+        ))}
+      </ol>
+
+      <section
+        className="rounded-card border border-border-subtle bg-surface-solid p-5 shadow-xs sm:p-8"
+        data-od-id="interview-prep-wizard"
+      >
         {loading ? (
-          <div className="py-12 text-center font-meta text-xs text-muted-foreground animate-pulse">
-            Loading configuration...
+          <div className="animate-pulse py-12 text-center text-sm text-muted-foreground">
+            Preparing your interview workspace…
           </div>
         ) : (
           <CustomInterviewWizard userEffectivePlan={userPlan} />
         )}
-      </div>
+      </section>
     </div>
   );
 }

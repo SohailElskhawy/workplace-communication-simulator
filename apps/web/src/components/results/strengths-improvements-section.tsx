@@ -18,13 +18,13 @@ export function StrengthsImprovementsSection({
   return (
     <section className="grid gap-3.5 sm:gap-6 grid-cols-1 md:grid-cols-2">
       {/* Key Strengths */}
-      <div className="glass-surface rounded-card border border-[#d4ff00]/40 bg-[#d4ff00]/5 p-3.5 sm:p-6 shadow-xs space-y-3 sm:space-y-4">
+      <div className="space-y-4 rounded-card border border-success/20 bg-success/5 p-5 shadow-xs sm:p-6">
         <div className="flex items-center gap-2">
-          <span className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-[#d4ff00] text-[#171e00] border border-border flex items-center justify-center font-bold text-xs">
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-success text-xs font-bold text-success-foreground">
             ✓
           </span>
-          <h3 className="font-display text-sm sm:text-base font-bold uppercase tracking-tight text-foreground">
-            Key Strengths
+          <h3 className="font-display text-xl font-semibold text-foreground">
+            Strengths
           </h3>
         </div>
 
@@ -37,7 +37,7 @@ export function StrengthsImprovementsSection({
             strengths.map((item, idx) => (
               <div
                 key={idx}
-                className="bg-white/80 rounded-control border border-border/30 p-3 sm:p-4 shadow-2xs space-y-1 sm:space-y-1.5"
+                className="space-y-1 rounded-control border border-border-subtle bg-surface-solid p-4"
               >
                 <h4 className="font-display text-xs sm:text-sm font-bold text-foreground">
                   {item.title}
@@ -67,13 +67,13 @@ export function StrengthsImprovementsSection({
       </div>
 
       {/* Areas for Improvement */}
-      <div className="glass-surface rounded-card border border-[#ffb3b0]/40 bg-[#ffb3b0]/5 p-3.5 sm:p-6 shadow-xs space-y-3 sm:space-y-4">
+      <div className="space-y-4 rounded-card border border-alert/20 bg-alert/5 p-5 shadow-xs sm:p-6">
         <div className="flex items-center gap-2">
-          <span className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-[#ffb3b0] text-[#971e26] border border-border flex items-center justify-center font-bold text-xs">
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-alert text-xs font-bold text-alert-foreground">
             ↑
           </span>
-          <h3 className="font-display text-sm sm:text-base font-bold uppercase tracking-tight text-foreground">
-            Areas for Improvement
+          <h3 className="font-display text-xl font-semibold text-foreground">
+            Improvements
           </h3>
         </div>
 
@@ -86,7 +86,7 @@ export function StrengthsImprovementsSection({
             improvements.map((item, idx) => (
               <div
                 key={idx}
-                className="bg-white/80 rounded-control border border-border/30 p-4 shadow-2xs space-y-1.5"
+                className="space-y-1.5 rounded-control border border-border-subtle bg-surface-solid p-4"
               >
                 <h4 className="font-display text-xs sm:text-sm font-bold text-foreground">
                   {item.title}

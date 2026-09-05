@@ -22,6 +22,7 @@ import { RetryAttemptDialog } from "@/components/results/retry-attempt-dialog";
 import { StrengthsImprovementsSection } from "@/components/results/strengths-improvements-section";
 import { TranscriptViewerModal } from "@/components/results/transcript-viewer-modal";
 import { UniversalSkillsSection } from "@/components/results/universal-skills-section";
+import { DisclosureSection } from "@/components/ui/disclosure-section";
 import { ErrorState, LoadingState } from "@/components/route-state";
 import { ApiClientError, createApiClient } from "@/lib/api-client";
 import { isRealtimeVoiceEnabled } from "@/lib/feature-flags";
@@ -425,7 +426,10 @@ export default function ResultsPage() {
   }
 
   return (
-    <div className="w-full max-w-container-max mx-auto px-4 sm:px-6 md:px-8 py-8 space-y-10 font-sans pb-24">
+    <div
+      className="mx-auto w-full max-w-container-max space-y-8 pb-24 pt-8"
+      data-od-id="results-screen"
+    >
       {/* 1. Hero & Overall Scores */}
       <ResultsHeroCard
         attempt={attempt}
@@ -436,30 +440,53 @@ export default function ResultsPage() {
         onOpenDeleteModal={() => setShowDeleteModal(true)}
       />
 
-      {/* 2. Attempt Comparison Section (if retry) */}
-      {comparison && <AttemptComparisonSection comparison={comparison} />}
-
-      {/* 3. Universal Skills Bento Grid */}
+      {/* 2. Five universal communication skills */}
       <UniversalSkillsSection
         skills={evaluation.skills}
         nextFocusSkillKey={evaluation.nextFocus.skill}
       />
 
-      {/* 4. Coaching Moments (Moments That Mattered) */}
-      <CoachingMomentsSection moments={evaluation.moments} turnMap={turnMap} />
-
-      {/* 5. Scenario Specific Objectives Outcome */}
-      <ObjectivesOutcomeSection
-        objectives={evaluation.objectives}
-        turnMap={turnMap}
-      />
-
-      {/* 6. Key Strengths & Areas for Improvement */}
+      {/* 3. The concise coaching readout stays visible. */}
       <StrengthsImprovementsSection
         strengths={evaluation.strengths}
         improvements={evaluation.improvements}
         turnMap={turnMap}
       />
+
+      {/* 4. Evidence-heavy details use progressive disclosure. */}
+      <div className="space-y-4" data-od-id="detailed-coaching">
+        <DisclosureSection
+          id="evidence-linked-moments"
+          title="Evidence-linked moments"
+          description={`${evaluation.moments.length} moments connected to what you actually said.`}
+        >
+          <CoachingMomentsSection
+            moments={evaluation.moments}
+            turnMap={turnMap}
+          />
+        </DisclosureSection>
+
+        <DisclosureSection
+          id="scenario-objectives"
+          title="Scenario objectives"
+          description="See which outcomes were achieved, partial, or missed."
+        >
+          <ObjectivesOutcomeSection
+            objectives={evaluation.objectives}
+            turnMap={turnMap}
+          />
+        </DisclosureSection>
+
+        {comparison && (
+          <DisclosureSection
+            id="attempt-comparison"
+            title="Compare with your previous attempt"
+            description="Inspect skill and outcome changes across retries."
+          >
+            <AttemptComparisonSection comparison={comparison} />
+          </DisclosureSection>
+        )}
+      </div>
 
       {/* Modals */}
       <RetryAttemptDialog

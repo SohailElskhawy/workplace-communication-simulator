@@ -1,6 +1,5 @@
 import type { ConversationTurn, ObjectiveResult } from "@kalemny/contracts";
 
-import { CheckIcon, CloseIcon } from "@/components/icons";
 import { cn } from "@/lib/cn";
 import { formatObjectiveStatus } from "@/lib/score-utils";
 

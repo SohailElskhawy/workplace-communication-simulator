@@ -52,20 +52,23 @@ export function SimulationHeader({
   onOpenBriefing,
 }: SimulationHeaderProps) {
   return (
-    <header className="shrink-0 border-b border-border bg-surface/95 backdrop-blur-md px-3 sm:px-6 py-2 sm:py-3 shadow-xs">
+    <header
+      className="shrink-0 border-b border-border-subtle bg-surface-solid/95 px-3 py-2 backdrop-blur-md sm:px-6"
+      data-od-id="simulation-header"
+    >
       <div className="flex items-center justify-between gap-2 sm:gap-4">
         {/* Left: Back Link & Scenario Info */}
         <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
           <Link
             href="/app"
-            className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-control border border-border bg-surface-solid text-muted-foreground hover:text-foreground hover:bg-surface-subtle shadow-[2px_2px_0px_0px_#1a1a1a] hover:shadow-none hover:translate-x-px hover:translate-y-px transition-all duration-200 ease-out cursor-pointer"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-control border border-border-subtle bg-surface-solid text-muted-foreground transition-colors hover:border-border hover:bg-surface-subtle hover:text-foreground"
             aria-label="Back to scenarios"
           >
-            <ArrowLeftIcon className="w-4 h-4" />
+            <ArrowLeftIcon className="directional-icon h-4 w-4" />
           </Link>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5 sm:gap-2">
-              <span className="font-display font-bold text-xs sm:text-base uppercase tracking-tight text-foreground truncate block">
+              <span className="block truncate font-display text-sm font-semibold text-foreground sm:text-base">
                 {scenarioTitle}
               </span>
               <span className="hidden sm:inline-block px-2 py-0.5 rounded-full border border-border font-meta text-[10px] font-bold uppercase tracking-wider bg-surface-subtle text-foreground shrink-0">
@@ -84,7 +87,7 @@ export function SimulationHeader({
             <button
               type="button"
               onClick={onOpenBriefing}
-              className="md:hidden inline-flex items-center justify-center font-meta text-xs h-8 px-2 rounded-control border border-border bg-surface-subtle text-foreground hover:bg-surface-raised transition-all duration-200 cursor-pointer shrink-0 whitespace-nowrap"
+              className="inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-control border border-border-subtle bg-surface-solid px-3 text-xs font-semibold text-foreground transition-colors hover:bg-surface-subtle md:hidden"
               aria-label="View scenario briefing and objectives"
               title="View scenario briefing"
             >
@@ -97,7 +100,7 @@ export function SimulationHeader({
               type="button"
               onClick={onToggleAutoPlay}
               className={cn(
-                "inline-flex items-center justify-center gap-1 font-meta text-xs h-8 px-2 sm:h-auto sm:px-2.5 sm:py-1.5 rounded-control border transition-all duration-200 ease-out cursor-pointer shrink-0 whitespace-nowrap",
+                "inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-control border px-3 text-xs font-semibold transition-colors",
                 autoPlaySpeech
                   ? "bg-primary/10 border-primary text-primary font-bold shadow-2xs"
                   : "bg-surface-subtle border-border/40 text-muted-foreground hover:text-foreground",
@@ -141,11 +144,12 @@ export function SimulationHeader({
             onClick={onOpenFinishDialog}
             disabled={finishing}
             className={cn(
-              "inline-flex items-center justify-center gap-1.5 rounded-control h-8 px-3 sm:h-auto sm:px-4 sm:py-1.5 font-display text-xs font-bold uppercase tracking-wider text-white border border-border brutalist-interactive cursor-pointer shrink-0 whitespace-nowrap min-w-fit",
+              "inline-flex min-h-11 min-w-fit shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-control border px-3 text-xs font-semibold transition-colors sm:px-4",
               turnCount >= 1
-                ? "bg-primary"
-                : "bg-muted-foreground/80 hover:bg-muted-foreground",
+                ? "border-alert/30 bg-alert/5 text-alert hover:bg-alert/10"
+                : "border-border-subtle bg-surface-subtle text-muted-foreground",
             )}
+            data-od-id="end-session-button"
           >
             {finishing ? (
               <>

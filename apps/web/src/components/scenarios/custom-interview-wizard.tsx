@@ -207,8 +207,8 @@ export function CustomInterviewWizard({
         </div>
 
         <div className="space-y-1.5 max-w-md mx-auto">
-          <h3 className="font-display text-base sm:text-xl font-bold uppercase tracking-tight text-foreground">
-            Crafting Your Custom Interview
+          <h3 className="font-display text-xl font-semibold text-foreground sm:text-2xl">
+            Preparing your personalized interview
           </h3>
           <p className="font-sans text-xs sm:text-sm text-muted-foreground leading-relaxed">
             Parsing your candidate CV in memory and grounding roleplay persona,
@@ -220,7 +220,7 @@ export function CustomInterviewWizard({
         <div className="max-w-xs mx-auto space-y-1.5 text-left font-meta text-xs text-muted-foreground bg-surface-raised border border-border/20 rounded-control p-3 sm:p-3.5 shadow-2xs">
           <div className="flex items-center gap-2 text-foreground font-bold text-[11px] sm:text-xs">
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse shrink-0" />
-            <span>AI Scenario Generation In Progress</span>
+            <span>Building your interview practice</span>
           </div>
           <p className="text-[10px] sm:text-[11px] text-muted-foreground">
             This typically takes ~10–15 seconds. Please keep this window open.
@@ -241,14 +241,14 @@ export function CustomInterviewWizard({
           <div className="flex items-center justify-between gap-2">
             <span className="font-meta text-[10px] sm:text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
               <SparklesIcon className="w-3.5 h-3.5" />
-              Custom Scenario Ready
+              Your interview is ready
             </span>
             <span className="px-2 py-0.5 rounded-full border border-border font-meta text-[9px] sm:text-[10px] font-bold uppercase tracking-wider bg-surface-raised text-foreground shrink-0">
-              Custom Interview
+              Personalized
             </span>
           </div>
 
-          <h3 className="font-display text-base sm:text-xl md:text-2xl font-bold uppercase tracking-tight text-foreground">
+          <h3 className="font-display text-xl font-semibold text-foreground sm:text-2xl">
             {generatedScenario.title}
           </h3>
 
@@ -368,7 +368,7 @@ export function CustomInterviewWizard({
               ) : (
                 <>
                   <PlayIcon className="w-4 h-4" />
-                  <span>Begin Simulation</span>
+                  <span>Start personalized interview</span>
                 </>
               )}
             </button>
@@ -397,7 +397,7 @@ export function CustomInterviewWizard({
           htmlFor="cv-upload-input"
           className="block font-meta text-xs font-bold uppercase tracking-wider text-foreground"
         >
-          1. Upload Candidate CV (PDF) <span className="text-alert">*</span>
+          1. Upload your CV (PDF) <span className="text-alert">*</span>
         </label>
 
         <div
@@ -467,7 +467,7 @@ export function CustomInterviewWizard({
             htmlFor="jd-textarea"
             className="block font-meta text-xs font-bold uppercase tracking-wider text-foreground"
           >
-            2. Paste Job Description <span className="text-alert">*</span>
+            2. Add the job description <span className="text-alert">*</span>
           </label>
           <span className="font-meta text-[10px] sm:text-[11px] text-muted-foreground shrink-0">
             {jobDescription.trim().length} / 50 min chars
@@ -487,10 +487,9 @@ export function CustomInterviewWizard({
       {/* 3. Privacy Assurance Callout */}
       <div className="rounded-control bg-surface-raised border border-border/20 p-2.5 sm:p-3">
         <p className="font-meta text-[10px] sm:text-[11px] text-muted-foreground leading-relaxed">
-          🔒 <strong>Privacy Assurance:</strong> Your CV is parsed strictly
-          in-memory and never stored on disk or in the database. The AI
-          interviewer grounds all questions exclusively in facts supported by
-          your CV and target job description.
+          <strong>Private by design:</strong> Your CV is parsed in memory and
+          never stored as a document. Interview questions are grounded in the CV
+          and job description you provide.
         </p>
       </div>
 
@@ -512,8 +511,7 @@ export function CustomInterviewWizard({
           className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-control bg-primary px-4 py-2.5 sm:px-6 sm:py-2.5 font-display text-xs font-bold uppercase tracking-normal sm:tracking-wider text-primary-foreground border border-border brutalist-interactive cursor-pointer disabled:opacity-50 text-center whitespace-nowrap"
         >
           <SparklesIcon className="w-3.5 h-3.5 shrink-0" />
-          <span className="hidden sm:inline">Generate Interview Scenario</span>
-          <span className="sm:hidden">Generate Interview</span>
+          <span>Create my personalized interview</span>
           <ArrowRightIcon className="w-3.5 h-3.5 shrink-0" />
         </button>
       </div>

@@ -70,7 +70,7 @@ export function AccessibleDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-3 sm:p-4 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 p-3 backdrop-blur-sm sm:p-4"
       onClick={(event) => {
         if (event.target === event.currentTarget) onCloseRef.current();
       }}
@@ -82,11 +82,11 @@ export function AccessibleDialog({
         aria-labelledby={titleId}
         aria-describedby={descriptionId}
         tabIndex={-1}
-        className="w-full max-w-md max-h-[92dvh] flex flex-col rounded-card border-2 border-border bg-surface-solid p-4 sm:p-6 shadow-brutal outline-none overflow-y-auto"
+        className="flex max-h-[92dvh] w-full max-w-md flex-col overflow-y-auto rounded-card border border-border bg-surface-solid p-5 shadow-brutal outline-none sm:p-7"
       >
         <h2
           id={titleId}
-          className="font-display text-base sm:text-lg font-bold uppercase tracking-tight text-foreground"
+          className="font-display text-xl font-semibold text-foreground sm:text-2xl"
         >
           {title}
         </h2>

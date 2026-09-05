@@ -10,22 +10,22 @@ describe("isConversationInputDisabled", () => {
     sendingTurn: false,
   };
 
-  it("keeps learner input disabled while the counterpart TTS is loading or playing", () => {
+  it("keeps learner input available while counterpart audio loads or plays", () => {
     expect(
       isConversationInputDisabled({
         ...availableTurn,
         counterpartSpeechStatus: "loading",
       }),
-    ).toBe(true);
+    ).toBe(false);
     expect(
       isConversationInputDisabled({
         ...availableTurn,
         counterpartSpeechStatus: "playing",
       }),
-    ).toBe(true);
+    ).toBe(false);
   });
 
-  it("returns control to the learner after playback ends or fails", () => {
+  it("keeps learner input available after playback ends or fails", () => {
     expect(
       isConversationInputDisabled({
         ...availableTurn,
@@ -38,5 +38,36 @@ describe("isConversationInputDisabled", () => {
         counterpartSpeechStatus: "error",
       }),
     ).toBe(false);
+  });
+
+  it("disables learner input only for terminal or in-flight turn states", () => {
+    expect(
+      isConversationInputDisabled({
+        ...availableTurn,
+        sendingTurn: true,
+        counterpartSpeechStatus: "idle",
+      }),
+    ).toBe(true);
+    expect(
+      isConversationInputDisabled({
+        ...availableTurn,
+        finishing: true,
+        counterpartSpeechStatus: "playing",
+      }),
+    ).toBe(true);
+    expect(
+      isConversationInputDisabled({
+        ...availableTurn,
+        isExpired: true,
+        counterpartSpeechStatus: "idle",
+      }),
+    ).toBe(true);
+    expect(
+      isConversationInputDisabled({
+        ...availableTurn,
+        isLimitReached: true,
+        counterpartSpeechStatus: "idle",
+      }),
+    ).toBe(true);
   });
 });

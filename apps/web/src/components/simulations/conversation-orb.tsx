@@ -9,7 +9,8 @@ export type SimulationUiState =
   | "TRANSCRIBING"
   | "REVIEWING"
   | "AI_THINKING"
-  | "AI_SPEAKING";
+  | "AI_SPEAKING"
+  | "MIC_ERROR";
 
 /**
  * Core animation per conversation state. All keyframes live in globals.css
@@ -22,6 +23,7 @@ const coreAnimation: Record<SimulationUiState, string> = {
   REVIEWING: "", // intentionally static
   AI_THINKING: "animate-[orb-morph_7s_linear_infinite]",
   AI_SPEAKING: "animate-[orb-speak_1.1s_ease-in-out_infinite]",
+  MIC_ERROR: "",
 };
 
 export interface ConversationOrbProps {
@@ -44,6 +46,7 @@ export function ConversationOrb({
 
   const isListening = uiState === "LISTENING";
   const isSpeaking = uiState === "AI_SPEAKING";
+  const hasError = uiState === "MIC_ERROR";
   const showRipples = isSpeaking && !prefersReducedMotion;
 
   const clampedLevel = Math.min(1, Math.max(0, microphoneLevel));
@@ -65,7 +68,12 @@ export function ConversationOrb({
       )}
 
       {/* Soft halo behind the core */}
-      <span className="absolute inset-2 rounded-full bg-primary/15 blur-md" />
+      <span
+        className={cn(
+          "absolute inset-2 rounded-full blur-md",
+          hasError ? "bg-alert/15" : "bg-primary/15",
+        )}
+      />
 
       {/* Microphone-reactive wrapper (LISTENING only) */}
       <span
@@ -76,12 +84,13 @@ export function ConversationOrb({
       >
         <span
           className={cn(
-            "block h-full w-full rounded-full border-2 border-border bg-linear-to-br from-primary to-[#003ecc] shadow-brutal-sm",
+            "block h-full w-full rounded-full border border-border shadow-brutal-sm",
+            hasError ? "bg-alert" : "bg-primary",
             coreAnimation[uiState],
           )}
         >
           {/* Highlight sheen */}
-          <span className="block h-[36%] w-[36%] translate-x-[20%] translate-y-[16%] rounded-full bg-white/35 blur-[2px]" />
+          <span className="block h-[36%] w-[36%] translate-x-[20%] translate-y-[16%] rounded-full bg-surface-solid/35 blur-[2px]" />
         </span>
       </span>
     </div>
