@@ -24,12 +24,20 @@ export const TurnStatusSchema = z.enum(["PENDING", "COMPLETED", "FAILED"]);
  */
 export const InteractionModeSchema = z.enum(["PUSH_TO_TALK", "REALTIME"]);
 
+export const SupportedLanguageSchema = z.enum(["en", "ar"]);
+export type SupportedLanguage = z.infer<typeof SupportedLanguageSchema>;
+
+export const ArabicDialectSchema = z.enum(["EGYPTIAN", "GULF"]);
+export type ArabicDialect = z.infer<typeof ArabicDialectSchema>;
+
 const ResourceIdSchema = z.uuid();
 const TimestampSchema = z.iso.datetime({ offset: true });
 
 export const CreateAttemptRequestSchema = z.strictObject({
   scenarioKey: z.string().trim().min(1),
   difficulty: DifficultySchema,
+  language: SupportedLanguageSchema.optional().default("en"),
+  dialect: ArabicDialectSchema.optional().default("EGYPTIAN"),
   retryOfAttemptId: ResourceIdSchema.nullable().optional().default(null),
   interactionMode: InteractionModeSchema.optional().default("PUSH_TO_TALK"),
 });
@@ -57,6 +65,8 @@ export const CreateAttemptResponseSchema = z.strictObject({
     id: ResourceIdSchema,
     status: z.literal("ACTIVE"),
     difficulty: DifficultySchema,
+    language: SupportedLanguageSchema.optional().default("en"),
+    dialect: ArabicDialectSchema.nullable().optional(),
     interactionMode: InteractionModeSchema,
     scenario: AttemptScenarioSchema,
     openingMessage: z.string().min(1),
@@ -70,6 +80,8 @@ export const AttemptDetailResponseSchema = z.strictObject({
     id: ResourceIdSchema,
     status: AttemptStatusSchema,
     difficulty: DifficultySchema,
+    language: SupportedLanguageSchema.optional().default("en"),
+    dialect: ArabicDialectSchema.nullable().optional(),
     interactionMode: InteractionModeSchema,
     scenario: AttemptScenarioSchema,
     retryOfAttemptId: ResourceIdSchema.nullable(),

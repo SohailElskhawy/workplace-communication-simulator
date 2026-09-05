@@ -14,6 +14,7 @@ export {
   type WeakAreaComparison,
 } from "./comparison.js";
 export {
+  ArabicDialectSchema,
   AttemptDetailResponseSchema,
   AttemptScenarioSchema,
   AttemptStatusSchema,
@@ -25,8 +26,10 @@ export {
   InputMethodSchema,
   InteractionModeSchema,
   MAX_TURN_TEXT_LENGTH,
+  SupportedLanguageSchema,
   TurnResponseSchema,
   TurnStatusSchema,
+  type ArabicDialect,
   type AttemptDetailResponse,
   type AttemptStatus,
   type ConversationTurn,
@@ -36,6 +39,7 @@ export {
   type FinishAttemptResponse,
   type InputMethod,
   type InteractionMode,
+  type SupportedLanguage,
   type TurnResponse,
   type TurnStatus,
 } from "./attempt.js";
