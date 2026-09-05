@@ -25,7 +25,6 @@ import { UniversalSkillsSection } from "@/components/results/universal-skills-se
 import { DisclosureSection } from "@/components/ui/disclosure-section";
 import { ErrorState, LoadingState } from "@/components/route-state";
 import { ApiClientError, createApiClient } from "@/lib/api-client";
-import { resolveEffectiveInteractionMode } from "@/lib/interaction-mode";
 
 export default function ResultsPage() {
   const params = useParams();
@@ -328,12 +327,7 @@ export default function ResultsPage() {
         language: attempt.language,
         dialect: attempt.dialect ?? undefined,
         retryOfAttemptId: attempt.id,
-        // A retry reproduces the same practice conditions, including the
-        // interaction mode chosen for the source attempt.
-        interactionMode: resolveEffectiveInteractionMode({
-          persistedMode: attempt.interactionMode,
-          realtimeVoiceEnabled: realtimeVoiceEnabled,
-        }),
+        interactionMode: "PUSH_TO_TALK",
       });
 
       router.push(`/app/simulations/${encodeURIComponent(newAttempt.id)}`);

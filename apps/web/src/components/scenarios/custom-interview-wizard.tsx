@@ -50,8 +50,6 @@ export function CustomInterviewWizard({
   const [jobDescription, setJobDescription] = useState<string>("");
   const [selectedDifficulty, setSelectedDifficulty] =
     useState<Difficulty>("MEDIUM");
-  const [selectedInteractionMode, setSelectedInteractionMode] =
-    useState<InteractionMode>("PUSH_TO_TALK");
 
   const [generatedScenario, setGeneratedScenario] =
     useState<PublicScenarioDetail | null>(null);
@@ -175,7 +173,7 @@ export function CustomInterviewWizard({
         language: "en",
         dialect: undefined,
         retryOfAttemptId: null,
-        interactionMode: selectedInteractionMode,
+        interactionMode: "PUSH_TO_TALK",
       });
 
       if (onSuccessStart) {
