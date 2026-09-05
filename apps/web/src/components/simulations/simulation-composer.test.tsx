@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import React, { createRef } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -495,7 +495,7 @@ describe("SimulationComposer", () => {
       ).toBeDefined();
     });
 
-    it("initializes reviewBeforeSend from localStorage when set to 'false'", () => {
+    it("initializes reviewBeforeSend from localStorage when set to 'false'", async () => {
       localStorage.setItem("kalemny_voice_review_before_send", "false");
 
       const props = createProps({
@@ -506,13 +506,15 @@ describe("SimulationComposer", () => {
       render(<SimulationComposer {...props} />);
 
       const toggle = screen.getByRole("switch");
-      expect(toggle.getAttribute("aria-checked")).toBe("false");
+      await waitFor(() => {
+        expect(toggle.getAttribute("aria-checked")).toBe("false");
+      });
       expect(
         screen.getByText(/Hold Space to talk, release to send/i),
       ).toBeDefined();
     });
 
-    it("directly sends turn on transcript arrival when reviewBeforeSend is false", () => {
+    it("directly sends turn on transcript arrival when reviewBeforeSend is false", async () => {
       const onSendTurn = vi.fn();
       const onVoiceTranscriptReady = vi.fn();
       const onChangeText = vi.fn();
@@ -528,6 +530,11 @@ describe("SimulationComposer", () => {
       });
 
       render(<SimulationComposer {...props} />);
+
+      const toggle = screen.getByRole("switch");
+      await waitFor(() => {
+        expect(toggle.getAttribute("aria-checked")).toBe("false");
+      });
 
       expect(capturedVoiceRecorderCallbacks).not.toBeNull();
       capturedVoiceRecorderCallbacks!.onTranscriptReady(

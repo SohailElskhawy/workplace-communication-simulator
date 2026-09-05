@@ -76,16 +76,18 @@ export function SimulationComposer({
   const spaceHeldRef = useRef(false);
   const lastEnterHandledTimeRef = useRef(0);
 
-  const [reviewBeforeSend, setReviewBeforeSend] = useState(() => {
-    if (typeof window === "undefined") return true;
+  const [reviewBeforeSend, setReviewBeforeSend] = useState(true);
+
+  useEffect(() => {
     try {
-      return (
-        localStorage.getItem("kalemny_voice_review_before_send") !== "false"
-      );
+      const stored = localStorage.getItem("kalemny_voice_review_before_send");
+      if (stored === "false") {
+        setReviewBeforeSend(false);
+      }
     } catch {
-      return true;
+      // Ignore localStorage read errors
     }
-  });
+  }, []);
 
   const handleToggleReviewMode = () => {
     setReviewBeforeSend((prev) => {
@@ -245,7 +247,7 @@ export function SimulationComposer({
       const len = textareaRef.current.value.length;
       textareaRef.current.setSelectionRange(len, len);
     }
-  }, [hasVoiceDraft, textareaRef]);
+  }, [hasVoiceDraft]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
