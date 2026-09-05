@@ -411,13 +411,6 @@ export default function SimulationPage() {
     if (liveUiState === "listening") return "LISTENING";
     if (liveUiState === "speaking") return "AI_SPEAKING";
     if (liveUiState === "connecting") return "AI_THINKING";
-    if (sendingTurn) return "AI_THINKING";
-    if (
-      counterpartSpeechStatus === "loading" ||
-      counterpartSpeechStatus === "playing"
-    ) {
-      return "AI_SPEAKING";
-    }
     if (
       voiceStatus === "recording" ||
       voiceStatus === "requesting_permission"
@@ -425,6 +418,14 @@ export default function SimulationPage() {
       return "LISTENING";
     }
     if (voiceStatus === "transcribing") return "TRANSCRIBING";
+    if (voiceStatus === "error") return "MIC_ERROR";
+    if (sendingTurn) return "AI_THINKING";
+    if (
+      counterpartSpeechStatus === "loading" ||
+      counterpartSpeechStatus === "playing"
+    ) {
+      return "AI_SPEAKING";
+    }
     if (hasVoiceDraft) return "REVIEWING";
     return "YOUR_TURN";
   }, [
@@ -666,7 +667,12 @@ export default function SimulationPage() {
             turnCount={displayTurnCount}
             uiState={simulationUiState}
             autoPlaySpeech={autoPlayStageSpeech}
-            cancelSpeechPlayback={finishing || liveActive}
+            cancelSpeechPlayback={
+              finishing ||
+              liveActive ||
+              voiceStatus === "requesting_permission" ||
+              voiceStatus === "recording"
+            }
             onSpeechStatusChange={setCounterpartSpeechStatus}
             microphoneLevel={microphoneLevel}
             onOpenTranscript={() => setTranscriptOpen(true)}
@@ -702,7 +708,7 @@ export default function SimulationPage() {
             hasVoiceDraft={hasVoiceDraft}
             microphoneLevel={microphoneLevel}
             onChangeText={setComposerText}
-            onSendTurn={() => void handleSendTurn()}
+            onSendTurn={(text, method) => void handleSendTurn(text, method)}
             onVoiceStatusChange={setVoiceStatus}
             onVoiceTranscriptReady={() => {
               setHasVoiceDraft(true);

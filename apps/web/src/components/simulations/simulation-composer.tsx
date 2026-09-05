@@ -3,7 +3,7 @@
 import { useAuth } from "@clerk/nextjs";
 import type { InputMethod } from "@kalemny/contracts";
 import { MAX_TURN_TEXT_LENGTH } from "@kalemny/contracts";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { CloseIcon, MicIcon, RefreshIcon, SendIcon } from "@/components/icons";
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
@@ -32,7 +32,10 @@ export interface SimulationComposerProps {
   /** Live microphone level (0–1) from the active recording; 0 when idle. */
   microphoneLevel: number;
   onChangeText: (text: string) => void;
-  onSendTurn: () => void;
+  onSendTurn: (
+    overrideText?: string,
+    overrideInputMethod?: InputMethod,
+  ) => void;
   onVoiceStatusChange: (
     status:
       "idle" | "requesting_permission" | "recording" | "transcribing" | "error",
@@ -70,6 +73,36 @@ export function SimulationComposer({
   const { getToken } = useAuth();
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
   const prefersReducedMotion = usePrefersReducedMotion();
+  const spaceHeldRef = useRef(false);
+  const lastEnterHandledTimeRef = useRef(0);
+
+  const [reviewBeforeSend, setReviewBeforeSend] = useState(true);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("kalemny_voice_review_before_send");
+      if (stored === "false") {
+        setReviewBeforeSend(false);
+      }
+    } catch {
+      // Ignore localStorage read errors
+    }
+  }, []);
+
+  const handleToggleReviewMode = () => {
+    setReviewBeforeSend((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(
+          "kalemny_voice_review_before_send",
+          String(next),
+        );
+      } catch {
+        // Ignore localStorage write errors
+      }
+      return next;
+    });
+  };
 
   const {
     status: voiceStatus,
@@ -84,13 +117,14 @@ export function SimulationComposer({
     onTranscriptReady: (transcript) => {
       const trimmed = transcript.trim();
       if (!trimmed) return;
-      // Stay in VOICE mode: the transcript lands in the review composer and
-      // the mode persists for the next turn.
+      if (!reviewBeforeSend) {
+        onSendTurn(trimmed, "VOICE");
+        return;
+      }
       onVoiceTranscriptReady();
       onChangeText(
         composerText.trim() ? `${composerText.trim()} ${trimmed}` : trimmed,
       );
-      textareaRef.current?.focus();
     },
     onTranscribeAudio: async (audioBlob, durationMs) => {
       const token = await getToken();
@@ -120,6 +154,66 @@ export function SimulationComposer({
     onMicrophoneLevelChange(activeMicrophoneLevel);
   }, [activeMicrophoneLevel, onMicrophoneLevelChange]);
 
+  useEffect(() => {
+    if (hasVoiceDraft || isComposerDisabled) return;
+
+    const isEditableTarget = (target: EventTarget | null) => {
+      if (!(target instanceof HTMLElement)) return false;
+      const tagName = target.tagName.toLowerCase();
+      return (
+        tagName === "input" ||
+        tagName === "textarea" ||
+        tagName === "select" ||
+        target.isContentEditable
+      );
+    };
+
+    const handleSpaceDown = (event: KeyboardEvent) => {
+      if (
+        event.code !== "Space" ||
+        event.repeat ||
+        isEditableTarget(event.target)
+      ) {
+        return;
+      }
+      event.preventDefault();
+      spaceHeldRef.current = true;
+      if (inputMode === "TEXT") onInputModeChange("VOICE");
+      if (voiceStatus === "idle" || voiceStatus === "error") {
+        void startRecording();
+      }
+    };
+
+    const handleSpaceUp = (event: KeyboardEvent) => {
+      if (event.code !== "Space" || isEditableTarget(event.target)) return;
+      event.preventDefault();
+      const wasHeld = spaceHeldRef.current;
+      spaceHeldRef.current = false;
+      if (!wasHeld) return;
+      if (voiceStatus === "recording") {
+        void stopAndTranscribe();
+      } else if (voiceStatus === "requesting_permission") {
+        cancelRecording();
+      }
+    };
+
+    window.addEventListener("keydown", handleSpaceDown);
+    window.addEventListener("keyup", handleSpaceUp);
+    return () => {
+      window.removeEventListener("keydown", handleSpaceDown);
+      window.removeEventListener("keyup", handleSpaceUp);
+    };
+  }, [
+    cancelRecording,
+    hasVoiceDraft,
+    inputMode,
+    isComposerDisabled,
+    onInputModeChange,
+    startRecording,
+    stopAndTranscribe,
+    voiceStatus,
+  ]);
+
   // Mic button reactivity while LISTENING: driven by the live level already
   // produced by the recorder's own analyser — no extra stream or analyser.
   // Suppressed under prefers-reduced-motion; resets with the recording
@@ -142,14 +236,69 @@ export function SimulationComposer({
     setTimeout(() => textareaRef.current?.focus(), 0);
   };
 
+  const switchToVoiceAndStart = () => {
+    onInputModeChange("VOICE");
+    void startRecording();
+  };
+
+  useEffect(() => {
+    if (hasVoiceDraft && textareaRef.current) {
+      textareaRef.current.focus();
+      const len = textareaRef.current.value.length;
+      textareaRef.current.setSelectionRange(len, len);
+    }
+  }, [hasVoiceDraft, textareaRef]);
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
       if (!isComposerDisabled && !isVoiceBusy && composerText.trim()) {
+        lastEnterHandledTimeRef.current = Date.now();
         onSendTurn();
       }
     }
   };
+
+  useEffect(() => {
+    if (!hasVoiceDraft || isComposerDisabled || isVoiceBusy) return;
+
+    const handleGlobalKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Enter" || event.shiftKey || event.isComposing) {
+        return;
+      }
+
+      if (document.querySelector('[role="dialog"]')) {
+        return;
+      }
+
+      const activeEl = document.activeElement;
+      if (activeEl instanceof HTMLElement) {
+        const tagName = activeEl.tagName.toLowerCase();
+        const isEditable =
+          tagName === "input" ||
+          tagName === "textarea" ||
+          tagName === "select" ||
+          activeEl.isContentEditable;
+        if (isEditable && activeEl !== textareaRef.current) {
+          return;
+        }
+      }
+
+      const now = Date.now();
+      if (now - lastEnterHandledTimeRef.current < 50) {
+        return;
+      }
+      lastEnterHandledTimeRef.current = now;
+
+      event.preventDefault();
+      onSendTurn();
+    };
+
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleGlobalKeyDown);
+    };
+  }, [hasVoiceDraft, isComposerDisabled, isVoiceBusy, onSendTurn, textareaRef]);
 
   const isNearLimit = composerText.length >= MAX_TURN_TEXT_LENGTH * 0.9;
 
@@ -267,10 +416,13 @@ export function SimulationComposer({
               </span>
               <button
                 type="button"
-                onClick={() => onInputModeChange("VOICE")}
-                className="font-meta text-[10px] font-bold uppercase tracking-wider text-muted-foreground underline underline-offset-2 hover:text-foreground cursor-pointer"
+                onClick={switchToVoiceAndStart}
+                disabled={isComposerDisabled || isVoiceBusy}
+                aria-keyshortcuts="Space"
+                className="inline-flex min-h-11 items-center gap-2 rounded-control border border-border bg-surface-solid px-3 text-xs font-semibold text-foreground shadow-xs hover:bg-surface-subtle disabled:opacity-40"
               >
-                Use microphone
+                <MicIcon className="h-4 w-4 text-primary" aria-hidden="true" />
+                Push-to-talk
               </button>
             </div>
             <div className="relative">
@@ -362,6 +514,9 @@ export function SimulationComposer({
                 <span className="font-meta text-[10px] font-bold uppercase tracking-wider">
                   Send
                 </span>
+                <kbd className="hidden sm:inline-block ml-1 rounded bg-surface-subtle px-1 py-0.5 text-[9px] font-mono text-foreground border border-border">
+                  ↵
+                </kbd>
               </button>
             </div>
           </>
@@ -392,8 +547,9 @@ export function SimulationComposer({
                 type="button"
                 onClick={() => void startRecording()}
                 disabled={isComposerDisabled || isVoiceBusy}
+                aria-keyshortcuts="Space"
                 className={cn(
-                  "relative inline-flex min-h-14 items-center justify-center gap-3 rounded-control border-2 border-border bg-primary px-6 py-3 text-primary-foreground brutalist-interactive cursor-pointer disabled:opacity-40 transition-transform duration-100 ease-out",
+                  "relative inline-flex min-h-14 items-center justify-center gap-3 rounded-control bg-primary px-6 py-3 text-primary-foreground brutalist-interactive cursor-pointer disabled:opacity-40 transition-transform duration-100 ease-out",
                   isRequestingMic && !prefersReducedMotion && "animate-pulse",
                 )}
                 style={
@@ -405,13 +561,59 @@ export function SimulationComposer({
               >
                 <MicIcon className="h-5 w-5" aria-hidden="true" />
                 <span className="font-display text-sm font-bold uppercase tracking-wider">
-                  {isRecording ? "Listening…" : "Tap to speak"}
+                  {isRecording ? "Listening…" : "Tap to talk"}
                 </span>
               </button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Record up to 2 minutes, then review your words before sending.
+              {reviewBeforeSend ? (
+                <>
+                  <span className="hidden sm:inline">
+                    Hold Space to talk, release to review. Press Enter to send.
+                  </span>
+                  <span className="sm:hidden">
+                    Tap to talk, tap Done to review.
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="hidden sm:inline">
+                    Hold Space to talk, release to send.
+                  </span>
+                  <span className="sm:hidden">
+                    Tap to talk, tap Done to send.
+                  </span>
+                </>
+              )}
             </p>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={reviewBeforeSend}
+              onClick={handleToggleReviewMode}
+              disabled={isComposerDisabled || isVoiceBusy}
+              className="inline-flex min-h-11 items-center gap-2 px-2 py-1.5 cursor-pointer disabled:opacity-40"
+            >
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "relative inline-flex h-4 w-7 sm:h-5 sm:w-9 shrink-0 items-center rounded-full border border-border transition-colors duration-150 ease-in-out",
+                  reviewBeforeSend ? "bg-primary" : "bg-surface-subtle",
+                )}
+              >
+                <span
+                  className={cn(
+                    "inline-block h-3 w-3 sm:h-3.5 sm:w-3.5 transform rounded-full bg-white transition duration-150 ease-in-out shadow-xs",
+                    reviewBeforeSend
+                      ? "translate-x-3.5 sm:translate-x-4"
+                      : "translate-x-0.5 sm:translate-x-1",
+                  )}
+                />
+              </span>
+              <span className="text-[11px] sm:text-xs text-muted-foreground select-none">
+                Review before sending
+              </span>
+            </button>
           </div>
         )}
 
