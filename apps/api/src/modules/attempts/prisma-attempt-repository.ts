@@ -1,3 +1,5 @@
+import type { ArabicDialect, SupportedLanguage } from "@kalemny/contracts";
+
 import { Prisma, type PrismaClient } from "../../generated/prisma/client.js";
 import {
   DEFAULT_PLAN_LIMITS,
@@ -83,10 +85,18 @@ function mapAttempt(attempt: PrismaAttemptRecord): AttemptRecord {
       )
     : null;
 
+  const language = (attempt.language === "ar" ? "ar" : "en") as SupportedLanguage;
+  const dialect =
+    language === "ar"
+      ? ((attempt.dialect as ArabicDialect | null) ?? "EGYPTIAN")
+      : null;
+
   return {
     id: attempt.id,
     userId: attempt.userId,
     difficulty: attempt.difficulty,
+    language,
+    dialect,
     status: attempt.status,
     retryOfAttemptId: attempt.retryOfAttemptId,
     variationId: attempt.variationId,
@@ -196,6 +206,10 @@ export function createPrismaAttemptRepository(
           }
         }
 
+        const language = input.language ?? "en";
+        const dialect =
+          language === "ar" ? (input.dialect ?? "EGYPTIAN") : null;
+
         const attempt = await transaction.simulationAttempt.create({
           data: {
             userId: input.userId,
@@ -203,6 +217,8 @@ export function createPrismaAttemptRepository(
             retryOfAttemptId: input.retryOfAttemptId,
             difficulty: input.difficulty,
             interactionMode: input.interactionMode,
+            language,
+            dialect,
             variationId: input.selectVariationId(
               scenario.definition,
               excludeVariationId,
@@ -370,6 +386,8 @@ export function createPrismaAttemptRepository(
         select: {
           difficulty: true,
           variationId: true,
+          language: true,
+          dialect: true,
           scenario: { select: { definition: true } },
           conversationTurns: {
             where: {
@@ -391,9 +409,17 @@ export function createPrismaAttemptRepository(
         return null;
       }
 
+      const language = (attempt.language === "ar" ? "ar" : "en") as SupportedLanguage;
+      const dialect =
+        language === "ar"
+          ? ((attempt.dialect as ArabicDialect | null) ?? "EGYPTIAN")
+          : null;
+
       return {
         difficulty: attempt.difficulty,
         variationId: attempt.variationId,
+        language,
+        dialect,
         scenarioDefinition: attempt.scenario.definition,
         previousTurns: attempt.conversationTurns.map((turn) => ({
           sequence: turn.sequence,

@@ -1,4 +1,8 @@
-import type { Difficulty } from "@kalemny/contracts";
+import type {
+  ArabicDialect,
+  Difficulty,
+  SupportedLanguage,
+} from "@kalemny/contracts";
 
 import { buildRoleplaySystemPrompt } from "../ai/roleplay-prompt.js";
 import { AttemptError } from "../attempts/attempt-errors.js";
@@ -89,6 +93,8 @@ function resolveAttemptContext(attempt: {
   difficulty: Difficulty;
   variationId: string | null;
   scenario: { key: string; version: number; definition: unknown };
+  language?: SupportedLanguage;
+  dialect?: ArabicDialect | null;
 }) {
   const definition = ScenarioDefinitionSchema.parse(
     attempt.scenario.definition,
@@ -101,8 +107,16 @@ function resolveAttemptContext(attempt: {
       scenario: definition,
       difficulty: attempt.difficulty,
       variation,
+      language: attempt.language,
+      dialect: attempt.dialect,
     }),
-    openingMessage: variation?.openingMessage ?? definition.openingMessage,
+    openingMessage:
+      attempt.language === "ar"
+        ? (variation?.openingMessageAr ??
+          definition.openingMessageAr ??
+          variation?.openingMessage ??
+          definition.openingMessage)
+        : (variation?.openingMessage ?? definition.openingMessage),
   };
 }
 

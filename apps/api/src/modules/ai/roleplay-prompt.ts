@@ -1,4 +1,8 @@
-import type { Difficulty } from "@kalemny/contracts";
+import type {
+  ArabicDialect,
+  Difficulty,
+  SupportedLanguage,
+} from "@kalemny/contracts";
 
 import type {
   ScenarioDefinition,
@@ -18,13 +22,17 @@ export interface RoleplayPromptInput {
   difficulty: Difficulty;
   previousTurns: RoleplayTranscriptTurn[];
   latestLearnerMessage: string;
-  variation?: ScenarioVariation | null;
+  variation?: ScenarioVariation | null | undefined;
+  language?: SupportedLanguage | undefined;
+  dialect?: ArabicDialect | null | undefined;
 }
 
 export interface RoleplaySystemPromptInput {
   scenario: ScenarioDefinition;
   difficulty: Difficulty;
-  variation?: ScenarioVariation | null;
+  variation?: ScenarioVariation | null | undefined;
+  language?: SupportedLanguage | undefined;
+  dialect?: ArabicDialect | null | undefined;
 }
 
 export interface RoleplayMessage {
@@ -34,6 +42,26 @@ export interface RoleplayMessage {
 
 function bullets(values: string[]): string {
   return values.map((value) => `- ${value}`).join("\n");
+}
+
+function languageDirectiveLines(
+  language: SupportedLanguage | undefined,
+  dialect: ArabicDialect | null | undefined,
+): string[] {
+  if (language !== "ar") {
+    return [];
+  }
+
+  const dialectLabel =
+    dialect === "GULF" ? "Gulf (خليجي)" : "Egyptian (مصري)";
+  return [
+    "",
+    "Language and dialect directive",
+    `- Conduct the entire roleplay conversation strictly in authentic, professional colloquial Arabic (${dialectLabel} dialect).`,
+    `- Use natural workplace phrasing, vocabulary, idioms, and conversational pacing typical of modern professional environments in that dialect.`,
+    `- Do not use overly rigid Modern Standard Arabic (الفصحى المعربة) or formal classical syntax unless a specific technical term or document title calls for it.`,
+    `- Adhere strictly to the persona traits, private objectives, constraints, and difficulty behavior guidance while conversing in Arabic.`,
+  ];
 }
 
 const INTERVIEW_CONDUCT_RULES = [
@@ -107,6 +135,7 @@ export function buildRoleplaySystemPrompt(
     `Difficulty: ${input.difficulty}`,
     `Behavior guidance: ${difficulty.behaviorGuidance}`,
     `Behavior axes (1 low, 5 high): cooperativeness=${difficulty.cooperativeness}, objectionIntensity=${difficulty.objectionIntensity}, followUpPressure=${difficulty.followUpPressure}, weakReasoningTolerance=${difficulty.weakReasoningTolerance}, concessionThreshold=${difficulty.concessionThreshold}.`,
+    ...languageDirectiveLines(input.language, input.dialect),
     "",
     "Conversation rules",
     bullets(scenario.roleplayRules),
@@ -136,11 +165,19 @@ export function buildRoleplayMessages(
   const variation = input.variation ?? null;
   const systemMessage = buildRoleplaySystemPrompt(input);
 
+  const openingMessage =
+    input.language === "ar"
+      ? (variation?.openingMessageAr ??
+        scenario.openingMessageAr ??
+        variation?.openingMessage ??
+        scenario.openingMessage)
+      : (variation?.openingMessage ?? scenario.openingMessage);
+
   const messages: RoleplayMessage[] = [
     { role: "system", content: systemMessage },
     {
       role: "assistant",
-      content: variation?.openingMessage ?? scenario.openingMessage,
+      content: openingMessage,
     },
   ];
 

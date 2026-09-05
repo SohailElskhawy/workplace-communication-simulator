@@ -46,6 +46,8 @@ export const promotionRequestV1: ScenarioDefinition =
     ],
     openingMessage:
       "I'm glad you scheduled time to talk about your growth. How are you thinking about your next step, and what would you like to discuss today?",
+    openingMessageAr:
+      "مبسوط إنك حجزت وقت عشان نتكلم في تطورك المهني. شايف خطوتك الجاية إزاي، وإيه اللي حابب نركز عليه النهاردة؟",
     difficulties: {
       EASY: {
         cooperativeness: 5,

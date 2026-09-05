@@ -46,6 +46,8 @@ export const managerPushbackV1: ScenarioDefinition =
     ],
     openingMessage:
       "We need to keep the launch on Friday as committed. I saw your note that you have concerns—what specifically do you think prevents us from shipping?",
+    openingMessageAr:
+      "لازم نحافظ على ميعاد الإطلاق يوم الجمعة زي ما وعدنا. شفت الإيميل بتاعك بخصوص تحفظاتك—إيه بالظبط في رأيك اللي يمنعنا نطلق في ميعادنا؟",
     difficulties: {
       EASY: {
         cooperativeness: 4,

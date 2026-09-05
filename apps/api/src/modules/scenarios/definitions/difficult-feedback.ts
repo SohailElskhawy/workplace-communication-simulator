@@ -46,6 +46,8 @@ export const difficultFeedbackV1: ScenarioDefinition =
     ],
     openingMessage:
       "You said you wanted to talk before our next project meeting. What's on your mind?",
+    openingMessageAr:
+      "كنت قولتلي إنك حابب نتكلم قبل ميتنج المشروع الجاي. خير، فيه إيه في بالك؟",
     difficulties: {
       EASY: {
         cooperativeness: 5,

@@ -186,4 +186,77 @@ describe("roleplay prompt", () => {
     expect(system).toContain("Preserve real speech and fillers");
     expect(system).toContain("Respect intentional interruptions");
   });
+
+  describe("Arabic roleplay localization", () => {
+    it("injects Egyptian Arabic directives when language is ar and dialect is EGYPTIAN", () => {
+      const messages = buildRoleplayMessages({
+        scenario: salaryNegotiationV1,
+        difficulty: "MEDIUM",
+        previousTurns: [],
+        latestLearnerMessage: "مرحباً",
+        language: "ar",
+        dialect: "EGYPTIAN",
+      });
+
+      const system = messages[0]?.content ?? "";
+      expect(system).toContain("Language and dialect directive");
+      expect(system).toContain("Egyptian (مصري) dialect");
+      expect(system).toContain("authentic, professional colloquial Arabic");
+      expect(system).toContain("Do not use overly rigid Modern Standard Arabic");
+      expect(system).toContain("natural workplace phrasing");
+
+      // Uses Arabic opening message from scenario when no variation
+      expect(messages[1]?.content).toBe(salaryNegotiationV1.openingMessageAr);
+    });
+
+    it("injects Gulf Arabic directives when dialect is GULF", () => {
+      const messages = buildRoleplayMessages({
+        scenario: salaryNegotiationV1,
+        difficulty: "HARD",
+        previousTurns: [],
+        latestLearnerMessage: "أهلاً وسهلاً",
+        language: "ar",
+        dialect: "GULF",
+      });
+
+      const system = messages[0]?.content ?? "";
+      expect(system).toContain("Language and dialect directive");
+      expect(system).toContain("Gulf (خليجي) dialect");
+    });
+
+    it("uses variation.openingMessageAr when variation has an Arabic opening message", () => {
+      const variationWithAr: ScenarioVariation = {
+        ...negotiationVariation,
+        openingMessageAr: "رسالة افتتاحية باللهجة المصرية الخاصة بالفارييشن.",
+      };
+
+      const messages = buildRoleplayMessages({
+        scenario: salaryNegotiationV1,
+        difficulty: "MEDIUM",
+        previousTurns: [],
+        latestLearnerMessage: "تمام",
+        variation: variationWithAr,
+        language: "ar",
+        dialect: "EGYPTIAN",
+      });
+
+      expect(messages[1]?.content).toBe(
+        "رسالة افتتاحية باللهجة المصرية الخاصة بالفارييشن.",
+      );
+    });
+
+    it("falls back to English opening message when language is en", () => {
+      const messages = buildRoleplayMessages({
+        scenario: salaryNegotiationV1,
+        difficulty: "MEDIUM",
+        previousTurns: [],
+        latestLearnerMessage: "Hello",
+        language: "en",
+      });
+
+      const system = messages[0]?.content ?? "";
+      expect(system).not.toContain("Language and dialect directive");
+      expect(messages[1]?.content).toBe(salaryNegotiationV1.openingMessage);
+    });
+  });
 });

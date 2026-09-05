@@ -1,9 +1,11 @@
 import type {
+  ArabicDialect,
   AttemptComparison,
   AttemptDetailResponse,
   AttemptStatus,
   ConversationTurn,
   CreateAttemptRequest,
+  CreateAttemptRequestSchema,
   CreateAttemptResponse,
   CreateTurnRequest,
   Difficulty,
@@ -11,8 +13,10 @@ import type {
   FinishAttemptResponse,
   InputMethod,
   InteractionMode,
+  SupportedLanguage,
   TurnStatus,
 } from "@kalemny/contracts";
+import type { z } from "zod";
 
 import type { AiService } from "../ai/ai-service.js";
 import { AiProviderError } from "../ai/openrouter-provider.js";
@@ -48,6 +52,8 @@ export interface AttemptRecord {
   id: string;
   userId: string;
   difficulty: Difficulty;
+  language: SupportedLanguage;
+  dialect: ArabicDialect | null;
   status: AttemptStatus;
   retryOfAttemptId: string | null;
   variationId: string | null;
@@ -66,6 +72,8 @@ export interface CreateAttemptRepositoryInput {
   userId: string;
   scenarioKey: string;
   difficulty: Difficulty;
+  language?: SupportedLanguage;
+  dialect?: ArabicDialect | null;
   retryOfAttemptId: string | null;
   /** Voice interaction mode chosen at simulation start. */
   interactionMode: InteractionMode;
@@ -144,6 +152,8 @@ export interface RoleplayContextTurn {
 export interface RoleplayContextRecord {
   difficulty: Difficulty;
   variationId: string | null;
+  language?: SupportedLanguage;
+  dialect?: ArabicDialect | null;
   scenarioDefinition: unknown;
   previousTurns: RoleplayContextTurn[];
 }
@@ -208,10 +218,12 @@ export interface CreatedTurnResult {
   created: boolean;
 }
 
+export type CreateAttemptInput = z.input<typeof CreateAttemptRequestSchema>;
+
 export interface AttemptService {
   create(
     userId: string,
-    request: CreateAttemptRequest,
+    request: CreateAttemptInput,
   ): Promise<CreateAttemptResponse["data"]>;
   getOwned(
     userId: string,
@@ -247,12 +259,19 @@ export interface AttemptService {
 function mapScenario(
   scenario: AttemptScenarioRecord,
   variationId: string | null,
+  language: SupportedLanguage = "en",
 ) {
   let openingMessage: string | undefined;
   const parsed = ScenarioDefinitionSchema.safeParse(scenario.definition);
   if (parsed.success) {
     const variation = resolveScenarioVariation(parsed.data, variationId);
-    openingMessage = variation?.openingMessage ?? parsed.data.openingMessage;
+    openingMessage =
+      language === "ar"
+        ? (variation?.openingMessageAr ??
+          parsed.data.openingMessageAr ??
+          variation?.openingMessage ??
+          parsed.data.openingMessage)
+        : (variation?.openingMessage ?? parsed.data.openingMessage);
   }
   return {
     key: scenario.key,
@@ -280,8 +299,14 @@ function mapAttempt(attempt: AttemptRecord): AttemptDetailResponse["data"] {
     id: attempt.id,
     status: attempt.status,
     difficulty: attempt.difficulty,
+    language: attempt.language,
+    dialect: attempt.dialect,
     interactionMode: attempt.interactionMode,
-    scenario: mapScenario(attempt.scenario, attempt.variationId),
+    scenario: mapScenario(
+      attempt.scenario,
+      attempt.variationId,
+      attempt.language,
+    ),
     retryOfAttemptId: attempt.retryOfAttemptId,
     turns: attempt.turns.map(mapTurn),
     evaluation: attempt.evaluation,
@@ -320,6 +345,8 @@ export function createAttemptService(
         previousTurns: context.previousTurns,
         latestLearnerMessage: turn.userText,
         variation,
+        language: context.language,
+        dialect: context.dialect,
       });
       const finalized = await repository.finalizeRoleplayTurn({
         attemptId,
@@ -371,13 +398,19 @@ export function createAttemptService(
 
   return {
     async create(userId, request) {
+      const language = request.language ?? "en";
+      const dialect = language === "ar" ? (request.dialect ?? "EGYPTIAN") : null;
+      const retryOfAttemptId = request.retryOfAttemptId ?? null;
+      const interactionMode = request.interactionMode ?? "PUSH_TO_TALK";
       const startedAt = clock();
       const result = await repository.createAttempt({
         userId,
         scenarioKey: request.scenarioKey,
         difficulty: request.difficulty,
-        retryOfAttemptId: request.retryOfAttemptId,
-        interactionMode: request.interactionMode,
+        language,
+        dialect,
+        retryOfAttemptId,
+        interactionMode,
         startedAt,
         expiresAt: new Date(startedAt.getTime() + ATTEMPT_DURATION_MS),
         selectVariationId: (definition, excludeVariationId) => {
@@ -410,13 +443,27 @@ export function createAttemptService(
         attempt.variationId,
       );
 
+      const openingMessage =
+        attempt.language === "ar"
+          ? (variation?.openingMessageAr ??
+            definition.openingMessageAr ??
+            variation?.openingMessage ??
+            definition.openingMessage)
+          : (variation?.openingMessage ?? definition.openingMessage);
+
       return {
         id: attempt.id,
         status: "ACTIVE",
         difficulty: attempt.difficulty,
+        language: attempt.language,
+        dialect: attempt.dialect,
         interactionMode: attempt.interactionMode,
-        scenario: mapScenario(attempt.scenario, attempt.variationId),
-        openingMessage: variation?.openingMessage ?? definition.openingMessage,
+        scenario: mapScenario(
+          attempt.scenario,
+          attempt.variationId,
+          attempt.language,
+        ),
+        openingMessage,
         startedAt: attempt.startedAt.toISOString(),
         expiresAt: attempt.expiresAt.toISOString(),
       };

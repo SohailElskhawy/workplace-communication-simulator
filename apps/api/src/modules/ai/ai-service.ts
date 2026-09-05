@@ -1,4 +1,8 @@
-import type { Difficulty } from "@kalemny/contracts";
+import type {
+  ArabicDialect,
+  Difficulty,
+  SupportedLanguage,
+} from "@kalemny/contracts";
 
 import type {
   ScenarioDefinition,
@@ -28,7 +32,9 @@ export interface GenerateRoleplayReplyInput {
   difficulty: Difficulty;
   previousTurns: RoleplayTranscriptTurn[];
   latestLearnerMessage: string;
-  variation?: ScenarioVariation | null;
+  variation?: ScenarioVariation | null | undefined;
+  language?: SupportedLanguage | undefined;
+  dialect?: ArabicDialect | null | undefined;
 }
 
 export interface EvaluateSimulationInput {

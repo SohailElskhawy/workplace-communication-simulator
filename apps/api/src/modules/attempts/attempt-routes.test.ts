@@ -20,6 +20,8 @@ const createdAttempt = {
   id: attemptId,
   status: "ACTIVE" as const,
   difficulty: "MEDIUM" as const,
+  language: "en" as const,
+  dialect: null,
   interactionMode: "PUSH_TO_TALK" as const,
   scenario: {
     key: "salary-negotiation",
@@ -55,6 +57,8 @@ function createAttemptApp(
         id: attemptId,
         status: "ACTIVE",
         difficulty: "MEDIUM",
+        language: "en",
+        dialect: null,
         interactionMode: "PUSH_TO_TALK",
         scenario: createdAttempt.scenario,
         retryOfAttemptId: null,
@@ -143,6 +147,8 @@ describe("attempt endpoints", () => {
     expect(attemptService.create).toHaveBeenCalledWith(ownerId, {
       scenarioKey: "salary-negotiation",
       difficulty: "MEDIUM",
+      language: "en",
+      dialect: "EGYPTIAN",
       retryOfAttemptId: null,
       interactionMode: "PUSH_TO_TALK",
     });
@@ -161,8 +167,31 @@ describe("attempt endpoints", () => {
     expect(attemptService.create).toHaveBeenCalledWith(ownerId, {
       scenarioKey: "salary-negotiation",
       difficulty: "MEDIUM",
+      language: "en",
+      dialect: "EGYPTIAN",
       retryOfAttemptId: null,
       interactionMode: "REALTIME",
+    });
+  });
+
+  it("persists requested language and dialect for Arabic attempt", async () => {
+    const { app, attemptService } = createAttemptApp();
+
+    const response = await request(app).post("/api/v1/attempts").send({
+      scenarioKey: "salary-negotiation",
+      difficulty: "HARD",
+      language: "ar",
+      dialect: "GULF",
+    });
+
+    expect(response.status).toBe(201);
+    expect(attemptService.create).toHaveBeenCalledWith(ownerId, {
+      scenarioKey: "salary-negotiation",
+      difficulty: "HARD",
+      language: "ar",
+      dialect: "GULF",
+      retryOfAttemptId: null,
+      interactionMode: "PUSH_TO_TALK",
     });
   });
 

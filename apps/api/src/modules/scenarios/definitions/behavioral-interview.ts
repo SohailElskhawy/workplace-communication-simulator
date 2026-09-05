@@ -41,6 +41,8 @@ export const behavioralInterviewV1: ScenarioDefinition =
     ],
     openingMessage:
       "Thanks for speaking with me today. To start, tell me about a time you faced a significant challenge while working on a team. What did you do, and what was the outcome?",
+    openingMessageAr:
+      "شكراً على وقتك النهاردة. عشان نبدأ، احكيلي عن موقف واجهت فيه تحدي كبير وأنت شغال وسط تيم. اتصرفت إزاي، وإيه كانت النتيجة؟",
     difficulties: {
       EASY: {
         cooperativeness: 5,

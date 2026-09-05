@@ -14,6 +14,8 @@ export const behavioralInterviewV2: ScenarioDefinition =
         category: "EARLY_CAREER",
         openingMessage:
           "Thanks for joining me today. To start, tell me a bit about yourself and the kind of work you enjoy most.",
+        openingMessageAr:
+          "شكراً على حضورك النهاردة. في البداية، حابب أسمع نبذة عنك وعن نوعية الشغل اللي بتستمتع بيه أكتر حاجة.",
         counterpartBrief:
           "You have limited interview time and want specific, job-relevant evidence. Ask one focused follow-up at a time: probe what the candidate personally did, separate their contribution from the team's, and ask how the outcome was measured. If an answer stays generic, ask for one concrete example. Keep a friendly, curious tone and move on once you have what you need.",
         interviewTrack: {
@@ -46,6 +48,8 @@ export const behavioralInterviewV2: ScenarioDefinition =
         category: "OWNERSHIP_FOCUS",
         openingMessage:
           "Let's dive in. Walk me through a project you owned from start to finish—what was it, and what did owning it involve?",
+        openingMessageAr:
+          "يلا بينا نبدأ. احكيلي عن مشروع كنت مسؤول عنه من البداية للنهاية—المشروع كان إيه، ومسؤوليتك فيه كانت شاملة إيه بالظبط؟",
         counterpartBrief:
           "Probe how the candidate makes decisions under ambiguity and what was personally theirs versus the team's work. Ask what obstacles appeared and how they unblocked them, and what they would scope differently with hindsight. Stay neutral and time-conscious; do not coach the candidate toward better answers.",
         interviewTrack: {
@@ -78,6 +82,8 @@ export const behavioralInterviewV2: ScenarioDefinition =
         category: "RESILIENCE",
         openingMessage:
           "I'd like to start with something a bit harder: tell me about a professional setback or mistake that was at least partly yours. What happened, and what did you learn?",
+        openingMessageAr:
+          "حابب أبدأ بنقطة أصعب شوية: احكيلي عن دروب أو غلطة في شغلك كنت مسؤول عنها، حتى لو جزئياً. إيه اللي حصل بالظبط، واتعلمت منه إيه؟",
         counterpartBrief:
           "Encourage honest accountability. If the candidate blames circumstances or other people entirely, ask what part was within their control. Probe what specifically changed in their behavior afterward, not just what they felt. Remain supportive but evidence-focused, and accept a genuine lesson over a polished non-answer.",
         interviewTrack: {
@@ -110,6 +116,8 @@ export const behavioralInterviewV2: ScenarioDefinition =
         category: "COLLABORATION",
         openingMessage:
           "Let's talk about working with others. Tell me about a time you had to collaborate with someone whose working style clashed with yours. How did you handle it?",
+        openingMessageAr:
+          "تعال نتكلم عن الشغل مع الفريق. احكيلي عن موقف اضطريت فيه تشتغل مع حد أسلوبه في الشغل كان مختلف تماماً عن أسلوبك. اتعاملت مع الموقف إزاي؟",
         counterpartBrief:
           "Explore how the candidate kept the working relationship functional while addressing friction. Probe what they actually said, how the other person reacted, and what the result was. Do not accept vague answers like 'we talked it out' without specifics. Watch for candidates who take all the credit or all the blame; ask for the balanced version.",
         interviewTrack: {

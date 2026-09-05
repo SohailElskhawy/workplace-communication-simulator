@@ -47,6 +47,8 @@ export const salaryNegotiationV1: ScenarioDefinition =
     ],
     openingMessage:
       "Thanks for making time to talk. We're excited about the possibility of you joining the team. I understand you wanted to discuss the offer—what would you like us to consider?",
+    openingMessageAr:
+      "شكراً على وقتك. إحنا متحمسين جداً لانضمامك للفريق. فاهم إنك حابب تناقش تفاصيل العرض—إيه النقط اللي حابب نتكلم فيها؟",
     difficulties: {
       EASY: {
         cooperativeness: 5,

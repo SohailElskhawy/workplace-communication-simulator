@@ -22,6 +22,8 @@ function createAttempt(overrides: Partial<AttemptRecord> = {}): AttemptRecord {
     id: attemptId,
     userId: ownerId,
     difficulty: "MEDIUM",
+    language: "en",
+    dialect: null,
     status: "ACTIVE",
     retryOfAttemptId: null,
     variationId: "budget-cap",

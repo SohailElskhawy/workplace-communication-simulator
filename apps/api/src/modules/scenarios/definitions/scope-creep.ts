@@ -45,6 +45,8 @@ export const scopeCreepV1: ScenarioDefinition = ScenarioDefinitionSchema.parse({
   ],
   openingMessage:
     "I need one more thing added before Friday: a detailed executive summary with revised recommendations. It should fit alongside everything already planned. Can you make that happen?",
+  openingMessageAr:
+    "محتاج نضيف حاجة أخيرة قبل يوم الجمعة: ملخص تنفيذي مفصل بالتوصيات المعدلة. المفروض ما ياخدش وقت ويتعمل مع باقي الحاجات المتفق عليها. هتقدر تخلصه؟",
   difficulties: {
     EASY: {
       cooperativeness: 5,

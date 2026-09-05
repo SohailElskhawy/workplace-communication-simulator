@@ -275,6 +275,8 @@ describe("Prisma attempt repository race recovery", () => {
     expect(context).toEqual({
       difficulty: "MEDIUM",
       variationId: "tight-budget",
+      language: "en",
+      dialect: null,
       scenarioDefinition: { marker: "definition" },
       previousTurns: [previousTurn],
     });

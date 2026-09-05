@@ -101,10 +101,14 @@ function createMemoryRepository(
         .toString()
         .padStart(12, "0")}`;
       nextAttempt += 1;
+      const language = input.language ?? "en";
+      const dialect = language === "ar" ? (input.dialect ?? "EGYPTIAN") : null;
       const attempt: AttemptRecord = {
         id,
         userId: input.userId,
         difficulty: input.difficulty,
+        language,
+        dialect,
         status: "ACTIVE",
         retryOfAttemptId: input.retryOfAttemptId,
         variationId,
@@ -144,6 +148,8 @@ function createMemoryRepository(
       return {
         difficulty: attempt.difficulty,
         variationId: attempt.variationId,
+        language: attempt.language,
+        dialect: attempt.dialect,
         scenarioDefinition: attempt.scenario.definition,
         previousTurns: attempt.turns
           .filter(
@@ -1041,6 +1047,121 @@ describe("attempt service", () => {
       name: "AttemptError",
       code: "PLAN_QUOTA_EXCEEDED",
       status: 403,
+    });
+  });
+
+  describe("Arabic and dialect handling", () => {
+    it("creates Arabic attempt with default Egyptian dialect and Arabic opening message", async () => {
+      const { repository } = createMemoryRepository();
+      const aiService = createSuccessfulAiService();
+      const service = createAttemptService(repository, aiService, () => now, () => 0);
+
+      const attempt = await service.create(ownerId, {
+        scenarioKey: "salary-negotiation",
+        difficulty: "MEDIUM",
+        language: "ar",
+        dialect: "EGYPTIAN",
+        retryOfAttemptId: null,
+        interactionMode: "PUSH_TO_TALK",
+      });
+
+      expect(attempt.language).toBe("ar");
+      expect(attempt.dialect).toBe("EGYPTIAN");
+      expect(attempt.openingMessage).toBe(
+        "شكراً على وقتك. حابب أكون صريح معاك من الأول قبل ما نتكلم: الراتب المحدد للوظيفة دي تم اعتماده عند الحد الأقصى للميزانية، والعرض الحالي قريب جداً منه. مع ذلك، حابب أسمع إيه اللي كان في بالك ونشوف.",
+      );
+      expect(attempt.scenario.openingMessage).toBe(
+        "شكراً على وقتك. حابب أكون صريح معاك من الأول قبل ما نتكلم: الراتب المحدد للوظيفة دي تم اعتماده عند الحد الأقصى للميزانية، والعرض الحالي قريب جداً منه. مع ذلك، حابب أسمع إيه اللي كان في بالك ونشوف.",
+      );
+    });
+
+    it("creates Arabic attempt with explicit Gulf dialect", async () => {
+      const { repository } = createMemoryRepository();
+      const aiService = createSuccessfulAiService();
+      const service = createAttemptService(repository, aiService, () => now, () => 0);
+
+      const attempt = await service.create(ownerId, {
+        scenarioKey: "salary-negotiation",
+        difficulty: "HARD",
+        language: "ar",
+        dialect: "GULF",
+        retryOfAttemptId: null,
+        interactionMode: "PUSH_TO_TALK",
+      });
+
+      expect(attempt.language).toBe("ar");
+      expect(attempt.dialect).toBe("GULF");
+    });
+
+    it("sets dialect to null when language is en even if a dialect was provided", async () => {
+      const { repository } = createMemoryRepository();
+      const aiService = createSuccessfulAiService();
+      const service = createAttemptService(repository, aiService, () => now, () => 0);
+
+      const attempt = await service.create(ownerId, {
+        scenarioKey: "salary-negotiation",
+        difficulty: "MEDIUM",
+        language: "en",
+        dialect: "EGYPTIAN",
+        retryOfAttemptId: null,
+        interactionMode: "PUSH_TO_TALK",
+      });
+
+      expect(attempt.language).toBe("en");
+      expect(attempt.dialect).toBeNull();
+      expect(attempt.openingMessage).toBe(
+        "Thanks for making time. I want to be upfront before you make your case: the band for this role was approved near the top of our range, and the offer is already close to it. I'm still happy to hear what you had in mind.",
+      );
+    });
+
+    it("returns language and dialect in getOwned", async () => {
+      const { repository } = createMemoryRepository();
+      const aiService = createSuccessfulAiService();
+      const service = createAttemptService(repository, aiService, () => now, () => 0);
+
+      const created = await service.create(ownerId, {
+        scenarioKey: "salary-negotiation",
+        difficulty: "MEDIUM",
+        language: "ar",
+        dialect: "EGYPTIAN",
+        retryOfAttemptId: null,
+        interactionMode: "PUSH_TO_TALK",
+      });
+
+      const owned = await service.getOwned(ownerId, created.id);
+      expect(owned.language).toBe("ar");
+      expect(owned.dialect).toBe("EGYPTIAN");
+      expect(owned.scenario.openingMessage).toBe(created.openingMessage);
+    });
+
+    it("passes language and dialect to generateRoleplayReply on turn creation", async () => {
+      const { repository } = createMemoryRepository();
+      const aiService = createSuccessfulAiService();
+      const service = createAttemptService(repository, aiService, () => now, () => 0);
+
+      const attempt = await service.create(ownerId, {
+        scenarioKey: "salary-negotiation",
+        difficulty: "MEDIUM",
+        language: "ar",
+        dialect: "GULF",
+        retryOfAttemptId: null,
+        interactionMode: "PUSH_TO_TALK",
+      });
+
+      await service.createTurn(ownerId, attempt.id, {
+        clientRequestId: "turn-ar-1",
+        text: "أنا شايف إني أستحق راتب أعلى بناء على خبرتي في السوق.",
+        inputMethod: "TEXT",
+      });
+
+      expect(aiService.generateRoleplayReply).toHaveBeenCalledWith(
+        expect.objectContaining({
+          language: "ar",
+          dialect: "GULF",
+          latestLearnerMessage:
+            "أنا شايف إني أستحق راتب أعلى بناء على خبرتي في السوق.",
+        }),
+      );
     });
   });
 });

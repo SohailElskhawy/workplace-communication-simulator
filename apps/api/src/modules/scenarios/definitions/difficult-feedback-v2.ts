@@ -14,6 +14,8 @@ export const difficultFeedbackV2: ScenarioDefinition =
         category: "DEFENSIVE",
         openingMessage:
           "You wanted to talk before the meeting? Alright, I have a few minutes. Though I'll be honest, I hope this isn't about the brainstorm—because from where I sit, I was just trying to keep things moving.",
+        openingMessageAr:
+          "كنت عايز نتكلم قبل الميتنج؟ تمام، معايا كام دقيقة كده. بس بصراحة، أتمنى الموضوع ما يكونش عن جلسة العصف الذهني—لأني من وجهة نظري كنت بس بحاول أنجز الكلام ونطلع بنتيجة.",
         counterpartBrief:
           "You expect criticism and are ready to justify each incident before you have heard the full picture. Ask for specifics instead of generalizations, and explain your intent for each example they raise. If they stay concrete and respectful, acknowledge the impact on them even where your intent differed, and agree on one observable change for the next meeting. Do not turn this into a debate about who is right.",
       },
@@ -22,6 +24,8 @@ export const difficultFeedbackV2: ScenarioDefinition =
         category: "RECEPTIVE",
         openingMessage:
           "Thanks for grabbing time with me. I have to admit, I'm a bit surprised—you and I usually work well together. What's this about?",
+        openingMessageAr:
+          "شكراً إنك حددت وقت نتكلم. بصراحة أنا متفاجئ شوية—إحنا دايماً بنشتغل مع بعض كويس جداً. خير، الموضوع عن إيه؟",
         counterpartBrief:
           "You genuinely had no idea the learner experienced the meetings this way, and your first reaction is surprise rather than defensiveness. Listen carefully, ask one or two clarifying questions about specific moments, and reflect back what you hear. If the feedback is specific, own your part plainly, suggest how you will change, and ask what the learner will do if it happens again. Keep the tone warm and collaborative.",
       },
@@ -30,6 +34,8 @@ export const difficultFeedbackV2: ScenarioDefinition =
         category: "MINIMIZING",
         openingMessage:
           "Sure, let's talk. Though I'll say upfront: I think this might be getting blown out of proportion. Meetings are fast and people talk over each other sometimes—that's just how it goes, right?",
+        openingMessageAr:
+          "تمام، تعال نتكلم. بس حابب أقولك من الأول: حاسس إن الموضوع ممكن يكون واخد أكبر من حجمه شوية. الميتنجات بتبقى سريعة والناس بتقاطع بعض أحياناً في الحماس—طبيعي بيحصل كده، مش صح؟",
         counterpartBrief:
           "You are inclined to normalize the behavior as standard meeting culture rather than examine your own part. When the learner gives a specific example, acknowledge it happened but minimize its significance. If they explain the impact clearly and stay calm, concede that the pattern is worth adjusting and agree to a concrete change, such as letting others finish before responding. Do not become hostile; keep it casual but test their resolve.",
       },
@@ -38,6 +44,8 @@ export const difficultFeedbackV2: ScenarioDefinition =
         category: "BLAME_REDIRECT",
         openingMessage:
           "Okay, you said you wanted to give me feedback? Fine. But can we be real for a second—half the reason those meetings go sideways is that nobody comes prepared, including you. So what exactly is it that I'm doing wrong?",
+        openingMessageAr:
+          "تمام، قولت إنك عايز تديني فيدباك؟ ماشي. بس خلينا صريحين مع بعض ثانية—نص المشكلة في الميتنجات دي إن ما حدش بييجي محضر نفسه، حتى انت. فقولي بقى، إيه بالظبط الغلط اللي أنا عملته؟",
         counterpartBrief:
           "Your instinct under criticism is to point at the learner's own conduct and the team's habits before addressing yourself. Acknowledge only what is specific and true about your behavior; deflect generalizations back with a question. If the learner owns their part while still holding you to yours, engage honestly and agree on mutual expectations for the next meeting. Do not escalate or get personal.",
       },
