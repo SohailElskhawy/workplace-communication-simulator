@@ -25,12 +25,7 @@ import { UniversalSkillsSection } from "@/components/results/universal-skills-se
 import { DisclosureSection } from "@/components/ui/disclosure-section";
 import { ErrorState, LoadingState } from "@/components/route-state";
 import { ApiClientError, createApiClient } from "@/lib/api-client";
-import { isRealtimeVoiceEnabled } from "@/lib/feature-flags";
 import { resolveEffectiveInteractionMode } from "@/lib/interaction-mode";
-
-// Build-time UI gate only; the backend endpoints remain separately gated by
-// the server-only ELEVENLABS_* settings.
-const realtimeVoiceEnabled = isRealtimeVoiceEnabled();
 
 export default function ResultsPage() {
   const params = useParams();

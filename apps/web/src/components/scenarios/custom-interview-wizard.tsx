@@ -3,7 +3,6 @@
 import { useAuth } from "@clerk/nextjs";
 import type {
   Difficulty,
-  InteractionMode,
   PublicScenarioDetail,
 } from "@kalemny/contracts";
 import { useRouter } from "next/navigation";
@@ -26,10 +25,8 @@ import {
   UserIcon,
 } from "@/components/icons";
 import { DifficultySelector } from "@/components/scenarios/difficulty-selector";
-import { InteractionModeSelector } from "@/components/scenarios/interaction-mode-selector";
 import { createApiClient } from "@/lib/api-client";
 import { cn } from "@/lib/cn";
-import { isRealtimeVoiceEnabled } from "@/lib/feature-flags";
 
 export interface CustomInterviewWizardProps {
   userEffectivePlan?: "FREE" | "PLUS" | "PRO";
@@ -64,10 +61,6 @@ export function CustomInterviewWizard({
   const [startError, setStartError] = useState<string | null>(null);
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
-  const realtimeVoiceEnabled = isRealtimeVoiceEnabled();
-  const availableInteractionModes: InteractionMode[] = realtimeVoiceEnabled
-    ? ["PUSH_TO_TALK", "REALTIME"]
-    : ["PUSH_TO_TALK"];
 
   const handleFileSelection = (file: File | null) => {
     setError(null);
@@ -313,15 +306,6 @@ export function CustomInterviewWizard({
           selectedDifficulty={selectedDifficulty}
           onSelectDifficulty={setSelectedDifficulty}
         />
-
-        {/* Voice Interaction Mode Selection */}
-        {realtimeVoiceEnabled && (
-          <InteractionModeSelector
-            availableModes={availableInteractionModes}
-            selectedMode={selectedInteractionMode}
-            onSelectMode={setSelectedInteractionMode}
-          />
-        )}
 
         {/* Start Error Alert */}
         {startError && (
