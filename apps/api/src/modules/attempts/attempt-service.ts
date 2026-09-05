@@ -4,7 +4,6 @@ import type {
   AttemptDetailResponse,
   AttemptStatus,
   ConversationTurn,
-  CreateAttemptRequest,
   CreateAttemptRequestSchema,
   CreateAttemptResponse,
   CreateTurnRequest,
