@@ -3,16 +3,16 @@ import type { AttemptStatus } from "@kalemny/contracts";
 export interface SpeechTurnRecord {
   assistantText: string | null;
   attemptStatus: AttemptStatus;
-  language?: "en" | "ar";
-  dialect?: "EGYPTIAN" | "GULF" | null;
-  personaRole?: string;
-  personaGender?: "MALE" | "FEMALE";
+  language?: ("en" | "ar") | undefined;
+  dialect?: ("EGYPTIAN" | "GULF" | null) | undefined;
+  personaRole?: string | undefined;
+  personaGender?: ("MALE" | "FEMALE") | undefined;
 }
 
 export interface TtsUsageInput {
   userId: string;
   attemptId: string;
-  provider?: string;
+  provider?: string | undefined;
   model: string;
   status: "SUCCESS" | "FAILED";
   latencyMs: number;

@@ -16,8 +16,8 @@ export function sanitizeTtsText(text: string): string {
 
 export function resolveEdgeVoice(
   language: "en" | "ar",
-  dialect?: "EGYPTIAN" | "GULF" | null,
-  gender?: "MALE" | "FEMALE",
+  dialect?: ("EGYPTIAN" | "GULF" | null) | undefined,
+  gender?: ("MALE" | "FEMALE") | undefined,
 ): string {
   const isFemale = gender === "FEMALE";
 

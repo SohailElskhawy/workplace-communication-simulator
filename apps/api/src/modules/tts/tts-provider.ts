@@ -1,8 +1,8 @@
 export interface GenerateSpeechOptions {
   text: string;
   language: "en" | "ar";
-  dialect?: "EGYPTIAN" | "GULF" | null;
-  gender?: "MALE" | "FEMALE";
+  dialect?: ("EGYPTIAN" | "GULF" | null) | undefined;
+  gender?: ("MALE" | "FEMALE") | undefined;
   timeoutMs: number;
 }
 
@@ -13,6 +13,6 @@ export interface SpeechResult {
 }
 
 export interface TtsProvider {
-  readonly model?: string;
+  readonly model?: string | undefined;
   generateSpeech(options: GenerateSpeechOptions): Promise<SpeechResult>;
 }
