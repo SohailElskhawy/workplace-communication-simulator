@@ -16,3 +16,4 @@ pnpm-debug.log*
 
 DEPLOYMENT_GUIDE.md
 ENV_SETUP_GUIDE.md
+/.superpowers/
