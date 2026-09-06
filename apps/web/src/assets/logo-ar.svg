@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 130 36" fill="none" width="130" height="36" dir="rtl">
+  <defs>
+    <linearGradient id="coral-gradient-ar" x1="4" y1="4" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#F47765" />
+      <stop offset="100%" stop-color="#B84132" />
+    </linearGradient>
+  </defs>
+  <text x="6" y="25" font-family="'Noto Sans Arabic', 'Segoe UI', Tahoma, sans-serif" font-size="22" font-weight="700" fill="#292725">كلمني</text>
+  <g transform="translate(94, 2)">
+    <path
+      d="M6 14C6 8.47715 10.4772 4 16 4C21.5228 4 26 8.47715 26 14C26 19.5228 21.5228 24 16 24C13.8447 24 11.8384 23.3188 10.1915 22.1585L6.45265 23.9535C5.81185 24.2612 5.08906 23.7087 5.22858 23.0076L5.93297 19.4674C5.33777 17.8286 5 16.0355 5 14.1957"
+      fill="url(#coral-gradient-ar)"
+    />
+    <circle cx="12" cy="14" r="1.75" fill="#FFFFFF" />
+    <circle cx="16" cy="14" r="1.75" fill="#FFFFFF" />
+    <circle cx="20" cy="14" r="1.75" fill="#FFFFFF" />
+  </g>
+</svg>

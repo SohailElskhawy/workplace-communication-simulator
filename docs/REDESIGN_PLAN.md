@@ -1,4 +1,4 @@
-﻿# REDESIGN_PLAN.md
+# REDESIGN_PLAN.md
 
 ## Approved Decisions
 - **D01 Brand**: Kalemny / كلمني. Warm Coral Concept A visual direction.
@@ -14,12 +14,12 @@
 ## Milestone Delivery Sequence
 
 ### Phase 1 — Foundation
-#### M01 — Design Foundation & Tokens (Active)
-- [ ] R01 Audit existing routes, components, tokens, and testing entitlements.
-- [ ] R02 Finalize Concept A vector logo mark and bilingual lockups.
-- [ ] R03 Finalize semantic tokens, typography scales, spacing, focus/error states in `WARM_CORAL_DESIGN.md`.
-- [ ] R04 Design corrected mobile simulator states (360px & 390px, keyboard open/closed, full-width composer, separate mic row).
-- [ ] R05 Map all primary application screens to Warm Coral layout and reviewed copy.
+#### M01 — Design Foundation & Tokens (Completed)
+- [x] R01 Audit existing routes, components, tokens, and testing entitlements.
+- [x] R02 Finalize Concept A vector logo mark and bilingual lockups.
+- [x] R03 Finalize semantic tokens, typography scales, spacing, focus/error states in `WARM_CORAL_DESIGN.md`.
+- [x] R04 Design corrected mobile simulator states (360px & 390px, keyboard open/closed, full-width composer, separate mic row).
+- [x] R05 Map all primary application screens to Warm Coral layout and reviewed copy.
 
 ### Phase 2 — Shared Architecture
 #### M02 — Bilingual Shell & Primitives

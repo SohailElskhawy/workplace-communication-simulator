@@ -1,12 +1,13 @@
-﻿# PROJECT_STATE.md
+# PROJECT_STATE.md
 
 ## Project
 **Kalemny / كلمني** — AI Workplace Communication Simulator. Deliberate practice for difficult workplace conversations with adaptive AI, structured coaching, retry, and progress tracking. Bilingual: English (`en`) & Arabic (`ar`) (Egyptian & Gulf dialects).
 
 ## Status
 - **Phase**: Development (Bilingual Warm Coral Redesign)
-- **Active Milestone**: M01 — Finalize design foundation ([REDESIGN_PLAN.md](REDESIGN_PLAN.md))
-- **Next Task**: R01–R05 in `REDESIGN_PLAN.md` (audit routes/tokens, finalize Concept A assets, verify mobile simulation states)
+- **Active Milestone**: M02 — Bilingual Shell & Primitives ([REDESIGN_PLAN.md](REDESIGN_PLAN.md))
+- **Completed**: M01 — Design Foundation & Tokens (R01–R05 complete: audits, vector logo mark & bilingual lockups, token spec in WARM_CORAL_DESIGN.md, mobile simulator state budgets, screen mapping & copy inventory)
+- **Next Task**: R06–R08 in `REDESIGN_PLAN.md` (implement light-only tokens/CSS vars/primitives, bilingual layout shell & direction handling, update global navigation)
 - **Testing Policy**: All scenario types free with 3 combined starts per rolling 7 days.
 
 ## Verified Baseline (473 tests passing)

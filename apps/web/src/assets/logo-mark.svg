@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width="32" height="32">
+  <defs>
+    <linearGradient id="coral-gradient" x1="4" y1="4" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#F47765" />
+      <stop offset="100%" stop-color="#B84132" />
+    </linearGradient>
+  </defs>
+  <path
+    d="M6 14C6 8.47715 10.4772 4 16 4C21.5228 4 26 8.47715 26 14C26 19.5228 21.5228 24 16 24C13.8447 24 11.8384 23.3188 10.1915 22.1585L6.45265 23.9535C5.81185 24.2612 5.08906 23.7087 5.22858 23.0076L5.93297 19.4674C5.33777 17.8286 5 16.0355 5 14.1957"
+    fill="url(#coral-gradient)"
+  />
+  <circle cx="12" cy="14" r="1.75" fill="#FFFFFF" />
+  <circle cx="16" cy="14" r="1.75" fill="#FFFFFF" />
+  <circle cx="20" cy="14" r="1.75" fill="#FFFFFF" />
+</svg>
