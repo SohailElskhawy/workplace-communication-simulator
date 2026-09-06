@@ -18,6 +18,9 @@ import {
   MessageSquareQuote as LucideMessageSquareQuote,
   MessagesSquare as LucideMessagesSquare,
   Mic as LucideMic,
+  MicOff as LucideMicOff,
+  Phone as LucidePhone,
+  PhoneOff as LucidePhoneOff,
   Play as LucidePlay,
   RotateCw as LucideRotateCw,
   Search as LucideSearch,
@@ -54,6 +57,9 @@ export const SendIcon = LucideSend;
 export const PlayIcon = LucidePlay;
 export const FlagIcon = LucideFlag;
 export const MicIcon = LucideMic;
+export const MicOffIcon = LucideMicOff;
+export const PhoneIcon = LucidePhone;
+export const PhoneOffIcon = LucidePhoneOff;
 export const VolumeIcon = LucideVolume2;
 export const VolumeMuteIcon = LucideVolumeX;
 

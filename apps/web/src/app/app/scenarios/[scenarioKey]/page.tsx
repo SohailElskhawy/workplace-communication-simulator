@@ -4,6 +4,7 @@ import { useAuth } from "@clerk/nextjs";
 import type {
   ArabicDialect,
   Difficulty,
+  InteractionMode,
   PublicScenarioDetail,
   SupportedLanguage,
 } from "@kalemny/contracts";
@@ -21,6 +22,7 @@ import { ErrorState, LoadingState } from "@/components/route-state";
 import { DeleteCustomScenarioDialog } from "@/components/scenarios/delete-custom-scenario-dialog";
 import { DifficultySelector } from "@/components/scenarios/difficulty-selector";
 import { LanguageDialectSelector } from "@/components/scenarios/language-dialect-selector";
+import { PracticeModeSelector } from "@/components/scenarios/practice-mode-selector";
 import { ScenarioBriefingCard } from "@/components/scenarios/scenario-briefing-card";
 import { ScenarioHeroGraphic } from "@/components/scenarios/scenario-hero-graphic";
 import { ApiClientError, createApiClient } from "@/lib/api-client";
@@ -43,6 +45,8 @@ export default function ScenarioDetailPage() {
     useState<SupportedLanguage>("en");
   const [selectedDialect, setSelectedDialect] =
     useState<ArabicDialect>("EGYPTIAN");
+  const [selectedInteractionMode, setSelectedInteractionMode] =
+    useState<InteractionMode>("PUSH_TO_TALK");
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -151,7 +155,7 @@ export default function ScenarioDetailPage() {
         language: selectedLanguage,
         dialect: selectedLanguage === "ar" ? selectedDialect : undefined,
         retryOfAttemptId: null,
-        interactionMode: "PUSH_TO_TALK",
+        interactionMode: selectedInteractionMode,
       });
 
       router.push(`/app/simulations/${encodeURIComponent(attempt.id)}`);
@@ -285,6 +289,13 @@ export default function ScenarioDetailPage() {
         onSelectDialect={setSelectedDialect}
       />
 
+      {/* 5c. Practice Mode Selection (Push-to-Talk vs Live Call) */}
+      <PracticeModeSelector
+        mode={selectedInteractionMode}
+        onSelectMode={setSelectedInteractionMode}
+        language={selectedLanguage}
+      />
+
       {/* Start Simulation Error Alert (if any) */}
       {startError && (
         <div
@@ -308,6 +319,14 @@ export default function ScenarioDetailPage() {
                 ? "Egyptian Arabic"
                 : "Gulf Arabic"
               : "English"}{" "}
+            ·{" "}
+            {selectedLanguage === "ar"
+              ? selectedInteractionMode === "REALTIME"
+                ? "مكالمة مباشرة"
+                : "اضغط للتحدث"
+              : selectedInteractionMode === "REALTIME"
+                ? "Live Call"
+                : "Push-to-Talk"}{" "}
             at {selectedDifficulty} Difficulty
           </p>
         </div>

@@ -17,6 +17,7 @@ import {
   type SimulationUiState,
 } from "@/components/simulations/conversation-stage";
 import { FinishSimulationDialog } from "@/components/simulations/finish-simulation-dialog";
+import { LiveCallStage } from "@/components/simulations/live-call-stage";
 import { SimulationComposer } from "@/components/simulations/simulation-composer";
 import { SimulationHeader } from "@/components/simulations/simulation-header";
 import {
@@ -388,6 +389,40 @@ export default function SimulationPage() {
     }
   };
 
+  const handleSendLiveTurn = async (
+    textToSend: string,
+  ): Promise<string | null> => {
+    if (!attemptId || !textToSend.trim()) return null;
+    const client = createApiClient(apiUrl);
+    const clientRequestId =
+      typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID()
+        : `req_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    try {
+      const token = await getToken();
+      if (!token) throw new Error("Authentication token not available.");
+
+      const newTurn = await client.createTurn(token, attemptId, {
+        clientRequestId,
+        text: textToSend.trim(),
+        inputMethod: "VOICE",
+      });
+
+      setAttempt((prev) => {
+        if (!prev) return prev;
+        const exists = prev.turns.some((t) => t.id === newTurn.id);
+        const updatedTurns = exists
+          ? prev.turns.map((t) => (t.id === newTurn.id ? newTurn : t))
+          : [...prev.turns, newTurn];
+        return { ...prev, turns: updatedTurns };
+      });
+
+      return newTurn.id;
+    } catch {
+      return null;
+    }
+  };
+
   const handleRetryTurn = async (turnId: string) => {
     if (!attemptId) return;
     try {
@@ -466,6 +501,7 @@ export default function SimulationPage() {
   }
 
   const isRtl = attempt.language === "ar";
+  const isLiveCallMode = attempt.interactionMode === "REALTIME";
 
   return (
     <div
@@ -481,7 +517,7 @@ export default function SimulationPage() {
         elapsedSeconds={elapsedSeconds}
         finishing={finishing}
         autoPlaySpeech={autoPlaySpeech}
-        showAutoPlayToggle={true}
+        showAutoPlayToggle={!isLiveCallMode}
         onToggleAutoPlay={() => setAutoPlaySpeech((prev) => !prev)}
         onOpenFinishDialog={() => setShowFinishDialog(true)}
         onOpenBriefing={() => setBriefingOpen(true)}
@@ -525,48 +561,87 @@ export default function SimulationPage() {
             </button>
           </div>
 
-          <ConversationStage
-            attemptId={attempt.id}
-            counterpartRole={counterpartRole}
-            openingMessage={openingMessage}
-            latestAssistantMessage={latestAssistantMessage}
-            turnCount={displayTurnCount}
-            uiState={simulationUiState}
-            autoPlaySpeech={autoPlayStageSpeech}
-            cancelSpeechPlayback={
-              finishing ||
-              voiceStatus === "requesting_permission" ||
-              voiceStatus === "recording"
-            }
-            onSpeechStatusChange={setCounterpartSpeechStatus}
-            microphoneLevel={microphoneLevel}
-            onOpenTranscript={() => setTranscriptOpen(true)}
-            language={attempt.language ?? "en"}
-          />
+          {isLiveCallMode ? (
+            <LiveCallStage
+              attemptId={attempt.id}
+              counterpartRole={counterpartRole}
+              language={attempt.language ?? "en"}
+              latestMessage={
+                latestAssistantMessage
+                  ? { role: "assistant", text: latestAssistantMessage.text }
+                  : openingMessage
+                    ? { role: "assistant", text: openingMessage }
+                    : null
+              }
+              turnCount={displayTurnCount}
+              hasOpeningMessage={Boolean(openingMessage)}
+              onFinish={() => setShowFinishDialog(true)}
+              onOpenTranscript={() => setTranscriptOpen(true)}
+              onSendTurn={handleSendLiveTurn}
+              onRequestAudioStream={async (turnId) => {
+                const token = await getToken();
+                if (!token) throw new Error("Authentication required");
+                const client = createApiClient(apiUrl);
+                return client.generateSpeech(token, attempt.id, turnId);
+              }}
+              onTranscribeAudio={async (audioBlob, durationMs) => {
+                const token = await getToken();
+                if (!token) throw new Error("Authentication required");
+                const client = createApiClient(apiUrl);
+                return client.transcribeAudio(
+                  token,
+                  attempt.id,
+                  audioBlob,
+                  durationMs,
+                );
+              }}
+            />
+          ) : (
+            <>
+              <ConversationStage
+                attemptId={attempt.id}
+                counterpartRole={counterpartRole}
+                openingMessage={openingMessage}
+                latestAssistantMessage={latestAssistantMessage}
+                turnCount={displayTurnCount}
+                uiState={simulationUiState}
+                autoPlaySpeech={autoPlayStageSpeech}
+                cancelSpeechPlayback={
+                  finishing ||
+                  voiceStatus === "requesting_permission" ||
+                  voiceStatus === "recording"
+                }
+                onSpeechStatusChange={setCounterpartSpeechStatus}
+                microphoneLevel={microphoneLevel}
+                onOpenTranscript={() => setTranscriptOpen(true)}
+                language={attempt.language ?? "en"}
+              />
 
-          <SimulationComposer
-            attemptId={attempt.id}
-            composerText={composerText}
-            sendingTurn={sendingTurn}
-            isComposerDisabled={composerDisabled}
-            isExpired={isExpired}
-            isLimitReached={isLimitReached}
-            turnCount={attempt.turns.length}
-            generalError={generalError}
-            textareaRef={textareaRef}
-            inputMode={inputMode}
-            onInputModeChange={setInputMode}
-            hasVoiceDraft={hasVoiceDraft}
-            microphoneLevel={microphoneLevel}
-            language={attempt.language ?? "en"}
-            onChangeText={setComposerText}
-            onSendTurn={(text, method) => void handleSendTurn(text, method)}
-            onVoiceStatusChange={setVoiceStatus}
-            onVoiceTranscriptReady={() => {
-              setHasVoiceDraft(true);
-            }}
-            onMicrophoneLevelChange={setMicrophoneLevel}
-          />
+              <SimulationComposer
+                attemptId={attempt.id}
+                composerText={composerText}
+                sendingTurn={sendingTurn}
+                isComposerDisabled={composerDisabled}
+                isExpired={isExpired}
+                isLimitReached={isLimitReached}
+                turnCount={attempt.turns.length}
+                generalError={generalError}
+                textareaRef={textareaRef}
+                inputMode={inputMode}
+                onInputModeChange={setInputMode}
+                hasVoiceDraft={hasVoiceDraft}
+                microphoneLevel={microphoneLevel}
+                language={attempt.language ?? "en"}
+                onChangeText={setComposerText}
+                onSendTurn={(text, method) => void handleSendTurn(text, method)}
+                onVoiceStatusChange={setVoiceStatus}
+                onVoiceTranscriptReady={() => {
+                  setHasVoiceDraft(true);
+                }}
+                onMicrophoneLevelChange={setMicrophoneLevel}
+              />
+            </>
+          )}
 
           <TranscriptDrawer
             open={transcriptOpen}
