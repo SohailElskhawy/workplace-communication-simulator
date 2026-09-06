@@ -1,5 +1,8 @@
 # ARCHITECTURE.md
 
+> September 6 reconciliation: read [REDESIGN_TECHNICAL_DECISIONS.md](REDESIGN_TECHNICAL_DECISIONS.md) for verified source versus approved target. It supersedes older English-only, custom paid-gate, ElevenLabs/RealtimeConversation and Kokoro-only TTS descriptions below. Remaining lifecycle, ownership, scoring and privacy rules stay authoritative. Redesign implementation is pending; no new DTO/migration is claimed by this documentation update.
+
+
 ## 1. System Overview
 
 Release 1 uses a small modular monorepo with two deployable applications:
@@ -261,7 +264,7 @@ and roleplay/evaluation resolve it for the whole attempt. Selection is
 deterministic application logic — no extra AI call.
 
 Custom Interview Scenarios:
-- Authenticated users on PLUS or PRO plans can upload a candidate CV (PDF) and target Job Description.
+- Approved testing target: all authenticated users can upload a CV PDF and job description, within existing validation/rate limits; simulation starts share the three-per-rolling-week allowance. Verify route-level access in M03.
 - The CV is parsed strictly in-memory using `unpdf` and is never persisted to disk or DB.
 - OpenRouter generates a structured, Zod-validated `ScenarioDefinition` strictly grounded in CV facts and JD requirements.
 - Custom scenarios are stored in PostgreSQL with `userId: owner_id`, `category: "CUSTOM"`, and `isActive: true`.
@@ -661,7 +664,7 @@ Agents must preserve these:
 
 ---
 
-## 21. Current Development Target
+## 21. Original Development Target (historical)
 
 First vertical slice:
 

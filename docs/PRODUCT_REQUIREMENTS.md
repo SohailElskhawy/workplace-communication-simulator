@@ -6,8 +6,10 @@
 
 A deliberate-practice web application for students and early-career professionals to rehearse difficult workplace conversations with adaptive AI, receive evidence-linked coaching, retry, and improve over time.
 
-**Release 1 deadline:** September 3, 2026  
-**Release 1 language:** English only
+**Original Release 1 target:** September 3, 2026 (historical); redesign date pending.
+**Release 1 languages:** English and Arabic across the full experience. Friendly Modern Standard Arabic UI, Egyptian/Gulf practice options.
+
+The approved September 6 target is detailed in [REDESIGN_PLAN.md](REDESIGN_PLAN.md) and [DESIGN.md](DESIGN.md). Implementation status remains in PROJECT_STATE.md.
 
 Core loop:
 
@@ -45,7 +47,7 @@ Exactly six curated scenarios:
 5. Giving difficult feedback to a teammate
 6. Handling scope creep / saying no professionally
 
-No user-generated scenarios in Release 1.
+Owner-scoped custom interviews generated from a CV PDF and job description are also supported. Arbitrary custom workplace-scenario generation is not included.
 
 Each scenario must define:
 - situation/context;
@@ -319,6 +321,10 @@ Must ship:
 - text simulation;
 - push-to-talk transcription;
 - adaptive AI roleplay;
+- full English/Arabic UI and coaching coverage;
+- discoverable owner-scoped CV/JD custom interviews;
+- static fictional counterpart portraits and visible call transcript;
+- free testing access with three shared rolling-week simulation starts;
 - optional non-blocking TTS;
 - session lifecycle;
 - structured evaluation;
@@ -353,10 +359,10 @@ Must ship:
 ## 16. P2 / Post-MVP
 
 Do not implement during Release 1:
-- Arabic or multilingual support;
-- custom/user-generated scenarios;
-- realtime speech-to-speech;
-- avatars/video;
+- languages beyond English/Arabic;
+- arbitrary custom scenarios beyond CV/JD interviews;
+- new external realtime speech-to-speech infrastructure;
+- animated/lip-synced avatars and learner video;
 - live meeting analysis;
 - multiplayer;
 - teams;
@@ -423,9 +429,21 @@ Release 1 is functionally complete when an authenticated learner can:
 
 If this loop is not stable, Release 1 is not done.
 
+### September 6 redesign acceptance additions
+
+- After sign-in, users reach practice selection with all six scenarios directly discoverable and a clear CV/JD custom interview path. Recommendation is an ordinary card badge, never a preselected dominant path.
+- Complete light-only Concept A experience in Arabic/English, including auth, errors, quota, setup, generated feedback, history and progress. Desktop/mobile and mixed-direction content remain readable.
+- All authenticated testers can create/use custom interviews without upgrade prompts. Three starts per rolling seven days are shared across curated/custom/retry attempts; generation alone and failed-turn/evaluation recovery do not consume another start. Preserve atomic quota and deletion invariants.
+- Portrait-based call workspace always exposes transcript. On mobile the composer has its own full-width row and microphone its own row; playback control sits by speaking status. Keyboard and safe area do not obscure controls/messages.
+- PTT can interrupt assistant playback safely, with text fallback and existing review preference. Existing continuous-call behavior is audited, not silently removed.
+- Fixed fictional adult portraits are clearly AI-labeled and match counterpart role/voice. No learner camera or animated face.
+- Coaching order is summary/score, strengths/improvements, grounded examples, skills/objectives, focused retry. Canonical scoring, turn evidence and historical attempts are unchanged.
+
+These are approved targets, not assertions that the current deployment passes them. Full milestone exits are in REDESIGN_PLAN.md.
+
 ---
 
-## 19. Current Development Priority
+## 19. Original Development Priority (historical)
 
 First vertical slice:
 

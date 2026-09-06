@@ -1,5 +1,8 @@
 # API_CONTRACT.md
 
+> September 6 reconciliation: read [REDESIGN_TECHNICAL_DECISIONS.md](REDESIGN_TECHNICAL_DECISIONS.md) for verified source versus approved target. It supersedes older English-only, custom paid-gate, ElevenLabs/RealtimeConversation and Kokoro-only TTS descriptions below. Remaining lifecycle, ownership, scoring and privacy rules stay authoritative. Redesign implementation is pending; no new DTO/migration is claimed by this documentation update.
+
+
 ## 1. Base Contract
 
 Base path:
@@ -212,7 +215,7 @@ Creates an owner-scoped custom interview scenario from an uploaded candidate CV 
 
 Requirements & Gating:
 - Authenticated user required (`401 UNAUTHENTICATED` if missing).
-- Plan entitlement must be `PLUS` or `PRO` (`403 PLAN_UPGRADE_REQUIRED` if `FREE`).
+- Historical paid policy: PLUS/PRO only. Approved testing target supersedes it: all authenticated testers can generate custom interviews without a paid gate. Verify actual source/route behavior and implement any necessary change in M03; three shared simulation starts still apply at attempt creation.
 - Multipart form body: `cv` (PDF file, <= 5MB) and `jobDescription` (text, 50 to 20,000 characters).
 - CV is parsed strictly in-memory and never persisted to disk or database.
 - AI generates a Zod-validated `ScenarioDefinition` grounded exclusively in CV facts and JD requirements.
@@ -975,7 +978,9 @@ Add voice, history, progress, comparison, and deletion after this slice works en
 
 ---
 
-## 27. Realtime Voice and Canonical Transcript Import
+## 27. Realtime Voice and Canonical Transcript Import (historical, removed)
+
+The ElevenLabs endpoints below are obsolete after September 5; they are not the current voice contract. Existing internal continuous call reuses transcription/turn/TTS calls. See REDESIGN_TECHNICAL_DECISIONS.md; do not rebuild these endpoints for call-style presentation.
 
 ElevenLabs realtime voice is enabled only when the server-only settings
 `ELEVENLABS_API_KEY`, `ELEVENLABS_AGENT_ID`, and `ELEVENLABS_TOOL_SECRET` are

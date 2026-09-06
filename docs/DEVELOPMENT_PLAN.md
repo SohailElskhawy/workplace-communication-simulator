@@ -1,5 +1,7 @@
 # DEVELOPMENT_PLAN.md
 
+> Historical baseline. The user-approved September 6 [redesign plan](REDESIGN_PLAN.md), [design specification](DESIGN.md), and [technical reconciliation](REDESIGN_TECHNICAL_DECISIONS.md) supersede conflicting scope, style and task ordering here. Preserve this document as prior milestone/audit history.
+
 ## Goal
 
 Implement Release 1 safely and incrementally by completing one working vertical slice first, then layering remaining P0 features.

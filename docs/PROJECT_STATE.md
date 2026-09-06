@@ -6,8 +6,8 @@
 
 A production-quality web application for students and early-career professionals to practice difficult workplace conversations with adaptive AI, receive structured coaching, retry, and track communication improvement.
 
-**Deadline:** September 3, 2026  
-**Current SDLC Phase:** Development
+**Original target:** September 3, 2026 (historical); redesign delivery date pending.
+**Current SDLC Phase:** Development; approved redesign planning completed, implementation not started by this task.
 
 ---
 
@@ -21,7 +21,19 @@ A production-quality web application for students and early-career professionals
 - Deployment — not started
 - Monitoring — not started
 
-Do not reopen approved product or architecture decisions unless a concrete blocker threatens the deadline or core loop.
+Do not reopen approved decisions without explicit product authorization. The user explicitly authorized the September 6 full UI/UX redesign and scope changes described below.
+
+## September 6 — Approved redesign planning milestone
+
+- Selected Warm Coral Concept A; light-only full Arabic/English experience and new Kalemny / كلمني logo direction.
+- Approved practice-first navigation, equal discoverability of all six scenarios, prominent CV/JD custom interviews and restrained recommendation badges.
+- Approved free testing access to all scenario types with three combined starts per rolling seven days; paid launch policy deferred. Actual enforcement must be verified in M03.
+- Approved static realistic fictional counterparts, call-style workspace and visible transcript. Mobile correction: separate full-width composer and mic rows, playback action near status, compact portrait and keyboard/safe-area space.
+- Approved supportive evidence-linked coaching results, followed by skills/objectives and focused retry.
+- Saved selected concept boards under `docs/design-concepts/`; generated text, logo, scores and mobile footer are references requiring the documented corrections.
+- Added [phases and tasks](REDESIGN_PLAN.md), [Warm Coral specification](WARM_CORAL_DESIGN.md), and [technical reconciliation](REDESIGN_TECHNICAL_DECISIONS.md). Updated source-of-truth entry points; preserved prior design/audit history.
+- This milestone changes documentation/assets only. No application code, migrations, environment, live access policy or deployment changed. M01–M09 remain pending. Validation: local-link/asset checks and diff review. Prettier could not run because the repository executable is unavailable; runtime tests belong to implementation milestones.
+
 
 ---
 
@@ -434,4 +446,4 @@ Some of these documents may not exist yet. Do not invent missing requirements; u
 
 ## Current Next Task
 
-Run the authenticated Milestone 13 core-loop smoke test in staging with valid Clerk, Neon, and OpenRouter configuration. If it passes with no release-blocking defect, record the evidence here, freeze features, and move formally from Development to Testing.
+Next authorized implementation work should start with M01 in REDESIGN_PLAN.md: baseline audit, final logo/font/token specification and corrected mobile states. Application implementation still requires the user to start that work. Preserve the outstanding authenticated core-loop staging smoke test as the M09 release gate; do not mark Testing, deployment, or any redesign milestone complete without evidence.

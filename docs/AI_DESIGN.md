@@ -1,5 +1,8 @@
 # AI_DESIGN.md
 
+> September 6 reconciliation: read [REDESIGN_TECHNICAL_DECISIONS.md](REDESIGN_TECHNICAL_DECISIONS.md) for verified source versus approved target. It supersedes older English-only, custom paid-gate, ElevenLabs/RealtimeConversation and Kokoro-only TTS descriptions below. Remaining lifecycle, ownership, scoring and privacy rules stay authoritative. Redesign implementation is pending; no new DTO/migration is claimed by this documentation update.
+
+
 ## 1. Purpose
 
 Defines Release 1 AI behavior and contracts.
@@ -817,7 +820,7 @@ Agents must preserve:
 
 ---
 
-## 26. Current Development Priority
+## 26. Original Development Priority (historical)
 
 Implement AI only for the first vertical slice:
 

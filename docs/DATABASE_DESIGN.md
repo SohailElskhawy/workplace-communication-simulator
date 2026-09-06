@@ -1,5 +1,8 @@
 # DATABASE_DESIGN.md
 
+> September 6 reconciliation: read [REDESIGN_TECHNICAL_DECISIONS.md](REDESIGN_TECHNICAL_DECISIONS.md) for verified source versus approved target. It supersedes older English-only, custom paid-gate, ElevenLabs/RealtimeConversation and Kokoro-only TTS descriptions below. Remaining lifecycle, ownership, scoring and privacy rules stay authoritative. Redesign implementation is pending; no new DTO/migration is claimed by this documentation update.
+
+
 ## 1. Database
 
 Use:
@@ -137,6 +140,8 @@ SimulationAttempt
 - variationId         string nullable
 - difficulty          enum
 - interactionMode     enum (default PUSH_TO_TALK)
+- language            string (en/ar; default en)
+- dialect             string nullable (EGYPTIAN/GULF; English persists null)
 - status              enum
 - startedAt           timestamp
 - endedAt             timestamp nullable
@@ -265,7 +270,9 @@ sequence >= 1
 
 ---
 
-## 8a. RealtimeConversation
+## 8a. RealtimeConversation (historical, removed September 5)
+
+This section and references to this table below are historical only. The current Prisma schema has no RealtimeConversation model; do not recreate it for the redesign.
 
 ```text
 RealtimeConversation

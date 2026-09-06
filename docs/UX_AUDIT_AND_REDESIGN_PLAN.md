@@ -1,5 +1,7 @@
 # Kalemny UI/UX audit and redesign plan
 
+> Historical baseline. The user-approved September 6 [redesign plan](REDESIGN_PLAN.md), [design specification](DESIGN.md), and [technical reconciliation](REDESIGN_TECHNICAL_DECISIONS.md) supersede conflicting scope, style and task ordering here. Preserve this document as prior milestone/audit history.
+
 Date: 2026-09-04
 
 ## Audit scope
