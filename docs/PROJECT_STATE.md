@@ -405,6 +405,15 @@ corepack pnpm prisma:generate
   - Cleaned up obsolete realtime feature flags, routes, repositories, and uninstalled `@elevenlabs/react` from the monorepo;
   - Verified with 467 tests across 70 test files passing, 100% clean monorepo typecheck, 0 ESLint warnings/errors, and successful Next.js production build.
 
+31. September 6 in-house continuous hands-free Live Call mode (VAD + Interruption):
+  - Built an in-house, zero-vendor-cost continuous hands-free voice call mode (`REALTIME`) alongside `PUSH_TO_TALK`, delivering natural spoken conversation without external telephony or third-party realtime voice vendors;
+  - Created `PracticeModeSelector` on the scenario setup screen allowing learners to choose between "Push-to-Talk" (`PUSH_TO_TALK`) and "Live Call (Hands-Free)" (`REALTIME`), with full bilingual (English & Arabic) metadata and badges;
+  - Created `useContinuousLiveCall` React hook powering the hands-free loop: continuous microphone capture via Web Audio `MicrophoneLevelMeter`, automatic silence detection via `MicrophoneSilenceDetector` (1.8s silence window), auto-slicing and sending audio to Whisper STT, exchanging turns with OpenRouter roleplay, and streaming neural counterpart speech via internal Edge-TTS;
+  - Engineered client-side barge-in / natural interruption: when the learner speaks while the counterpart is speaking (sustained speech detection), audio playback instantly terminates, resets, and switches to user recording mode;
+  - Built `LiveCallStage` featuring a call lobby, live animated `ConversationOrb`, call timer, interruption counter, live turn counter, real-time speech subtitles, mute/unmute control, manual interrupt button, transcript drawer trigger, and call termination dialog;
+  - Fully localized in English LTR and Arabic RTL (`dir="rtl"`), supporting both Egyptian and Gulf dialects seamlessly;
+  - Verified with 473 tests across 72 test files passing (including new unit tests for `PracticeModeSelector` and `LiveCallStage`), 100% clean monorepo typecheck, 0 ESLint warnings/errors, and successful Next.js production build.
+
 
 
 ## Source-of-Truth Docs
