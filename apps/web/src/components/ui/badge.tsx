@@ -2,12 +2,14 @@ import type { HTMLAttributes } from "react";
 
 import { cn } from "@/lib/cn";
 
-type BadgeTone = "default" | "success" | "alert" | "analysis";
+export type BadgeTone = "default" | "coral" | "success" | "alert" | "analysis";
+
 const toneClasses: Record<BadgeTone, string> = {
-  default: "border-border-subtle bg-surface-subtle text-foreground",
-  success: "border-success/20 bg-success/10 text-success",
-  alert: "border-alert/20 bg-alert/10 text-alert",
-  analysis: "border-analysis/20 bg-analysis/10 text-analysis",
+  default: "border-border bg-surface-subtle text-muted-foreground",
+  coral: "border-border-active/40 bg-selected-surface text-primary font-semibold",
+  success: "border-success/25 bg-success-surface text-success-foreground font-semibold",
+  alert: "border-alert/25 bg-alert-surface text-alert-foreground font-semibold",
+  analysis: "border-analysis/25 bg-analysis-surface text-analysis-foreground font-semibold",
 };
 
 export function Badge({
@@ -18,7 +20,7 @@ export function Badge({
   return (
     <span
       className={cn(
-        "inline-flex min-h-7 items-center rounded-full border px-2.5 py-1 text-xs font-medium leading-none",
+        "inline-flex min-h-7 items-center rounded-pill border px-2.5 py-1 text-xs leading-none select-none",
         toneClasses[tone],
         className,
       )}

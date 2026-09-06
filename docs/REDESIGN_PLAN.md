@@ -22,10 +22,10 @@
 - [x] R05 Map all primary application screens to Warm Coral layout and reviewed copy.
 
 ### Phase 2 — Shared Architecture
-#### M02 — Bilingual Shell & Primitives
-- [ ] R06 Implement light-only tokens, CSS variables, and semantic primitives (Button, Card, Badge, Dialog).
-- [ ] R07 Implement bilingual layout shell, direction handling (LTR/RTL), and locale switching.
-- [ ] R08 Update global navigation (header, mobile drawer, practice/history/progress links).
+#### M02 — Bilingual Shell & Primitives (Completed)
+- [x] R06 Implement light-only tokens, CSS variables, and semantic primitives (Button, Card, Badge, Dialog).
+- [x] R07 Implement bilingual layout shell, direction handling (LTR/RTL), and locale switching.
+- [x] R08 Update global navigation (header, mobile drawer, practice/history/progress links).
 
 #### M03 — Backend & Testing Entitlements
 - [ ] R09 Update entitlement service to enforce 3 free simulation starts per rolling 7 days across curated + custom scenarios.

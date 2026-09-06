@@ -1,23 +1,7 @@
-import type { HTMLAttributes } from "react";
+import { Card, type CardProps } from "./card";
 
-import { cn } from "@/lib/cn";
+export type GlassCardProps = CardProps;
 
-export interface GlassCardProps extends HTMLAttributes<HTMLDivElement> {
-  as?: "div" | "section" | "article";
-}
-
-export function GlassCard({
-  as: Component = "div",
-  className,
-  ...props
-}: GlassCardProps) {
-  return (
-    <Component
-      className={cn(
-        "rounded-card border border-border-subtle bg-surface-solid p-5 shadow-xs sm:p-8",
-        className,
-      )}
-      {...props}
-    />
-  );
+export function GlassCard(props: GlassCardProps) {
+  return <Card {...props} />;
 }

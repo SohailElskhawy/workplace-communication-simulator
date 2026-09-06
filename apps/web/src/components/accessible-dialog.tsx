@@ -82,11 +82,11 @@ export function AccessibleDialog({
         aria-labelledby={titleId}
         aria-describedby={descriptionId}
         tabIndex={-1}
-        className="flex max-h-[92dvh] w-full max-w-md flex-col overflow-y-auto rounded-card border border-border bg-surface-solid p-5 shadow-brutal outline-none sm:p-7"
+        className="flex max-h-[92dvh] w-full max-w-md flex-col overflow-y-auto rounded-card border border-border bg-surface-solid p-5 shadow-overlay outline-none sm:p-7"
       >
         <h2
           id={titleId}
-          className="font-display text-xl font-semibold text-foreground sm:text-2xl"
+          className="font-sans text-xl font-bold tracking-tight text-foreground sm:text-2xl"
         >
           {title}
         </h2>
