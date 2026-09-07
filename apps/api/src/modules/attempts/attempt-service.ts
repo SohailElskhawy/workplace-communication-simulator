@@ -242,6 +242,7 @@ function mapScenario(
   language: SupportedLanguage = "en",
 ) {
   let openingMessage: string | undefined;
+  let titleAr: string | undefined;
   const parsed = ScenarioDefinitionSchema.safeParse(scenario.definition);
   if (parsed.success) {
     const variation = resolveScenarioVariation(parsed.data, variationId);
@@ -252,11 +253,13 @@ function mapScenario(
           variation?.openingMessage ??
           parsed.data.openingMessage)
         : (variation?.openingMessage ?? parsed.data.openingMessage);
+    titleAr = parsed.data.titleAr;
   }
   return {
     key: scenario.key,
     version: scenario.version,
-    title: scenario.title,
+    title: language === "ar" && titleAr ? titleAr : scenario.title,
+    ...(titleAr ? { titleAr } : {}),
     ...(openingMessage ? { openingMessage } : {}),
   };
 }

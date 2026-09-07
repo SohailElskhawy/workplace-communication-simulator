@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import type { Difficulty } from "@kalemny/contracts";
+import type { ArabicDialect, Difficulty, SupportedLanguage } from "@kalemny/contracts";
 
 import type {
   ScenarioDefinition,
@@ -28,6 +28,8 @@ export interface EvaluationPromptInput {
   difficulty: Difficulty;
   turns: EvaluationTranscriptTurn[];
   variation?: ScenarioVariation | null;
+  language?: SupportedLanguage | undefined;
+  dialect?: ArabicDialect | null | undefined;
 }
 
 export interface EvaluationMessage {
@@ -140,6 +142,7 @@ export function buildEvaluationMessages(
 ): EvaluationMessage[] {
   const { scenario, difficulty, turns } = input;
   const variation = input.variation ?? null;
+  const isArabic = input.language === "ar";
 
   const systemMessage = [
     `Workplace simulation evaluation prompt version: ${EVALUATION_PROMPT_VERSION}`,
@@ -147,6 +150,19 @@ export function buildEvaluationMessages(
     "ROLE AND RESPONSIBILITY",
     "You are an expert workplace communication coach. Your role is to provide an objective, evidence-based, structured evaluation of the learner's communication performance during a workplace simulation.",
     "Do NOT judge whether the roleplay counterpart agreed; evaluate the learner's communication effectiveness, skills, and objective attainment.",
+    "",
+    "FEEDBACK LANGUAGE REQUIREMENT",
+    isArabic
+      ? [
+          "The practice conversation was conducted in Arabic. You MUST provide all evaluation feedback in clear, professional Modern Standard Arabic (العربية الفصحى).",
+          "- All natural-language text fields (skill explanations, objective explanations, strength titles and explanations, improvement titles and explanations, coaching moment explanations, suggested betterResponse phrases, summary, and nextFocus reason) MUST be written in Arabic.",
+          "- Keep all schema keys, objective IDs, turn IDs, and enum values (ACHIEVED, PARTIALLY_ACHIEVED, MISSED, STRENGTH, IMPROVEMENT, MISSED_OPPORTUNITY, CLARITY, ASSERTIVENESS, EMPATHY, STRUCTURE, CONCISENESS) exactly as defined in the English JSON schema.",
+          "- Any betterResponse suggested rewrite must be natural, professional workplace Arabic appropriate for the scenario and counterpart.",
+        ].join("\n")
+      : [
+          "The practice conversation was conducted in English. You MUST provide all evaluation feedback in professional English.",
+          "- Keep all schema keys, objective IDs, turn IDs, and enum values exactly as defined in the English JSON schema.",
+        ].join("\n"),
     "",
     "UNIVERSAL COMMUNICATION RUBRIC (Each scored 0-100 integer)",
     "Guidance bands: 0-39: weak, 40-59: developing, 60-74: competent, 75-89: strong, 90-100: exceptional.",
@@ -157,15 +173,33 @@ export function buildEvaluationMessages(
     "- Conciseness: Economy of words, high signal-to-noise ratio, avoiding rambling, tangents, or over-explaining.",
     "",
     "SCENARIO INFORMATION",
-    `Title: ${scenario.title}`,
-    `Learner Role: ${scenario.publicContext.userRole}`,
-    `Counterpart Role: ${scenario.persona.role}`,
-    `Situation: ${variation?.situation ?? scenario.publicContext.description}`,
-    `Learner Objective: ${scenario.publicContext.userObjective}`,
-    ...(variation
-      ? [`Counterpart opening message: ${variation.openingMessage}`]
-      : []),
-    `Difficulty: ${difficulty}`,
+    isArabic
+      ? [
+          `Title: ${scenario.titleAr ?? scenario.title}`,
+          `Learner Role: ${scenario.publicContext.userRoleAr ?? scenario.publicContext.userRole}`,
+          `Counterpart Role: ${scenario.publicContext.aiRoleAr ?? scenario.persona.role}`,
+          `Situation: ${variation?.situation ?? scenario.publicContext.descriptionAr ?? scenario.publicContext.description}`,
+          `Learner Objective: ${scenario.publicContext.userObjectiveAr ?? scenario.publicContext.userObjective}`,
+          ...(variation
+            ? [
+                `Counterpart opening message: ${variation.openingMessageAr ?? variation.openingMessage}`,
+              ]
+            : []),
+          `Difficulty: ${difficulty}`,
+          `Language: Arabic${input.dialect ? ` (${input.dialect})` : ""}`,
+        ].join("\n")
+      : [
+          `Title: ${scenario.title}`,
+          `Learner Role: ${scenario.publicContext.userRole}`,
+          `Counterpart Role: ${scenario.persona.role}`,
+          `Situation: ${variation?.situation ?? scenario.publicContext.description}`,
+          `Learner Objective: ${scenario.publicContext.userObjective}`,
+          ...(variation
+            ? [`Counterpart opening message: ${variation.openingMessage}`]
+            : []),
+          `Difficulty: ${difficulty}`,
+          `Language: English`,
+        ].join("\n"),
     "",
     "SCENARIO OBJECTIVES TO EVALUATE",
     ...scenario.objectives.map((obj) =>

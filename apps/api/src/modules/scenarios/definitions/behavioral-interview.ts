@@ -8,18 +8,28 @@ export const behavioralInterviewV1: ScenarioDefinition =
     key: "behavioral-interview",
     version: 1,
     title: "Behavioral Interview",
+    titleAr: "المقابلة الوظيفية السلوكية",
     category: "INTERVIEW",
     summary:
       "Practice answering behavioral interview questions with clear, relevant evidence.",
+    summaryAr: "أجب عن الأسئلة الموقفية الصعبة باستخدام نموذج STAR باحترافية.",
     publicContext: {
       description:
         "You are interviewing for an early-career role. The interviewer wants concrete examples of how you handled challenges, worked with others, and learned from experience.",
+      descriptionAr:
+        "أنت في مقابلة لوظيفة في بداية مسارك المهني، ويريد المحاور أمثلة ملموسة عن كيفية تعاملك مع التحديات والعمل مع الآخرين والتعلم من التجارب.",
       userRole: "The job candidate",
+      userRoleAr: "المتقدم للوظيفة",
       aiRole: "The hiring manager conducting the interview",
+      aiRoleAr: "مدير التوظيف الذي يجري المقابلة",
       userObjective:
         "Give a focused, credible behavioral example and connect it to the role.",
+      userObjectiveAr:
+        "تقديم مثال سلوكي مركّز وموثوق وربطه بمتطلبات الوظيفة.",
       stakes:
         "Your answers will shape whether the interviewer believes you can handle the role's responsibilities.",
+      stakesAr:
+        "ستحدد إجاباتك ما إذا كان المحاور سيثق بقدرتك على تولي مسؤوليات الوظيفة.",
     },
     persona: {
       role: "Hiring manager and interviewer",

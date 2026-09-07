@@ -20,21 +20,35 @@ export function createPrismaScenarioRepository(
   prisma: PrismaClient,
 ): ScenarioRepository {
   return {
-    listActive(userId?: string): Promise<ScenarioSummaryRecord[]> {
-      return prisma.scenario.findMany({
+    async listActive(userId?: string): Promise<ScenarioSummaryRecord[]> {
+      const records = await prisma.scenario.findMany({
         where: {
           isActive: true,
           OR: [{ userId: null }, ...(userId ? [{ userId }] : [])],
         },
         orderBy: [{ createdAt: "desc" }, { title: "asc" }],
-        select: summarySelection,
+        select: { ...summarySelection, definition: true },
+      });
+
+      return records.map((record) => {
+        const def = record.definition as Record<string, unknown> | null;
+        return {
+          key: record.key,
+          version: record.version,
+          title: record.title,
+          titleAr: typeof def?.titleAr === "string" ? def.titleAr : null,
+          category: record.category,
+          summary: record.summary,
+          summaryAr: typeof def?.summaryAr === "string" ? def.summaryAr : null,
+          userId: record.userId,
+        };
       });
     },
-    findActiveByKey(
+    async findActiveByKey(
       key: string,
       userId?: string,
     ): Promise<ScenarioDetailRecord | null> {
-      return prisma.scenario.findFirst({
+      const record = await prisma.scenario.findFirst({
         where: {
           key,
           isActive: true,
@@ -42,6 +56,23 @@ export function createPrismaScenarioRepository(
         },
         select: { ...summarySelection, definition: true },
       });
+
+      if (!record) {
+        return null;
+      }
+
+      const def = record.definition as Record<string, unknown> | null;
+      return {
+        key: record.key,
+        version: record.version,
+        title: record.title,
+        titleAr: typeof def?.titleAr === "string" ? def.titleAr : null,
+        category: record.category,
+        summary: record.summary,
+        summaryAr: typeof def?.summaryAr === "string" ? def.summaryAr : null,
+        userId: record.userId,
+        definition: record.definition,
+      };
     },
     async createCustomScenario(
       input: CreateCustomScenarioRepositoryInput,

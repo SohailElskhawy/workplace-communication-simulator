@@ -5,14 +5,15 @@
 
 ## Status
 - **Phase**: Development (Bilingual Warm Coral Redesign)
-- **Active Milestone**: M03 — Backend & Testing Entitlements ([REDESIGN_PLAN.md](REDESIGN_PLAN.md))
+- **Active Milestone**: M04 — Discovery & Setup ([REDESIGN_PLAN.md](REDESIGN_PLAN.md))
 - **Completed**:
   - M01 — Design Foundation & Tokens (R01–R05 complete: audits, vector logo mark & bilingual lockups, token spec in WARM_CORAL_DESIGN.md, mobile simulator state budgets, screen mapping & copy inventory)
   - M02 — Bilingual Shell & Primitives (R06–R08 complete: Warm Coral light-only tokens & CSS vars in globals.css, Button/Card/Badge/Dialog primitives, LocaleProvider & dynamic LTR/RTL switching, BrandLogo & responsive bilingual AppHeader navigation)
-- **Next Task**: R09–R12 in `REDESIGN_PLAN.md` (entitlement service rolling 7-day quota enforcement across curated + custom, feedback language handling, server-authoritative remaining quota exposure, localized scenario metadata)
+  - M03 — Backend & Testing Entitlements (R09–R12 complete: entitlement service enforcing 3 free simulation starts per rolling 7-day window across curated + custom scenarios, evaluation prompt feedback language handling for Arabic MSA / English, dedicated `/api/v1/entitlements` route and client integration, localized scenario metadata across all 6 curated definitions and frontend briefing cards)
+- **Next Task**: R13–R15 in `REDESIGN_PLAN.md` (M04 — Discovery & Setup: Redesign `/app` practice selection cards, scenario briefing modal, and custom interview CV/JD generation wizard)
 - **Testing Policy**: All scenario types free with 3 combined starts per rolling 7 days.
 
-## Verified Baseline (485 tests passing)
+## Verified Baseline (502 tests passing)
 - **Auth**: Clerk JWT validation + lazy local user provisioning.
 - **Scenarios**: 6 curated immutable scenarios + owner-scoped custom interview generation from in-memory CV PDF & JD.
 - **Simulation**: Push-to-talk (Whisper STT) and continuous hands-free call mode (`REALTIME` with VAD/interruption). Text fallback always available.

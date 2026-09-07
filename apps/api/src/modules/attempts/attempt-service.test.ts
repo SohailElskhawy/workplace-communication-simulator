@@ -1013,6 +1013,8 @@ describe("attempt service", () => {
       expect(attempt.scenario.openingMessage).toBe(
         "شكراً على وقتك. حابب أكون صريح معاك من الأول قبل ما نتكلم: الراتب المحدد للوظيفة دي تم اعتماده عند الحد الأقصى للميزانية، والعرض الحالي قريب جداً منه. مع ذلك، حابب أسمع إيه اللي كان في بالك ونشوف.",
       );
+      expect(attempt.scenario.title).toBe("التفاوض على الراتب");
+      expect(attempt.scenario.titleAr).toBe("التفاوض على الراتب");
     });
 
     it("creates Arabic attempt with explicit Gulf dialect", async () => {

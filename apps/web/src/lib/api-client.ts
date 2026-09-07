@@ -4,6 +4,7 @@ import {
   AttemptDetailResponseSchema,
   CreateAttemptResponseSchema,
   CreateCustomScenarioResponseSchema,
+  EntitlementResponseSchema,
   EvaluationResponseSchema,
   FinishAttemptResponseSchema,
   HistoryResponseSchema,
@@ -22,6 +23,7 @@ import {
   type FinishAttemptResponse,
   type HistoryResponse,
   type MeResponse,
+  type PlanEntitlement,
   type ProgressData,
   type PublicScenarioDetail,
   type PublicScenarioSummary,
@@ -245,6 +247,18 @@ export function createApiClient(baseUrl: string) {
           token,
           { method: "GET" },
           MeResponseSchema,
+        ),
+      );
+    },
+
+    async fetchEntitlement(token: string): Promise<PlanEntitlement> {
+      return retryTransientRead(() =>
+        request(
+          baseUrl,
+          "/api/v1/entitlements",
+          token,
+          { method: "GET" },
+          EntitlementResponseSchema,
         ),
       );
     },

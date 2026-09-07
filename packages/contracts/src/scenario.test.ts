@@ -68,4 +68,34 @@ describe("scenario public contracts", () => {
       "availableDifficulties",
     ]);
   });
+
+  it("accepts localized Arabic scenario metadata in summary and context", () => {
+    const localized = {
+      key: "salary-negotiation",
+      version: 2,
+      title: "Salary Negotiation",
+      titleAr: "التفاوض على الراتب",
+      category: "NEGOTIATION",
+      summary: "Practice discussing compensation for a new role.",
+      summaryAr: "تفاوض بثقة على راتب عادل عند تلقي عرض عمل.",
+      context: {
+        description: "You have received a job offer.",
+        descriptionAr: "تلقيت عرض عمل لوظيفة ترغب بها.",
+        userRole: "The candidate",
+        userRoleAr: "المرشح",
+        aiRole: "The hiring manager",
+        aiRoleAr: "مدير التوظيف",
+        userObjective: "Negotiate a stronger compensation package.",
+        userObjectiveAr: "تقديم حجة مهنية واضحة لتحسين الراتب.",
+        stakes: "The offer is attractive, but below your target.",
+        stakesAr: "العرض جذاب لكنه أقل من طموحك.",
+      },
+      availableDifficulties: ["EASY", "MEDIUM", "HARD"] as const,
+    };
+
+    const parsed = ScenarioDetailResponseSchema.parse({ data: localized });
+    expect(parsed.data.titleAr).toBe("التفاوض على الراتب");
+    expect(parsed.data.summaryAr).toBe("تفاوض بثقة على راتب عادل عند تلقي عرض عمل.");
+    expect(parsed.data.context.descriptionAr).toBe("تلقيت عرض عمل لوظيفة ترغب بها.");
+  });
 });

@@ -24,6 +24,8 @@ describe("EvaluationService", () => {
     status: "EVALUATING",
     difficulty: "MEDIUM",
     variationId: null,
+    language: "en",
+    dialect: null,
     endedAt: new Date("2026-08-29T12:10:00.000Z"),
     scenario: {
       id: "scenario-1",
@@ -516,4 +518,71 @@ describe("EvaluationService", () => {
     ).rejects.toMatchObject({ code: "EVALUATION_IN_PROGRESS" });
     expect(aiService.evaluateSimulation).not.toHaveBeenCalled();
   });
+
+  it("forwards attempt language and dialect to aiService.evaluateSimulation", async () => {
+    const arabicAttempt: AttemptForEvaluationRecord = {
+      ...baseAttempt,
+      language: "ar",
+      dialect: "EGYPTIAN",
+    };
+    const repository: EvaluationRepository = {
+      claimEvaluation: vi
+        .fn()
+        .mockResolvedValue({ kind: "claimed", attempt: arabicAttempt }),
+      findAttemptForEvaluation: vi.fn(),
+      findExistingEvaluation: vi.fn(),
+      saveEvaluation: vi.fn().mockImplementation(async (input) => ({
+        id: "eval-1",
+        attemptId: input.attemptId,
+        clarity: input.clarity,
+        assertiveness: input.assertiveness,
+        empathy: input.empathy,
+        structure: input.structure,
+        conciseness: input.conciseness,
+        universalScore: input.universalScore,
+        scenarioScore: input.scenarioScore,
+        overallScore: input.overallScore,
+        objectiveResults: input.objectiveResults,
+        strengths: input.strengths,
+        improvements: input.improvements,
+        moments: input.moments,
+        nextFocusSkill: input.nextFocusSkill,
+        nextFocusReason: input.nextFocusReason,
+        summary: input.summary,
+        model: input.usage.model,
+        promptVersion: "evaluation-v2",
+        createdAt: new Date(),
+      })),
+      markEvaluationFailed: vi.fn(),
+    };
+    let capturedInput: unknown = null;
+    const aiService: AiService = {
+      roleplayModel: "deepseek/deepseek-v4-flash-0731",
+      evaluationModel: "openai/gpt-5.6-luna-pro",
+      transcriptionModel: "openai/whisper-large-v3-turbo",
+      ttsModel: "hexgrad/kokoro-82m",
+      generateSpeech: vi.fn(),
+      generateRoleplayReply: vi.fn(),
+      evaluateSimulation: vi.fn().mockImplementation(async (input) => {
+        capturedInput = input;
+        return {
+          evaluation: validRawEvaluation,
+          latencyMs: 1200,
+          inputTokens: 600,
+          outputTokens: 400,
+          estimatedCost: 0.01,
+        };
+      }),
+      transcribeAudio: vi.fn(),
+    };
+
+    const service = createEvaluationService(repository, aiService);
+    await service.evaluate(userId, attemptId);
+
+    expect(capturedInput).toMatchObject({
+      language: "ar",
+      dialect: "EGYPTIAN",
+    });
+  });
 });
+

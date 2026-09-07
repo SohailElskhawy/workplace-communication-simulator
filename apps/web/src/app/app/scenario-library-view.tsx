@@ -16,6 +16,7 @@ import {
 import { DeleteCustomScenarioDialog } from "@/components/scenarios/delete-custom-scenario-dialog";
 import { createApiClient } from "@/lib/api-client";
 import { cn } from "@/lib/cn";
+import { useLocale } from "@/lib/locale-context";
 
 export interface ScenarioVisualMeta {
   categoryLabel: string;
@@ -38,49 +39,61 @@ export const DEFAULT_MOCK_SCENARIOS: PublicScenarioSummary[] = [
     key: "salary-negotiation",
     version: 1,
     title: "Salary Negotiation",
+    titleAr: "التفاوض على الراتب",
     category: "NEGOTIATION",
     summary:
       "Advocate for your value while handling realistic compensation objections and budget constraints.",
+    summaryAr: "تفاوض بثقة على راتب عادل عند تلقي عرض عمل أو أثناء التقييم السنوي.",
   },
   {
     key: "behavioral-interview",
     version: 1,
     title: "Behavioral Job Interview",
+    titleAr: "المقابلة الوظيفية السلوكية",
     category: "INTERVIEW",
     summary:
       "Practice clear, confident answers to challenging interview questions with structured examples.",
+    summaryAr: "أجب عن الأسئلة الموقفية الصعبة باستخدام نموذج STAR باحترافية.",
   },
   {
     key: "promotion-request",
     version: 1,
     title: "Asking for a Promotion",
+    titleAr: "طلب ترقية",
     category: "CAREER_GROWTH",
     summary:
       "Make a grounded case for greater responsibility, recognition, and career progression.",
+    summaryAr: "قدّم حيثيات مقنعة ومستندة إلى إنجازاتك للحصول على ترقيتك المستحقة.",
   },
   {
     key: "manager-pushback",
     version: 1,
     title: "Disagree with Your Manager",
+    titleAr: "مناقشة الأولويات مع المدير",
     category: "MANAGING_UP",
     summary:
       "Push back on an unrealistic deadline while protecting trust, clarity, and alignment.",
+    summaryAr: "وازن التوقعات ودافع عن مواعيد واقعية عند تراكم ضغط العمل.",
   },
   {
     key: "difficult-feedback",
     version: 1,
     title: "Difficult Feedback",
+    titleAr: "تقديم ملاحظات بناءة",
     category: "FEEDBACK",
     summary:
       "Give direct, constructive feedback without creating unnecessary defensiveness or conflict.",
+    summaryAr: "وجّه ملاحظات حساسة لفريقك بتعاطف ووضوح بنّاء ومثمر.",
   },
   {
     key: "scope-creep",
     version: 1,
     title: "Saying No to Scope Creep",
+    titleAr: "إدارة توسع نطاق المشروع",
     category: "BOUNDARIES",
     summary:
       "Set firm project boundaries and negotiate priorities when new work appears late.",
+    summaryAr: "ضع حدوداً مهنية واضحة عندما تتجاوز طلبات العميل ما تم الاتفاق عليه.",
   },
 ];
 
@@ -232,6 +245,8 @@ export function ScenarioLibraryView({
     useState<PublicScenarioSummary | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const { locale } = useLocale();
+  const isArabic = locale === "ar";
 
   useEffect(() => {
     let mounted = true;
@@ -273,7 +288,10 @@ export function ScenarioLibraryView({
       const matchesSearch =
         !query ||
         scenario.title.toLowerCase().includes(query) ||
+        (scenario.titleAr && scenario.titleAr.toLowerCase().includes(query)) ||
         scenario.summary.toLowerCase().includes(query) ||
+        (scenario.summaryAr &&
+          scenario.summaryAr.toLowerCase().includes(query)) ||
         meta.tags.some((tag) => tag.toLowerCase().includes(query));
       return matchesCategory && matchesSearch;
     });
@@ -414,6 +432,12 @@ export function ScenarioLibraryView({
               const isRecommended = scenario.key === recommendedKey;
               const isCustom =
                 scenario.isCustom || scenario.category === "CUSTOM";
+              const title =
+                isArabic && scenario.titleAr ? scenario.titleAr : scenario.title;
+              const summary =
+                isArabic && scenario.summaryAr
+                  ? scenario.summaryAr
+                  : scenario.summary;
               return (
                 <article
                   key={scenario.key}
@@ -427,7 +451,7 @@ export function ScenarioLibraryView({
                     <div className="flex items-center gap-2">
                       {isRecommended && (
                         <span className="rounded-full bg-primary-muted px-2.5 py-1 text-[11px] font-semibold text-primary">
-                          Recommended
+                          {isArabic ? "موصى به" : "Recommended"}
                         </span>
                       )}
                       {isCustom && (
@@ -435,7 +459,7 @@ export function ScenarioLibraryView({
                           type="button"
                           onClick={() => setDeletingScenario(scenario)}
                           className="flex h-11 w-11 items-center justify-center rounded-full text-muted-foreground hover:bg-alert/5 hover:text-alert"
-                          aria-label={`Remove ${scenario.title}`}
+                          aria-label={`Remove ${title}`}
                         >
                           <TrashIcon className="h-4 w-4" />
                         </button>
@@ -445,10 +469,10 @@ export function ScenarioLibraryView({
 
                   <div className="mt-6 flex-1">
                     <h3 className="font-display text-2xl font-semibold text-foreground group-hover:text-primary">
-                      {scenario.title}
+                      {title}
                     </h3>
                     <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
-                      {scenario.summary}
+                      {summary}
                     </p>
                     <div className="mt-4 flex flex-wrap gap-2">
                       <span className="rounded-full border border-border-subtle px-2.5 py-1 text-xs text-muted-foreground">

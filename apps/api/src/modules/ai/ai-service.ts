@@ -42,6 +42,8 @@ export interface EvaluateSimulationInput {
   difficulty: Difficulty;
   turns: EvaluationTranscriptTurn[];
   variation?: ScenarioVariation | null;
+  language?: SupportedLanguage | undefined;
+  dialect?: ArabicDialect | null | undefined;
 }
 
 export interface GenerateCustomScenarioInput {

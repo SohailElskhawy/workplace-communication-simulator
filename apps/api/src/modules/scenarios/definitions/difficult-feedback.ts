@@ -8,18 +8,28 @@ export const difficultFeedbackV1: ScenarioDefinition =
     key: "difficult-feedback",
     version: 1,
     title: "Difficult Teammate Feedback",
+    titleAr: "تقديم ملاحظات بناءة",
     category: "FEEDBACK",
     summary:
       "Practice giving candid, respectful feedback to a teammate about behavior affecting the team.",
+    summaryAr: "وجّه ملاحظات حساسة لفريقك بتعاطف ووضوح بنّاء ومثمر.",
     publicContext: {
       description:
         "A teammate has repeatedly interrupted you and dismissed your input in project meetings. You are speaking privately before the next team meeting.",
+      descriptionAr:
+        "يقوم زميل في الفريق بمقاطعتك باستمرار وتجاهل مدخلاتك في اجتماعات المشروع، وأنت تتحدث معه على انفراد قبل الاجتماع القادم.",
       userRole: "A teammate giving peer feedback",
+      userRoleAr: "زميل يقدّم ملاحظات مهنية لزميله",
       aiRole: "The teammate receiving the feedback",
+      aiRoleAr: "الزميل المتلقي للملاحظات",
       userObjective:
         "Describe the behavior and impact, hear the teammate's perspective, and agree on a constructive change.",
+      userObjectiveAr:
+        "وصف السلوك وأثره، والاستماع إلى وجهة نظر الزميل، والاتفاق على تغيير بنّاء.",
       stakes:
         "The pattern is hurting collaboration, but an accusatory conversation could damage the working relationship.",
+      stakesAr:
+        "هذا النمط يضر بالتعاون في الفريق، لكن أسلوب التوجيه الاتهامي قد يفسد علاقة العمل.",
     },
     persona: {
       role: "Teammate receiving feedback",

@@ -192,4 +192,34 @@ describe("evaluation-prompt", () => {
     const parsed = RawAiEvaluationSchema.safeParse(raw);
     expect(parsed.success).toBe(true);
   });
+
+  it("includes explicit Arabic feedback directives when language is ar", () => {
+    const messages = buildEvaluationMessages({
+      scenario: salaryNegotiationV1,
+      difficulty: "MEDIUM",
+      turns,
+      language: "ar",
+      dialect: "EGYPTIAN",
+    });
+
+    const systemPrompt = messages[0]?.content ?? "";
+    expect(systemPrompt).toContain("FEEDBACK LANGUAGE REQUIREMENT");
+    expect(systemPrompt).toContain("Modern Standard Arabic (العربية الفصحى)");
+    expect(systemPrompt).toContain("Language: Arabic (EGYPTIAN)");
+  });
+
+  it("includes explicit English feedback directives when language is en", () => {
+    const messages = buildEvaluationMessages({
+      scenario: salaryNegotiationV1,
+      difficulty: "MEDIUM",
+      turns,
+      language: "en",
+    });
+
+    const systemPrompt = messages[0]?.content ?? "";
+    expect(systemPrompt).toContain("FEEDBACK LANGUAGE REQUIREMENT");
+    expect(systemPrompt).toContain("professional English");
+    expect(systemPrompt).toContain("Language: English");
+  });
 });
+

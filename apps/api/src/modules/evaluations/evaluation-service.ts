@@ -1,4 +1,8 @@
-import type { EvaluationData } from "@kalemny/contracts";
+import type {
+  ArabicDialect,
+  EvaluationData,
+  SupportedLanguage,
+} from "@kalemny/contracts";
 
 import { EVALUATION_PROMPT_VERSION } from "../ai/evaluation-prompt.js";
 import type { AiService } from "../ai/ai-service.js";
@@ -91,11 +95,20 @@ export function createEvaluationService(
         scenario.objectives.map((o) => o.id),
       );
 
+      const language: SupportedLanguage =
+        attempt.language === "ar" ? "ar" : "en";
+      const dialect =
+        language === "ar"
+          ? ((attempt.dialect as ArabicDialect | null) ?? "EGYPTIAN")
+          : null;
+
       const evaluationInput = {
         scenario,
         difficulty: attempt.difficulty,
         turns: completedTurns,
         variation,
+        language,
+        dialect,
       };
 
       let aiResult;

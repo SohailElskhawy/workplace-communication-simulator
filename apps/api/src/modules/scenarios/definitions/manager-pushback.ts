@@ -8,18 +8,28 @@ export const managerPushbackV1: ScenarioDefinition =
     key: "manager-pushback",
     version: 1,
     title: "Manager Pushback",
+    titleAr: "مناقشة الأولويات مع المدير",
     category: "MANAGING_UP",
     summary:
       "Practice disagreeing with a manager respectfully while protecting an important concern.",
+    summaryAr: "وازن التوقعات ودافع عن مواعيد واقعية عند تراكم ضغط العمل.",
     publicContext: {
       description:
         "Your manager wants the team to launch a client-facing change this week. You believe the schedule creates a serious quality and support risk.",
+      descriptionAr:
+        "يريد مديرك من الفريق إطلاق ميزة موجهة للعملاء هذا الأسبوع، بينما تعتقد أن الجدول الزمني يشكل مخاطرة حقيقية على الجودة والدعم الفني.",
       userRole: "A team member responsible for part of the launch",
+      userRoleAr: "عضو الفريق المسؤول عن جزء من الإطلاق",
       aiRole: "The manager accountable for delivery",
+      aiRoleAr: "المدير المسؤول عن تسليم المشروع",
       userObjective:
         "Raise the risk clearly, recommend a workable alternative, and reach an explicit decision.",
+      userObjectiveAr:
+        "طرح المخاطر بوضوح، واقتراح بديل قابل للتنفيذ، والوصول إلى قرار محدد ومعلن.",
       stakes:
         "You need to protect the outcome without undermining your manager or appearing unwilling to deliver.",
+      stakesAr:
+        "تحتاج إلى حماية جودة النتيجة دون التقليل من شأن مديرك أو الظهور بمظهر غير المتعاون.",
     },
     persona: {
       role: "Delivery-focused manager",

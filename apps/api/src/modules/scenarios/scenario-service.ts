@@ -15,8 +15,10 @@ export interface ScenarioSummaryRecord {
   key: string;
   version: number;
   title: string;
+  titleAr?: string | null;
   category: string;
   summary: string;
+  summaryAr?: string | null;
   userId?: string | null;
 }
 
@@ -111,8 +113,10 @@ export function createScenarioService(
         key: record.key,
         version: record.version,
         title: record.title,
+        ...(record.titleAr ? { titleAr: record.titleAr } : {}),
         category: record.category,
         summary: record.summary,
+        ...(record.summaryAr ? { summaryAr: record.summaryAr } : {}),
         ...(record.userId ? { isCustom: true } : {}),
       }));
 
@@ -144,13 +148,17 @@ export function createScenarioService(
       }
 
       const definition = ScenarioDefinitionSchema.parse(record.definition);
+      const titleAr = record.titleAr ?? definition.titleAr;
+      const summaryAr = record.summaryAr ?? definition.summaryAr;
 
       const detail: PublicScenarioDetail = {
         key: record.key,
         version: record.version,
         title: record.title,
+        ...(titleAr ? { titleAr } : {}),
         category: record.category,
         summary: record.summary,
+        ...(summaryAr ? { summaryAr } : {}),
         ...(record.userId ? { isCustom: true } : {}),
         context: definition.publicContext,
         availableDifficulties: ["EASY", "MEDIUM", "HARD"],

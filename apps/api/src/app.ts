@@ -1,5 +1,6 @@
 import type {
   ApiErrorResponse,
+  EntitlementResponse,
   HealthResponse,
   MeResponse,
 } from "@kalemny/contracts";
@@ -166,6 +167,44 @@ export function createApp(dependencies: AuthenticatedAppDependencies): Express {
           id: user.id,
           entitlement,
         },
+      };
+
+      response.status(200).json(body);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/v1/entitlements", async (request, response, next) => {
+    try {
+      const authProviderUserId =
+        dependencies.resolveAuthProviderUserId(request);
+      if (!authProviderUserId) {
+        response
+          .status(401)
+          .json(unauthenticated(response.locals.requestId as string));
+        return;
+      }
+
+      const user =
+        await dependencies.userProvisioner.ensureUser(authProviderUserId);
+      const entitlement = dependencies.entitlementService
+        ? await dependencies.entitlementService.getUserEntitlement(user.id)
+        : {
+            plan: "FREE" as const,
+            effectivePlan: "FREE" as const,
+            expiresAt: null,
+            simulationsLimit: 3,
+            simulationsUsed: 0,
+            simulationsRemaining: 3,
+            windowStartsAt: new Date(
+              Date.now() - 7 * 24 * 60 * 60 * 1000,
+            ).toISOString(),
+            windowEndsAt: new Date().toISOString(),
+          };
+
+      const body: EntitlementResponse = {
+        data: entitlement,
       };
 
       response.status(200).json(body);

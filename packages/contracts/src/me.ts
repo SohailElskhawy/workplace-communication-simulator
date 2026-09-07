@@ -23,6 +23,11 @@ export const MeResponseSchema = z.strictObject({
   }),
 });
 
+export const EntitlementResponseSchema = z.strictObject({
+  data: PlanEntitlementSchema,
+});
+
 export type PlanTier = z.infer<typeof PlanTierSchema>;
 export type PlanEntitlement = z.infer<typeof PlanEntitlementSchema>;
 export type MeResponse = z.infer<typeof MeResponseSchema>;
+export type EntitlementResponse = z.infer<typeof EntitlementResponseSchema>;

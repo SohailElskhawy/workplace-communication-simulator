@@ -7,18 +7,28 @@ export const scopeCreepV1: ScenarioDefinition = ScenarioDefinitionSchema.parse({
   key: "scope-creep",
   version: 1,
   title: "Scope Creep / Saying No",
+  titleAr: "إدارة توسع نطاق المشروع",
   category: "BOUNDARIES",
   summary:
     "Practice setting a professional boundary when a stakeholder adds work without changing constraints.",
+  summaryAr: "ضع حدوداً مهنية واضحة عندما تتجاوز طلبات العميل ما تم الاتفاق عليه.",
   publicContext: {
     description:
       "A stakeholder asks for another substantial deliverable before Friday while expecting the original deadline and quality to remain unchanged.",
+    descriptionAr:
+      "يطلب أحد أصحاب المصلحة تسليم مهمة كبيرة إضافية قبل يوم الجمعة مع توقع الالتزام بالموعد النهائي الأصلي ومستوى الجودة دون تغيير.",
     userRole: "The person accountable for delivering the agreed work",
+    userRoleAr: "المسؤول عن تسليم العمل المتفق عليه",
     aiRole: "The stakeholder requesting the additional work",
+    aiRoleAr: "صاحب المصلحة الذي يطلب عملاً إضافياً",
     userObjective:
       "Clarify the request, set a firm capacity boundary, and negotiate priorities or trade-offs.",
+    userObjectiveAr:
+      "توضيح الطلب، ووضع حدود واضحة للطاقة الاستيعابية، والتفاوض على الأولويات أو التنازلات.",
     stakes:
       "Agreeing without adjustment risks missed commitments, while a blunt refusal could damage stakeholder trust.",
+    stakesAr:
+      "الموافقة دون تعديل تعرض الالتزامات للخطر، بينما الرفض الحاد قد يضر بالثقة المهنية.",
   },
   persona: {
     role: "Project stakeholder",

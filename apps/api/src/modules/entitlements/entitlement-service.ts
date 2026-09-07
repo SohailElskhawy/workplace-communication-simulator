@@ -19,11 +19,23 @@ export interface EntitlementRepository {
   getPracticeUsageCount(userId: string, since: Date): Promise<number>;
 }
 
+export interface SimulationAccessResult {
+  allowed: boolean;
+  remaining: number | null;
+  limit: number | null;
+  used: number;
+  effectivePlan: PlanTier;
+}
+
 export interface EntitlementService {
   getUserEntitlement(
     userId: string,
     currentTime?: Date,
   ): Promise<PlanEntitlement>;
+  checkSimulationAccess(
+    userId: string,
+    currentTime?: Date,
+  ): Promise<SimulationAccessResult>;
 }
 
 export function createPrismaEntitlementRepository(
@@ -86,6 +98,21 @@ export function createEntitlementService(
         simulationsRemaining,
         windowStartsAt: windowStartsAt.toISOString(),
         windowEndsAt: windowEndsAt.toISOString(),
+      };
+    },
+
+    async checkSimulationAccess(userId: string, customCurrentTime?: Date): Promise<SimulationAccessResult> {
+      const entitlement = await this.getUserEntitlement(userId, customCurrentTime);
+      const allowed =
+        entitlement.simulationsRemaining === null ||
+        entitlement.simulationsRemaining > 0;
+
+      return {
+        allowed,
+        remaining: entitlement.simulationsRemaining,
+        limit: entitlement.simulationsLimit,
+        used: entitlement.simulationsUsed,
+        effectivePlan: entitlement.effectivePlan,
       };
     },
   };

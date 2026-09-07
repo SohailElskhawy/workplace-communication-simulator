@@ -27,11 +27,11 @@
 - [x] R07 Implement bilingual layout shell, direction handling (LTR/RTL), and locale switching.
 - [x] R08 Update global navigation (header, mobile drawer, practice/history/progress links).
 
-#### M03 — Backend & Testing Entitlements
-- [ ] R09 Update entitlement service to enforce 3 free simulation starts per rolling 7 days across curated + custom scenarios.
-- [ ] R10 Add explicit feedback language handling to evaluation pipeline.
-- [ ] R11 Verify and expose server-authoritative remaining quota in `/me` or entitlement endpoints.
-- [ ] R12 Verify localized scenario metadata (Arabic titles/descriptions) across active definitions.
+#### M03 — Backend & Testing Entitlements (Completed)
+- [x] R09 Update entitlement service to enforce 3 free simulation starts per rolling 7 days across curated + custom scenarios.
+- [x] R10 Add explicit feedback language handling to evaluation pipeline.
+- [x] R11 Verify and expose server-authoritative remaining quota in `/me` or entitlement endpoints.
+- [x] R12 Verify localized scenario metadata (Arabic titles/descriptions) across active definitions.
 
 ### Phase 3 — Core Simulation Loop
 #### M04 — Discovery & Setup

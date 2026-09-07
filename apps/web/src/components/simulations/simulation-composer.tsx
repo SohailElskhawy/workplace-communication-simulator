@@ -63,7 +63,10 @@ function subscribeVoiceReview(callback: () => void) {
 
 function getVoiceReviewSnapshot(): boolean {
   try {
-    return localStorage.getItem("kalemny_voice_review_before_send") !== "false";
+    if (typeof window === "undefined" || !window.localStorage) return true;
+    return (
+      window.localStorage.getItem("kalemny_voice_review_before_send") !== "false"
+    );
   } catch {
     return true;
   }
@@ -110,7 +113,12 @@ export function SimulationComposer({
   const handleToggleReviewMode = () => {
     const next = !reviewBeforeSend;
     try {
-      localStorage.setItem("kalemny_voice_review_before_send", String(next));
+      if (typeof window !== "undefined" && window.localStorage) {
+        window.localStorage.setItem(
+          "kalemny_voice_review_before_send",
+          String(next),
+        );
+      }
       window.dispatchEvent(new Event("kalemny_voice_review_change"));
     } catch {
       // Ignore localStorage write errors

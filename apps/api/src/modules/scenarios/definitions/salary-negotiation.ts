@@ -8,18 +8,28 @@ export const salaryNegotiationV1: ScenarioDefinition =
     key: "salary-negotiation",
     version: 1,
     title: "Salary Negotiation",
+    titleAr: "التفاوض على الراتب",
     category: "NEGOTIATION",
     summary:
       "Practice negotiating the compensation package for a new professional role.",
+    summaryAr: "تفاوض بثقة على راتب عادل عند تلقي عرض عمل أو أثناء التقييم السنوي.",
     publicContext: {
       description:
         "You have received an offer for a role you want. The base salary is below the range you hoped for, and you have a scheduled call to discuss the offer.",
+      descriptionAr:
+        "تلقيت عرض عمل لوظيفة ترغب بها، لكن الراتب الأساسي أقل من توقعاتك، ولديك مكالمة مجدولة لمناقشة تفاصيل العرض.",
       userRole: "The candidate who received the offer",
+      userRoleAr: "المرشح الذي تلقى عرض العمل",
       aiRole: "The hiring manager responsible for the offer",
+      aiRoleAr: "مدير التوظيف المسؤول عن العرض",
       userObjective:
         "Make a clear, professional case for improved compensation and work toward a concrete next step.",
+      userObjectiveAr:
+        "تقديم حجة مهنية واضحة لتحسين الراتب والوصول إلى خطوة تالية ملموسة.",
       stakes:
         "You want to improve the package without damaging trust or losing an attractive opportunity.",
+      stakesAr:
+        "تريد تحسين العرض المالي دون الإضرار بالثقة المتبادلة أو خسارة فرصة واعدة.",
     },
     persona: {
       role: "Hiring manager",

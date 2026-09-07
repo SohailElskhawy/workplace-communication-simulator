@@ -140,4 +140,79 @@ describe("createEntitlementService", () => {
     expect(entitlement.effectivePlan).toBe("FREE");
     expect(entitlement.simulationsRemaining).toBe(3);
   });
+
+  describe("checkSimulationAccess", () => {
+    it("returns allowed: true when user has remaining simulations", async () => {
+      const repository: EntitlementRepository = {
+        getUserPlan: vi
+          .fn()
+          .mockResolvedValue({ plan: "FREE", planExpiresAt: null }),
+        getPracticeUsageCount: vi.fn().mockResolvedValue(2),
+      };
+
+      const service = createEntitlementService(
+        repository,
+        { FREE: 3, PLUS: 10, PRO: null },
+        () => now,
+      );
+
+      const access = await service.checkSimulationAccess(userId);
+      expect(access).toEqual({
+        allowed: true,
+        remaining: 1,
+        limit: 3,
+        used: 2,
+        effectivePlan: "FREE",
+      });
+    });
+
+    it("returns allowed: false when user has exhausted their 3 free starts", async () => {
+      const repository: EntitlementRepository = {
+        getUserPlan: vi
+          .fn()
+          .mockResolvedValue({ plan: "FREE", planExpiresAt: null }),
+        getPracticeUsageCount: vi.fn().mockResolvedValue(3),
+      };
+
+      const service = createEntitlementService(
+        repository,
+        { FREE: 3, PLUS: 10, PRO: null },
+        () => now,
+      );
+
+      const access = await service.checkSimulationAccess(userId);
+      expect(access).toEqual({
+        allowed: false,
+        remaining: 0,
+        limit: 3,
+        used: 3,
+        effectivePlan: "FREE",
+      });
+    });
+
+    it("returns allowed: true with remaining: null for PRO user", async () => {
+      const repository: EntitlementRepository = {
+        getUserPlan: vi
+          .fn()
+          .mockResolvedValue({ plan: "PRO", planExpiresAt: null }),
+        getPracticeUsageCount: vi.fn().mockResolvedValue(50),
+      };
+
+      const service = createEntitlementService(
+        repository,
+        { FREE: 3, PLUS: 10, PRO: null },
+        () => now,
+      );
+
+      const access = await service.checkSimulationAccess(userId);
+      expect(access).toEqual({
+        allowed: true,
+        remaining: null,
+        limit: null,
+        used: 50,
+        effectivePlan: "PRO",
+      });
+    });
+  });
 });
+

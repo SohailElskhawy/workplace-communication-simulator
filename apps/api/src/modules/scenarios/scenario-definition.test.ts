@@ -334,4 +334,17 @@ describe("v1 preservation and v2 variation pools", () => {
       expect(interviewTrack?.questions.length).toBeLessThanOrEqual(5);
     }
   });
+
+  it("provides Arabic localization metadata across all active scenarios", () => {
+    for (const definition of scenarioDefinitions) {
+      const parsed = ScenarioDefinitionSchema.parse(definition);
+      expect(parsed.titleAr).toBeTruthy();
+      expect(parsed.summaryAr).toBeTruthy();
+      expect(parsed.publicContext.descriptionAr).toBeTruthy();
+      expect(parsed.publicContext.userRoleAr).toBeTruthy();
+      expect(parsed.publicContext.aiRoleAr).toBeTruthy();
+      expect(parsed.publicContext.userObjectiveAr).toBeTruthy();
+      expect(parsed.publicContext.stakesAr).toBeTruthy();
+    }
+  });
 });

@@ -399,6 +399,40 @@ describe("api-client", () => {
     expect(result.entitlement.simulationsRemaining).toBe(2);
   });
 
+  it("fetches server-authoritative plan entitlement data via fetchEntitlement", async () => {
+    const mockEntitlement = {
+      data: {
+        plan: "FREE",
+        effectivePlan: "FREE",
+        expiresAt: null,
+        simulationsLimit: 3,
+        simulationsUsed: 2,
+        simulationsRemaining: 1,
+        windowStartsAt: "2026-08-26T10:00:00.000Z",
+        windowEndsAt: "2026-09-02T10:00:00.000Z",
+      },
+    };
+
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => mockEntitlement,
+    } as Response);
+
+    const result = await client.fetchEntitlement(token);
+
+    expect(fetch).toHaveBeenCalledWith(
+      "https://api.test.kalemny.com/api/v1/entitlements",
+      expect.objectContaining({
+        headers: expect.any(Headers),
+        method: "GET",
+      }),
+    );
+    expect(result.plan).toBe("FREE");
+    expect(result.simulationsRemaining).toBe(1);
+    expect(result.simulationsUsed).toBe(2);
+  });
+
   it("posts custom scenario creation with multipart form data and parses detail response", async () => {
     const mockScenario = {
       data: {

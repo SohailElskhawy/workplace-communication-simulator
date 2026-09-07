@@ -79,9 +79,33 @@ function createProps(
   };
 }
 
+const storageMap = new Map<string, string>();
+const mockLocalStorage = {
+  getItem: (key: string) => storageMap.get(key) ?? null,
+  setItem: (key: string, value: string) => {
+    storageMap.set(key, String(value));
+  },
+  removeItem: (key: string) => {
+    storageMap.delete(key);
+  },
+  clear: () => {
+    storageMap.clear();
+  },
+  key: (index: number) => Array.from(storageMap.keys())[index] ?? null,
+  get length() {
+    return storageMap.size;
+  },
+};
+
+Object.defineProperty(window, "localStorage", {
+  value: mockLocalStorage,
+  writable: true,
+  configurable: true,
+});
+
 describe("SimulationComposer", () => {
   beforeEach(() => {
-    localStorage.clear();
+    storageMap.clear();
     capturedVoiceRecorderCallbacks = null;
     vi.clearAllMocks();
   });
@@ -477,7 +501,7 @@ describe("SimulationComposer", () => {
 
       expect(toggle.getAttribute("aria-checked")).toBe("false");
       expect(
-        localStorage.getItem("kalemny_voice_review_before_send"),
+        window.localStorage.getItem("kalemny_voice_review_before_send"),
       ).toBe("false");
       expect(
         screen.getByText(/Hold Space to talk, release to send/i),
@@ -488,7 +512,7 @@ describe("SimulationComposer", () => {
 
       expect(toggle.getAttribute("aria-checked")).toBe("true");
       expect(
-        localStorage.getItem("kalemny_voice_review_before_send"),
+        window.localStorage.getItem("kalemny_voice_review_before_send"),
       ).toBe("true");
       expect(
         screen.getByText(/Hold Space to talk, release to review/i),
@@ -496,7 +520,7 @@ describe("SimulationComposer", () => {
     });
 
     it("initializes reviewBeforeSend from localStorage when set to 'false'", async () => {
-      localStorage.setItem("kalemny_voice_review_before_send", "false");
+      window.localStorage.setItem("kalemny_voice_review_before_send", "false");
 
       const props = createProps({
         inputMode: "VOICE",
@@ -519,7 +543,7 @@ describe("SimulationComposer", () => {
       const onVoiceTranscriptReady = vi.fn();
       const onChangeText = vi.fn();
 
-      localStorage.setItem("kalemny_voice_review_before_send", "false");
+      window.localStorage.setItem("kalemny_voice_review_before_send", "false");
 
       const props = createProps({
         inputMode: "VOICE",

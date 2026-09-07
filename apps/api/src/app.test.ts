@@ -1,5 +1,6 @@
 import {
   ApiErrorResponseSchema,
+  EntitlementResponseSchema,
   HealthResponseSchema,
   MeResponseSchema,
 } from "@kalemny/contracts";
@@ -145,6 +146,13 @@ describe("GET /api/v1/me", () => {
             if (userId !== localUserId) throw new Error("Unexpected user ID");
             return expectedEntitlement;
           },
+          checkSimulationAccess: async () => ({
+            allowed: true,
+            remaining: 2,
+            limit: 3,
+            used: 1,
+            effectivePlan: "FREE",
+          }),
         },
         evaluationService: unusedEvaluationService,
         historyService: unusedHistoryService,
@@ -171,6 +179,85 @@ describe("GET /api/v1/me", () => {
         id: localUserId,
         entitlement: expectedEntitlement,
       },
+    });
+  });
+
+  it("returns server-authoritative plan entitlement from GET /api/v1/entitlements", async () => {
+    const localUserId = "ef4d8dd1-d525-45d7-91f6-3a180db74eac";
+    const expectedEntitlement = {
+      plan: "FREE" as const,
+      effectivePlan: "FREE" as const,
+      expiresAt: null,
+      simulationsLimit: 3,
+      simulationsUsed: 2,
+      simulationsRemaining: 1,
+      windowStartsAt: "2026-08-26T10:00:00.000Z",
+      windowEndsAt: "2026-09-02T10:00:00.000Z",
+    };
+    const response = await request(
+      createApp({
+        attemptService: unusedAttemptService,
+        authenticationMiddleware,
+        entitlementService: {
+          getUserEntitlement: async (userId: string) => {
+            if (userId !== localUserId) throw new Error("Unexpected user ID");
+            return expectedEntitlement;
+          },
+          checkSimulationAccess: async () => ({
+            allowed: true,
+            remaining: 2,
+            limit: 3,
+            used: 1,
+            effectivePlan: "FREE",
+          }),
+        },
+        evaluationService: unusedEvaluationService,
+        historyService: unusedHistoryService,
+        progressService: unusedProgressService,
+        resolveAuthProviderUserId: () => "user_clerk_123",
+        scenarioService: unusedScenarioService,
+        userProvisioner: {
+          ensureUser: async (authProviderUserId: string) => {
+            if (authProviderUserId !== "user_clerk_123") {
+              throw new Error("Unexpected provider identity");
+            }
+            return { id: localUserId };
+          },
+        },
+        voiceService: unusedVoiceService,
+        webOrigin: "http://localhost:3000",
+      }),
+    ).get("/api/v1/entitlements");
+
+    expect(response.status).toBe(200);
+    expect(EntitlementResponseSchema.parse(response.body)).toEqual({
+      data: expectedEntitlement,
+    });
+  });
+
+  it("rejects unauthenticated request to /api/v1/entitlements with 401", async () => {
+    const response = await request(
+      createApp({
+        attemptService: unusedAttemptService,
+        authenticationMiddleware,
+        evaluationService: unusedEvaluationService,
+        historyService: unusedHistoryService,
+        progressService: unusedProgressService,
+        resolveAuthProviderUserId: () => null,
+        scenarioService: unusedScenarioService,
+        userProvisioner: {
+          ensureUser: async () => {
+            throw new Error("Should not be called");
+          },
+        },
+        voiceService: unusedVoiceService,
+        webOrigin: "http://localhost:3000",
+      }),
+    ).get("/api/v1/entitlements");
+
+    expect(response.status).toBe(401);
+    expect(ApiErrorResponseSchema.parse(response.body)).toMatchObject({
+      error: { code: "UNAUTHENTICATED" },
     });
   });
 });

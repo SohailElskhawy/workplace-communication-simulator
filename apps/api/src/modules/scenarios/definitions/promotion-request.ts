@@ -8,18 +8,28 @@ export const promotionRequestV1: ScenarioDefinition =
     key: "promotion-request",
     version: 1,
     title: "Promotion Request",
+    titleAr: "طلب ترقية",
     category: "CAREER_GROWTH",
     summary:
       "Practice making a professional case for promotion and agreeing on concrete next steps.",
+    summaryAr: "قدّم حيثيات مقنعة ومستندة إلى إنجازاتك للحصول على ترقيتك المستحقة.",
     publicContext: {
       description:
         "You have taken on broader responsibilities and scheduled a career conversation with your manager to discuss promotion readiness.",
+      descriptionAr:
+        "لقد توليت مسؤوليات أوسع وحددت موعداً لمحادثة مهنية مع مديرك لمناقشة جاهزيتك للترقية.",
       userRole: "An employee seeking a promotion",
+      userRoleAr: "موظف يسعى للحصول على ترقية",
       aiRole: "The employee's direct manager",
+      aiRoleAr: "المدير المباشر للموظف",
       userObjective:
         "Make a specific, evidence-based promotion case and establish a fair decision or development path.",
+      userObjectiveAr:
+        "بناء حجة ترقية محددة وقائمة على الأدلة والاتفاق على مسار تطوير أو قرار عادل.",
       stakes:
         "You want recognition and advancement while maintaining a productive relationship with your manager.",
+      stakesAr:
+        "تريد الحصول على التقدير والترقي مع الحفاظ على علاقة عمل إيجابية ومثمرة مع مديرك.",
     },
     persona: {
       role: "Direct manager",

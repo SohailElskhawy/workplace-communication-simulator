@@ -1,4 +1,5 @@
 import type {
+  ArabicDialect,
   AttemptStatus,
   CoachingMoment,
   Difficulty,
@@ -7,6 +8,7 @@ import type {
   ObjectiveResult,
   SkillScores,
   StrengthFeedback,
+  SupportedLanguage,
   UniversalSkill,
 } from "@kalemny/contracts";
 
@@ -24,6 +26,8 @@ export interface AttemptForEvaluationRecord {
   status: AttemptStatus;
   difficulty: Difficulty;
   variationId: string | null;
+  language: SupportedLanguage;
+  dialect: ArabicDialect | null;
   endedAt: Date | null;
   scenario: {
     id: string;

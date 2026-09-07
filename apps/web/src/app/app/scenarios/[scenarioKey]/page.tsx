@@ -26,6 +26,7 @@ import { PracticeModeSelector } from "@/components/scenarios/practice-mode-selec
 import { ScenarioBriefingCard } from "@/components/scenarios/scenario-briefing-card";
 import { ScenarioHeroGraphic } from "@/components/scenarios/scenario-hero-graphic";
 import { ApiClientError, createApiClient } from "@/lib/api-client";
+import { useLocale } from "@/lib/locale-context";
 
 import { getScenarioMeta } from "../../scenario-library-view";
 
@@ -37,6 +38,7 @@ export default function ScenarioDetailPage() {
 
   const router = useRouter();
   const { getToken, isLoaded, isSignedIn } = useAuth();
+  const { locale } = useLocale();
 
   const [scenario, setScenario] = useState<PublicScenarioDetail | null>(null);
   const [selectedDifficulty, setSelectedDifficulty] =
@@ -220,6 +222,10 @@ export default function ScenarioDetailPage() {
     );
   }
 
+  const isArabic = selectedLanguage === "ar" || locale === "ar";
+  const displayTitle = (isArabic && scenario.titleAr) || scenario.title;
+  const displaySummary = (isArabic && scenario.summaryAr) || scenario.summary;
+
   return (
     <div className="w-full max-w-container-max mx-auto px-3 sm:px-6 md:px-8 py-4 sm:py-8 space-y-6 sm:space-y-10 font-sans pb-24">
       {/* 1. Top Navigation & Category */}
@@ -259,20 +265,20 @@ export default function ScenarioDetailPage() {
       </nav>
 
       {/* 2. Memphis Hero Banner */}
-      <ScenarioHeroGraphic scenarioKey={scenario.key} title={scenario.title} />
+      <ScenarioHeroGraphic scenarioKey={scenario.key} title={displayTitle} />
 
       {/* 3. Scenario Title & Overview */}
       <header className="space-y-2 sm:space-y-3">
         <h1 className="font-display text-xl sm:text-3xl md:text-5xl font-bold uppercase tracking-tight text-foreground leading-[1.15]">
-          {scenario.title}
+          {displayTitle}
         </h1>
         <p className="font-sans text-xs sm:text-base md:text-lg text-muted-foreground max-w-3xl leading-relaxed">
-          {scenario.summary}
+          {displaySummary}
         </p>
       </header>
 
       {/* 4. Scenario Briefing & Context Card */}
-      <ScenarioBriefingCard scenario={scenario} />
+      <ScenarioBriefingCard scenario={scenario} language={selectedLanguage} />
 
       {/* 5. Difficulty Selection */}
       <DifficultySelector

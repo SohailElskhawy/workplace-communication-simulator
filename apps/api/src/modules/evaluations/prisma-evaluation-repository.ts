@@ -1,3 +1,4 @@
+import type { ArabicDialect, SupportedLanguage } from "@kalemny/contracts";
 import { Prisma, type PrismaClient } from "../../generated/prisma/client.js";
 import {
   mapPrismaEvaluationToData,
@@ -127,6 +128,14 @@ export function createPrismaEvaluationRepository(
           data: { status: "EVALUATING", evaluationClaimedAt: claimedAt },
         });
         if (claimed.count !== 1) return { kind: "in_progress" } as const;
+        const language = (
+          attempt.language === "ar" ? "ar" : "en"
+        ) as SupportedLanguage;
+        const dialect =
+          language === "ar"
+            ? ((attempt.dialect as ArabicDialect | null) ?? "EGYPTIAN")
+            : null;
+
         return {
           kind: "claimed",
           attempt: {
@@ -135,6 +144,8 @@ export function createPrismaEvaluationRepository(
             status: "EVALUATING",
             difficulty: attempt.difficulty,
             variationId: attempt.variationId,
+            language,
+            dialect,
             endedAt: attempt.endedAt,
             scenario: attempt.scenario,
             turns: attempt.conversationTurns,
@@ -172,12 +183,22 @@ export function createPrismaEvaluationRepository(
 
       if (!attempt) return null;
 
+      const language = (
+        attempt.language === "ar" ? "ar" : "en"
+      ) as SupportedLanguage;
+      const dialect =
+        language === "ar"
+          ? ((attempt.dialect as ArabicDialect | null) ?? "EGYPTIAN")
+          : null;
+
       return {
         id: attempt.id,
         userId: attempt.userId,
         status: attempt.status,
         difficulty: attempt.difficulty,
         variationId: attempt.variationId,
+        language,
+        dialect,
         endedAt: attempt.endedAt,
         scenario: attempt.scenario,
         turns: attempt.conversationTurns,

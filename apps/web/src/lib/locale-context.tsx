@@ -141,9 +141,9 @@ const STORAGE_KEY = "kalemny_ui_locale";
 const LocaleContext = createContext<LocaleContextValue | null>(null);
 
 function getInitialLocale(defaultLocale: Locale): Locale {
-  if (typeof window === "undefined") return defaultLocale;
+  if (typeof window === "undefined" || !window.localStorage) return defaultLocale;
   try {
-    const stored = localStorage.getItem(STORAGE_KEY) as Locale | null;
+    const stored = window.localStorage.getItem(STORAGE_KEY) as Locale | null;
     if (stored === "en" || stored === "ar") {
       return stored;
     }
@@ -181,7 +181,9 @@ export function LocaleProvider({
   const setLocale = useCallback((newLocale: Locale) => {
     setLocaleState(newLocale);
     try {
-      localStorage.setItem(STORAGE_KEY, newLocale);
+      if (typeof window !== "undefined" && window.localStorage) {
+        window.localStorage.setItem(STORAGE_KEY, newLocale);
+      }
     } catch {
       // Ignore storage failures
     }

@@ -67,6 +67,41 @@ describe("ScenarioService caching", () => {
     expect(third?.key).toBe("salary-negotiation");
     expect(callCount).toBe(2);
   });
+
+  it("passes through Arabic metadata in listActive and getActiveByKey", async () => {
+    const service = createScenarioService({
+      async listActive() {
+        return [
+          {
+            ...summary,
+            titleAr: "التفاوض على الراتب",
+            summaryAr: "تفاوض بثقة",
+          },
+        ];
+      },
+      async findActiveByKey(key) {
+        return key === salaryNegotiationV1.key
+          ? {
+              ...summary,
+              titleAr: "التفاوض على الراتب",
+              summaryAr: "تفاوض بثقة",
+              definition: salaryNegotiationV1,
+            }
+          : null;
+      },
+    });
+
+    const list = await service.listActive();
+    expect(list[0]?.titleAr).toBe("التفاوض على الراتب");
+    expect(list[0]?.summaryAr).toBe("تفاوض بثقة");
+
+    const detail = await service.getActiveByKey("salary-negotiation");
+    expect(detail?.titleAr).toBe("التفاوض على الراتب");
+    expect(detail?.summaryAr).toBe("تفاوض بثقة");
+    expect(detail?.context.descriptionAr).toBe(
+      salaryNegotiationV1.publicContext.descriptionAr,
+    );
+  });
 });
 
 describe("ScenarioService custom interview creation", () => {
@@ -204,6 +239,13 @@ startxref
             windowStartsAt: new Date().toISOString(),
             windowEndsAt: new Date().toISOString(),
           }),
+          checkSimulationAccess: async () => ({
+            allowed: true,
+            remaining: null,
+            limit: null,
+            used: 0,
+            effectivePlan: "PLUS",
+          }),
         },
       },
     );
@@ -256,6 +298,13 @@ startxref
             simulationsRemaining: null,
             windowStartsAt: new Date().toISOString(),
             windowEndsAt: new Date().toISOString(),
+          }),
+          checkSimulationAccess: async () => ({
+            allowed: true,
+            remaining: null,
+            limit: null,
+            used: 0,
+            effectivePlan: "PLUS",
           }),
         },
         aiService: {

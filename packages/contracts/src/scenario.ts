@@ -6,17 +6,24 @@ export const PublicScenarioSummarySchema = z.object({
   key: z.string().min(1),
   version: z.int().min(1),
   title: z.string().min(1),
+  titleAr: z.string().min(1).optional(),
   category: z.string().min(1),
   summary: z.string().min(1),
+  summaryAr: z.string().min(1).optional(),
   isCustom: z.boolean().optional(),
 });
 
 export const PublicScenarioContextSchema = z.object({
   description: z.string().min(1),
+  descriptionAr: z.string().min(1).optional(),
   userRole: z.string().min(1),
+  userRoleAr: z.string().min(1).optional(),
   aiRole: z.string().min(1),
+  aiRoleAr: z.string().min(1).optional(),
   userObjective: z.string().min(1),
+  userObjectiveAr: z.string().min(1).optional(),
   stakes: z.string().min(1),
+  stakesAr: z.string().min(1).optional(),
 });
 
 export const PublicScenarioDetailSchema = PublicScenarioSummarySchema.extend({

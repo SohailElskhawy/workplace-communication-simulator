@@ -69,9 +69,11 @@ export {
 } from "./evaluation.js";
 export { HealthResponseSchema, type HealthResponse } from "./health.js";
 export {
+  EntitlementResponseSchema,
   MeResponseSchema,
   PlanEntitlementSchema,
   PlanTierSchema,
+  type EntitlementResponse,
   type MeResponse,
   type PlanEntitlement,
   type PlanTier,

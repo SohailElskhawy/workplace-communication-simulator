@@ -213,10 +213,23 @@ export default function SimulationPage() {
   }, [attempt]);
 
   const counterpartRole = useMemo(() => {
+    if (attempt?.language === "ar" && scenarioDetail?.context?.aiRoleAr) {
+      return scenarioDetail.context.aiRoleAr;
+    }
     if (scenarioDetail?.context?.aiRole) {
       return scenarioDetail.context.aiRole;
     }
     const key = attempt?.scenario?.key ?? "";
+    if (attempt?.language === "ar") {
+      if (key.includes("salary") || key.includes("offer")) return "مدير التوظيف";
+      if (key.includes("interview")) return "المحاور الرئيسي";
+      if (key.includes("pushback") || key.includes("manager"))
+        return "المدير المسؤول";
+      if (key.includes("feedback")) return "الزميل";
+      if (key.includes("scope")) return "صاحب المصلحة";
+      if (key.includes("promotion")) return "المدير المباشر";
+      return "الطرف الآخر";
+    }
     if (key.includes("salary") || key.includes("offer"))
       return "Hiring Manager";
     if (key.includes("interview")) return "Interviewer";
@@ -225,14 +238,21 @@ export default function SimulationPage() {
     if (key.includes("scope")) return "Project Stakeholder";
     if (key.includes("promotion")) return "Department Head";
     return "Counterpart";
-  }, [scenarioDetail, attempt?.scenario?.key]);
+  }, [scenarioDetail, attempt?.scenario?.key, attempt?.language]);
 
   const userObjective = useMemo(() => {
+    if (attempt?.language === "ar") {
+      return (
+        scenarioDetail?.context?.userObjectiveAr ??
+        scenarioDetail?.context?.userObjective ??
+        "خض المحادثة بشكل بنّاء لتحقيق هدفك المهني في بيئة العمل."
+      );
+    }
     return (
       scenarioDetail?.context?.userObjective ??
       "Navigate the conversation constructively to achieve your workplace objective."
     );
-  }, [scenarioDetail]);
+  }, [scenarioDetail, attempt?.language]);
 
   const openingMessage = useMemo(() => {
     if (attempt?.scenario?.openingMessage) {
@@ -533,6 +553,7 @@ export default function SimulationPage() {
           userObjective={userObjective}
           isOpenMobile={briefingOpen}
           onToggleMobile={() => setBriefingOpen((prev) => !prev)}
+          language={attempt.language}
         />
 
         {/* Conversation stage, response controls, and transcript drawer */}

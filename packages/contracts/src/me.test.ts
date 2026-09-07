@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  EntitlementResponseSchema,
   MeResponseSchema,
   PlanEntitlementSchema,
   PlanTierSchema,
@@ -91,3 +92,23 @@ describe("MeResponseSchema", () => {
     ).toThrow();
   });
 });
+
+describe("EntitlementResponseSchema", () => {
+  it("accepts valid entitlement response", () => {
+    const valid = {
+      data: {
+        plan: "FREE" as const,
+        effectivePlan: "FREE" as const,
+        expiresAt: null,
+        simulationsLimit: 3,
+        simulationsUsed: 1,
+        simulationsRemaining: 2,
+        windowStartsAt: "2026-08-26T10:00:00.000Z",
+        windowEndsAt: "2026-09-02T10:00:00.000Z",
+      },
+    };
+
+    expect(EntitlementResponseSchema.parse(valid)).toEqual(valid);
+  });
+});
+
