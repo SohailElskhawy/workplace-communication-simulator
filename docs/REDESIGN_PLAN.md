@@ -34,10 +34,10 @@
 - [x] R12 Verify localized scenario metadata (Arabic titles/descriptions) across active definitions.
 
 ### Phase 3 — Core Simulation Loop
-#### M04 — Discovery & Setup
-- [ ] R13 Redesign `/app` practice selection: 6 scenario cards, custom interview entry, subtle recommendation badge.
-- [ ] R14 Redesign scenario briefing modal/screen (context, objectives, difficulty, language/dialect, mode).
-- [ ] R15 Redesign CV/JD custom interview wizard (in-memory PDF upload, JD input, generation review).
+#### M04 — Discovery & Setup (Completed)
+- [x] R13 Redesign `/app` practice selection: 6 scenario cards, custom interview entry, subtle recommendation badge.
+- [x] R14 Redesign scenario briefing modal/screen (context, objectives, difficulty, language/dialect, mode).
+- [x] R15 Redesign CV/JD custom interview wizard (in-memory PDF upload, JD input, generation review).
 
 #### M05 — Call Simulation Workspace
 - [ ] R16 Integrate static fictional counterpart portraits with name/role/voice alignment.
