@@ -160,6 +160,28 @@ describe("ScenarioBriefingModal", () => {
     });
   });
 
+  it("preserves user-selected configuration across parent re-renders with new scenario object reference while open", () => {
+    const props = createProps();
+    const { rerender } = render(<ScenarioBriefingModal {...props} />);
+
+    // Change difficulty to HARD
+    const hardBtn = screen.getByRole("button", { name: /hard/i });
+    fireEvent.click(hardBtn);
+    expect(hardBtn.getAttribute("aria-pressed")).toBe("true");
+
+    // Parent re-renders with new object reference for the same scenario
+    rerender(
+      <ScenarioBriefingModal
+        {...props}
+        scenario={{ ...mockScenario }}
+      />,
+    );
+
+    // Hard button should remain selected, NOT wiped back to MEDIUM
+    const hardBtnAfter = screen.getByRole("button", { name: /hard/i });
+    expect(hardBtnAfter.getAttribute("aria-pressed")).toBe("true");
+  });
+
   it("calls onStartPractice with default configuration when clicking Start Practice without changes", async () => {
     const onStartPractice = vi.fn().mockResolvedValue(undefined);
     const props = createProps({ onStartPractice });

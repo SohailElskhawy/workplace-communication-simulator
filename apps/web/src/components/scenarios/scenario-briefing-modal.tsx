@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type {
   ArabicDialect,
   Difficulty,
@@ -70,20 +70,33 @@ export function ScenarioBriefingModal({
   const [starting, setStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
 
-  // Sync state when dialog opens or scenario changes
+  const prevOpenRef = useRef(false);
+  const prevScenarioKeyRef = useRef<string | null>(null);
+
+  // Sync state when dialog opens or scenario changes, preserving user selections on parent re-renders
   useEffect(() => {
-    if (open && scenario) {
-      const initialDiff = scenario.availableDifficulties.includes("MEDIUM")
-        ? "MEDIUM"
-        : (scenario.availableDifficulties[0] ?? "MEDIUM");
-      setSelectedDifficulty(initialDiff);
-      setSelectedLanguage(locale === "ar" ? "ar" : "en");
-      setSelectedDialect("EGYPTIAN");
-      setSelectedInteractionMode("PUSH_TO_TALK");
-      setStarting(false);
-      setStartError(null);
+    const isOpening = open && !prevOpenRef.current;
+    const isScenarioChanged = Boolean(
+      open && scenario && scenario.key !== prevScenarioKeyRef.current,
+    );
+
+    if (isOpening || isScenarioChanged) {
+      if (scenario) {
+        const initialDiff = scenario.availableDifficulties.includes("MEDIUM")
+          ? "MEDIUM"
+          : (scenario.availableDifficulties[0] ?? "MEDIUM");
+        setSelectedDifficulty(initialDiff);
+        setSelectedLanguage(locale === "ar" ? "ar" : "en");
+        setSelectedDialect("EGYPTIAN");
+        setSelectedInteractionMode("PUSH_TO_TALK");
+        setStarting(false);
+        setStartError(null);
+      }
     }
-  }, [open, scenario, locale]);
+
+    prevOpenRef.current = open;
+    prevScenarioKeyRef.current = scenario?.key ?? null;
+  }, [open, scenario?.key, scenario?.version, scenario?.availableDifficulties, locale]);
 
   const handleSelectLanguage = (lang: SupportedLanguage) => {
     setSelectedLanguage(lang);
