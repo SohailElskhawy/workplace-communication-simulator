@@ -1,5 +1,6 @@
 import {
   AlertTriangle as LucideAlertTriangle,
+  ArrowDown as LucideArrowDown,
   ArrowLeft as LucideArrowLeft,
   ArrowRight as LucideArrowRight,
   BarChart3 as LucideBarChart3,
@@ -44,6 +45,7 @@ export type IconProps = LucideProps;
 // Navigation & Structure
 export const ArrowRightIcon = LucideArrowRight;
 export const ArrowLeftIcon = LucideArrowLeft;
+export const ArrowDownIcon = LucideArrowDown;
 export const ChevronDownIcon = LucideChevronDown;
 export const MenuIcon = LucideMenu;
 
