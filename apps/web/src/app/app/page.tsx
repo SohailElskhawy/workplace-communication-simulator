@@ -140,18 +140,19 @@ function PracticeHubContent() {
   // Fetch full detail when activeScenarioKey changes and is non-null
   useEffect(() => {
     if (!activeScenarioKey) {
-      setActiveScenarioDetail(null);
-      setModalLoading(false);
-      setModalError(null);
+      return;
+    }
+
+    if (!authLoaded || !isSignedIn) {
       return;
     }
 
     const keyToLoad: string = activeScenarioKey;
     let isCurrent = true;
-    setModalLoading(true);
-    setModalError(null);
 
     async function loadDetail(key: string) {
+      setModalLoading(true);
+      setModalError(null);
       try {
         const token = await getToken();
         if (!token) throw new Error("Authentication token not available.");
@@ -180,7 +181,7 @@ function PracticeHubContent() {
     return () => {
       isCurrent = false;
     };
-  }, [activeScenarioKey, apiUrl, getToken, isArabic]);
+  }, [activeScenarioKey, apiUrl, authLoaded, getToken, isArabic, isSignedIn]);
 
   // Partition scenarios
   const curatedScenarios = useMemo(() => {
@@ -212,6 +213,9 @@ function PracticeHubContent() {
   );
 
   const handleCloseModal = useCallback(() => {
+    setActiveScenarioDetail(null);
+    setModalLoading(false);
+    setModalError(null);
     router.replace("/app", { scroll: false });
   }, [router]);
 
@@ -248,6 +252,9 @@ function PracticeHubContent() {
       if (!token) throw new Error("Authentication token not available.");
       const client = createApiClient(apiUrl);
       await client.deleteCustomScenario(token, scenarioToDelete.key);
+      if (activeScenarioKey === scenarioToDelete.key) {
+        handleCloseModal();
+      }
       setScenarios((prev) =>
         prev.filter((s) => s.key !== scenarioToDelete.key),
       );
@@ -263,7 +270,7 @@ function PracticeHubContent() {
     } finally {
       setDeleteLoading(false);
     }
-  }, [apiUrl, getToken, isArabic, scenarioToDelete]);
+  }, [activeScenarioKey, apiUrl, getToken, handleCloseModal, isArabic, scenarioToDelete]);
 
   return (
     <div

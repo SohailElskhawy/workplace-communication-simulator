@@ -279,6 +279,48 @@ describe("PracticeHubPage (/app)", () => {
     });
   });
 
+  it("closes modal and resets URL when currently active custom scenario is deleted", async () => {
+    const customScenario: PublicScenarioSummary = {
+      key: "custom-job-interview-active",
+      version: 1,
+      title: "Active Custom Interview",
+      category: "CUSTOM",
+      summary: "Interview scenario that is currently open.",
+      isCustom: true,
+    };
+
+    mockFetchScenarios.mockResolvedValue([
+      ...DEFAULT_MOCK_SCENARIOS,
+      customScenario,
+    ]);
+    mockSearchParams = new URLSearchParams("scenario=custom-job-interview-active");
+
+    render(<PracticeHubPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Active Custom Interview")).toBeDefined();
+    });
+
+    const trashBtn = screen.getByRole("button", {
+      name: "Delete Active Custom Interview",
+    });
+    fireEvent.click(trashBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText("Delete custom interview?")).toBeDefined();
+    });
+
+    mockDeleteCustomScenario.mockResolvedValue(undefined);
+    const confirmDeleteBtn = screen.getByRole("button", {
+      name: "Delete Scenario",
+    });
+    fireEvent.click(confirmDeleteBtn);
+
+    await waitFor(() => {
+      expect(mockRouterReplace).toHaveBeenCalledWith("/app", { scroll: false });
+    });
+  });
+
   it("falls back to DEFAULT_MOCK_SCENARIOS and shows message when scenarios fetch fails", async () => {
     mockFetchScenarios.mockRejectedValue(new Error("Network failure"));
 

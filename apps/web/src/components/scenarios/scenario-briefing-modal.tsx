@@ -85,6 +85,7 @@ export function ScenarioBriefingModal({
         const initialDiff = scenario.availableDifficulties.includes("MEDIUM")
           ? "MEDIUM"
           : (scenario.availableDifficulties[0] ?? "MEDIUM");
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setSelectedDifficulty(initialDiff);
         setSelectedLanguage(locale === "ar" ? "ar" : "en");
         setSelectedDialect("EGYPTIAN");
@@ -96,7 +97,7 @@ export function ScenarioBriefingModal({
 
     prevOpenRef.current = open;
     prevScenarioKeyRef.current = scenario?.key ?? null;
-  }, [open, scenario?.key, scenario?.version, scenario?.availableDifficulties, locale]);
+  }, [open, scenario, locale]);
 
   const handleSelectLanguage = (lang: SupportedLanguage) => {
     setSelectedLanguage(lang);
