@@ -2,56 +2,61 @@
 
 import { useAuth, useUser } from "@clerk/nextjs";
 import type {
-  HistoryItem,
   ProgressData,
+  PublicScenarioDetail,
   PublicScenarioSummary,
 } from "@kalemny/contracts";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 
-import {
-  ArrowRightIcon,
-  DocumentTextIcon,
-  InterviewIcon,
-  SparklesIcon,
-  TargetIcon,
-} from "@/components/icons";
+import { ArrowRightIcon, TrashIcon } from "@/components/icons";
+import { CuratedScenarioGrid } from "@/components/scenarios/curated-scenario-grid";
+import { DeleteCustomScenarioDialog } from "@/components/scenarios/delete-custom-scenario-dialog";
+import { ScenarioBriefingModal } from "@/components/scenarios/scenario-briefing-modal";
+import { TestingEntitlementCard } from "@/components/scenarios/testing-entitlement-card";
 import { createApiClient } from "@/lib/api-client";
-import { SKILL_SCORE_KEYS } from "@/lib/constants";
-import { getSkillMetadata } from "@/lib/score-utils";
+import { useLocale } from "@/lib/locale-context";
 import { DEFAULT_MOCK_SCENARIOS } from "./scenario-library-view";
 
-function formatHistoryStatus(status: HistoryItem["status"]): string {
-  switch (status) {
-    case "COMPLETED":
-      return "Results ready";
-    case "EVALUATING":
-      return "Preparing feedback";
-    case "EVALUATION_FAILED":
-      return "Feedback needs attention";
-    case "ABANDONED":
-      return "Ended early";
-    case "ACTIVE":
-      return "Continue practice";
-  }
+interface EntitlementState {
+  remaining: number;
+  limit: number;
+  resetWindowDays: number;
 }
 
-function pathHrefForHistory(item: HistoryItem): string {
-  return item.status === "ACTIVE"
-    ? `/app/simulations/${encodeURIComponent(item.attemptId)}`
-    : `/app/results/${encodeURIComponent(item.attemptId)}`;
-}
+function PracticeHubContent() {
+  const searchParams = useSearchParams();
+  const activeScenarioKey = searchParams.get("scenario");
+  const router = useRouter();
 
-export default function DashboardPage() {
   const { getToken, isLoaded: authLoaded, isSignedIn } = useAuth();
   const { user } = useUser();
+  const { locale, direction } = useLocale();
+  const isArabic = locale === "ar";
+
   const [scenarios, setScenarios] = useState<PublicScenarioSummary[]>(
     DEFAULT_MOCK_SCENARIOS,
   );
+  const [entitlements, setEntitlements] = useState<EntitlementState | null>(
+    null,
+  );
   const [progress, setProgress] = useState<ProgressData | null>(null);
-  const [recentHistory, setRecentHistory] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [scenariosError, setScenariosError] = useState<string | null>(null);
+
+  // Scenario detail for modal
+  const [activeScenarioDetail, setActiveScenarioDetail] =
+    useState<PublicScenarioDetail | null>(null);
+  const [modalLoading, setModalLoading] = useState(false);
+  const [modalError, setModalError] = useState<string | null>(null);
+
+  // Custom scenario deletion
+  const [scenarioToDelete, setScenarioToDelete] =
+    useState<PublicScenarioSummary | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
 
   const loadDashboardData = useCallback(async () => {
@@ -62,310 +67,429 @@ export default function DashboardPage() {
       const token = await getToken();
       if (!token) return;
       const client = createApiClient(apiUrl);
-      const [scenariosResult, progressResult, historyResult] =
+      const clientAny = client as unknown as {
+        fetchEntitlements?: (t: string) => Promise<{
+          remaining: number;
+          limit: number;
+          resetWindowDays?: number;
+        }>;
+        fetchEntitlement?: (t: string) => Promise<{
+          simulationsRemaining?: number | null;
+          simulationsLimit?: number | null;
+        }>;
+      };
+
+      const entitlementsPromise =
+        typeof clientAny.fetchEntitlements === "function"
+          ? clientAny.fetchEntitlements(token)
+          : typeof clientAny.fetchEntitlement === "function"
+            ? clientAny.fetchEntitlement(token)
+            : client.fetchEntitlement(token);
+
+      const [entitlementsResult, scenariosResult, progressResult] =
         await Promise.allSettled([
+          entitlementsPromise,
           client.fetchScenarios(token),
           client.fetchProgress(token),
-          client.fetchHistory(token, { limit: 3 }),
         ]);
 
+      if (entitlementsResult.status === "fulfilled") {
+        const val = entitlementsResult.value as {
+          remaining?: number;
+          simulationsRemaining?: number | null;
+          limit?: number;
+          simulationsLimit?: number | null;
+          resetWindowDays?: number;
+        };
+        setEntitlements({
+          remaining: val.remaining ?? val.simulationsRemaining ?? 3,
+          limit: val.limit ?? val.simulationsLimit ?? 3,
+          resetWindowDays: val.resetWindowDays ?? 7,
+        });
+      }
+
       if (scenariosResult.status === "fulfilled") {
-        setScenarios(scenariosResult.value);
+        const fetchedScenarios = scenariosResult.value;
+        if (fetchedScenarios && fetchedScenarios.length > 0) {
+          setScenarios(fetchedScenarios);
+        } else {
+          setScenarios(DEFAULT_MOCK_SCENARIOS);
+        }
         setScenariosError(null);
       } else {
-        setScenariosError("We could not refresh the scenario list.");
+        setScenarios(DEFAULT_MOCK_SCENARIOS);
+        setScenariosError(
+          isArabic
+            ? "تعذر تحديث قائمة السيناريوهات. نعرض السيناريوهات الجاهزة."
+            : "We could not refresh the scenario list. Showing curated scenarios.",
+        );
       }
+
       if (progressResult.status === "fulfilled") {
         setProgress(progressResult.value);
-      }
-      if (historyResult.status === "fulfilled") {
-        setRecentHistory(historyResult.value.data);
       }
     } finally {
       setLoading(false);
     }
-  }, [apiUrl, authLoaded, getToken, isSignedIn]);
+  }, [apiUrl, authLoaded, getToken, isSignedIn, isArabic]);
 
   useEffect(() => {
     void loadDashboardData();
   }, [loadDashboardData]);
 
-  const recommendedScenario = useMemo(() => {
-    if (progress?.recommendedScenario) {
-      const match = scenarios.find(
-        (scenario) => scenario.key === progress.recommendedScenario?.key,
-      );
-      if (match) return match;
+  // Fetch full detail when activeScenarioKey changes and is non-null
+  useEffect(() => {
+    if (!activeScenarioKey) {
+      setActiveScenarioDetail(null);
+      setModalLoading(false);
+      setModalError(null);
+      return;
     }
-    return (
-      scenarios.find((scenario) => scenario.key === "salary-negotiation") ??
-      scenarios[0] ??
-      DEFAULT_MOCK_SCENARIOS[0]!
-    );
-  }, [progress, scenarios]);
 
-  const greetingName = user?.firstName ? `, ${user.firstName}` : "";
+    const keyToLoad: string = activeScenarioKey;
+    let isCurrent = true;
+    setModalLoading(true);
+    setModalError(null);
 
-  if (loading && scenarios.length === 0) {
-    return (
-      <div className="space-y-8 py-8" role="status" aria-busy="true">
-        <div className="h-8 w-40 animate-pulse rounded-lg bg-muted" />
-        <div className="h-20 max-w-2xl animate-pulse rounded-card bg-muted" />
-        <div className="grid gap-4 md:grid-cols-3">
-          {[1, 2, 3].map((item) => (
-            <div
-              key={item}
-              className="h-64 animate-pulse rounded-card border border-border-subtle bg-surface-solid"
-            />
-          ))}
-        </div>
-      </div>
+    async function loadDetail(key: string) {
+      try {
+        const token = await getToken();
+        if (!token) throw new Error("Authentication token not available.");
+        const client = createApiClient(apiUrl);
+        const detail = await client.fetchScenarioDetail(token, key);
+        if (!isCurrent) return;
+        setActiveScenarioDetail(detail);
+      } catch (err: unknown) {
+        if (!isCurrent) return;
+        setModalError(
+          err instanceof Error
+            ? err.message
+            : isArabic
+              ? "فشل في تحميل تفاصيل السيناريو."
+              : "Failed to load scenario details.",
+        );
+      } finally {
+        if (isCurrent) {
+          setModalLoading(false);
+        }
+      }
+    }
+
+    void loadDetail(keyToLoad);
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [activeScenarioKey, apiUrl, getToken, isArabic]);
+
+  // Partition scenarios
+  const curatedScenarios = useMemo(() => {
+    const filtered = scenarios.filter(
+      (s) => !s.isCustom && s.category !== "CUSTOM",
     );
-  }
+    return filtered.length > 0 ? filtered : DEFAULT_MOCK_SCENARIOS;
+  }, [scenarios]);
+
+  const customScenarios = useMemo(() => {
+    return scenarios.filter(
+      (s) => Boolean(s.isCustom) || s.category === "CUSTOM",
+    );
+  }, [scenarios]);
+
+  const greetingName = user?.firstName
+    ? isArabic
+      ? `، ${user.firstName}`
+      : `, ${user.firstName}`
+    : "";
+
+  const handleSelectScenario = useCallback(
+    (key: string) => {
+      router.replace(`/app?scenario=${encodeURIComponent(key)}`, {
+        scroll: false,
+      });
+    },
+    [router],
+  );
+
+  const handleCloseModal = useCallback(() => {
+    router.replace("/app", { scroll: false });
+  }, [router]);
+
+  const handleStartPractice = useCallback(
+    async (config: {
+      difficulty: "EASY" | "MEDIUM" | "HARD";
+      language: "en" | "ar";
+      dialect?: "EGYPTIAN" | "GULF";
+      interactionMode: "PUSH_TO_TALK" | "REALTIME";
+    }) => {
+      if (!activeScenarioKey) return;
+      const token = await getToken();
+      if (!token) throw new Error("Authentication token not available.");
+      const client = createApiClient(apiUrl);
+      const attempt = await client.createAttempt(token, {
+        scenarioKey: activeScenarioKey,
+        difficulty: config.difficulty,
+        language: config.language,
+        dialect: config.dialect,
+        interactionMode: config.interactionMode,
+        retryOfAttemptId: null,
+      });
+      router.push(`/app/simulations/${encodeURIComponent(attempt.id)}`);
+    },
+    [activeScenarioKey, apiUrl, getToken, router],
+  );
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (!scenarioToDelete) return;
+    try {
+      setDeleteLoading(true);
+      setDeleteError(null);
+      const token = await getToken();
+      if (!token) throw new Error("Authentication token not available.");
+      const client = createApiClient(apiUrl);
+      await client.deleteCustomScenario(token, scenarioToDelete.key);
+      setScenarios((prev) =>
+        prev.filter((s) => s.key !== scenarioToDelete.key),
+      );
+      setScenarioToDelete(null);
+    } catch (err: unknown) {
+      setDeleteError(
+        err instanceof Error
+          ? err.message
+          : isArabic
+            ? "فشل في حذف المقابلة المخصصة."
+            : "Failed to delete custom scenario.",
+      );
+    } finally {
+      setDeleteLoading(false);
+    }
+  }, [apiUrl, getToken, isArabic, scenarioToDelete]);
 
   return (
-    <div className="space-y-16 py-8 sm:py-12" data-od-id="home-screen">
-      <header className="max-w-3xl space-y-4" data-od-id="home-heading">
+    <div
+      dir={direction}
+      className="space-y-12 py-8 sm:py-12"
+      data-od-id="practice-selection-hub"
+    >
+      {/* 1. Header: Greeting, H1, and Subtitle */}
+      <header className="max-w-3xl space-y-3" data-od-id="practice-hub-header">
         <p className="text-sm font-semibold text-primary">
-          Welcome back{greetingName}
+          {isArabic
+            ? `مرحباً بعودتك${greetingName}`
+            : `Welcome back${greetingName}`}
         </p>
         <h1 className="font-display text-4xl font-semibold leading-tight text-foreground sm:text-5xl lg:text-6xl">
-          What conversation would help you feel more prepared?
+          {isArabic
+            ? "ما هي المحادثة التي تود الاستعداد لها؟"
+            : "What conversation would help you feel more prepared?"}
         </h1>
         <p className="max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-          Practice privately with an AI counterpart, get evidence-linked
-          coaching, and try again while the moment is still fresh.
+          {isArabic
+            ? "تدرب على انفراد مع محاور ذكي، واحصل على تدريب مستند إلى أدلة، وأعد المحاولة بثقة."
+            : "Practice privately with an AI counterpart, get evidence-linked coaching, and try again while the moment is still fresh."}
         </p>
       </header>
 
+      {/* Scenario fetch error banner */}
       {scenariosError && (
         <div
           role="status"
-          className="rounded-control border border-alert/20 bg-alert/5 px-4 py-3 text-sm text-foreground"
+          className="rounded-control border border-alert/20 bg-alert-surface px-4 py-3 text-sm text-alert-foreground shadow-xs"
         >
-          {scenariosError} Showing the available curated practice set.
+          {scenariosError}
         </div>
       )}
 
+      {/* 2. Testing Entitlement Card */}
+      <TestingEntitlementCard
+        remaining={entitlements?.remaining ?? 3}
+        limit={entitlements?.limit ?? 3}
+        resetWindowDays={entitlements?.resetWindowDays ?? 7}
+        loading={loading}
+      />
+
+      {/* 3. Custom Interview Banner */}
       <section
-        aria-labelledby="practice-paths-title"
-        className="space-y-5"
-        data-od-id="practice-paths"
+        aria-label={
+          isArabic
+            ? "إنشاء مقابلة وظيفية مخصصة"
+            : "Create custom job interview"
+        }
+        className="bg-primary-muted border border-primary/20 rounded-card p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-xs"
+        data-od-id="custom-interview-banner"
       >
-        <div>
-          <h2
-            id="practice-paths-title"
-            className="font-display text-3xl font-semibold text-foreground"
-          >
-            Choose your practice path
+        <div className="space-y-2 max-w-2xl">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center rounded-full bg-primary/10 border border-primary/20 px-2.5 py-0.5 text-xs font-semibold text-primary">
+              {isArabic ? "إنشاء مجاني للسيناريو" : "Free scenario generation"}
+            </span>
+          </div>
+          <h2 className="font-display text-xl sm:text-2xl font-bold text-foreground">
+            {isArabic
+              ? "استعد لمقابلتك الوظيفية الحقيقية"
+              : "Prepare for your real job interview"}
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            All three paths lead to the same simulation, coaching, and retry
-            loop.
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            {isArabic
+              ? "تدرّب مع محاور ذكي مخصص وفقاً لسيرتك الذاتية ووصف الوظيفة المستهدفة."
+              : "Upload your CV and paste the job description to practice tailored questions grounded in your experience."}
           </p>
         </div>
+        <Link
+          href="/app/scenarios/custom"
+          className="inline-flex min-h-[44px] shrink-0 items-center justify-center rounded-control bg-primary px-5 py-2.5 font-display text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90 cursor-pointer"
+        >
+          {isArabic ? "إنشاء مقابلة مخصصة" : "Create custom interview"}
+        </Link>
+      </section>
 
-        <div className="grid gap-4 md:grid-cols-3">
-          <Link
-            href={`/app/scenarios/${encodeURIComponent(recommendedScenario.key)}`}
-            className="group flex min-h-72 flex-col rounded-card border border-border-subtle bg-surface-solid p-6 shadow-xs transition hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-brutal"
-            data-od-id="path-recommended-practice"
-          >
-            <div className="flex items-center justify-between gap-3">
-              <span className="inline-flex min-h-8 items-center rounded-full bg-primary-muted px-3 text-xs font-semibold text-primary">
-                Recommended for you
+      {/* 4. Curated Scenario Grid */}
+      <CuratedScenarioGrid
+        scenarios={curatedScenarios}
+        {...(progress?.recommendedScenario?.key
+          ? { recommendedKey: progress.recommendedScenario.key }
+          : {})}
+        onSelectScenario={handleSelectScenario}
+      />
+
+      {/* 5. My Custom Interviews Section (conditionally rendered) */}
+      {customScenarios.length > 0 && (
+        <section
+          aria-label={isArabic ? "مقابلاتي المخصصة" : "My Custom Interviews"}
+          className="space-y-6"
+          data-od-id="my-custom-interviews"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <h2 className="font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+                {isArabic ? "مقابلاتي المخصصة" : "My Custom Interviews"}
+              </h2>
+              <span className="inline-flex items-center justify-center rounded-full border border-border-subtle bg-surface-subtle px-2.5 py-0.5 text-xs font-semibold text-muted-foreground">
+                {customScenarios.length}
               </span>
-              <SparklesIcon
-                className="h-5 w-5 text-primary"
-                aria-hidden="true"
-              />
             </div>
-            <div className="mt-8 flex-1">
-              <h3 className="font-display text-2xl font-semibold text-foreground">
-                Recommended practice
-              </h3>
-              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                {recommendedScenario.title}: {recommendedScenario.summary}
-              </p>
-            </div>
-            <span className="mt-6 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-foreground group-hover:text-primary">
-              Start this practice
-              <ArrowRightIcon className="directional-icon h-4 w-4" />
-            </span>
-          </Link>
-
-          <Link
-            href="/app/scenarios"
-            className="group flex min-h-72 flex-col rounded-card border border-border-subtle bg-surface-solid p-6 shadow-xs transition hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-brutal"
-            data-od-id="path-browse-scenarios"
-          >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-subtle text-foreground">
-              <DocumentTextIcon className="h-5 w-5" aria-hidden="true" />
-            </div>
-            <div className="mt-8 flex-1">
-              <h3 className="font-display text-2xl font-semibold text-foreground">
-                Browse scenarios
-              </h3>
-              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                Explore {scenarios.length} workplace and interview situations by
-                skill, category, and difficulty.
-              </p>
-            </div>
-            <span className="mt-6 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-foreground group-hover:text-primary">
-              Explore the library
-              <ArrowRightIcon className="directional-icon h-4 w-4" />
-            </span>
-          </Link>
-
-          <Link
-            href="/app/scenarios/custom"
-            className="group flex min-h-72 flex-col rounded-card border border-border-subtle bg-surface-solid p-6 shadow-xs transition hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-brutal"
-            data-od-id="path-real-interview"
-          >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-subtle text-foreground">
-              <InterviewIcon className="h-5 w-5" aria-hidden="true" />
-            </div>
-            <div className="mt-8 flex-1">
-              <h3 className="font-display text-2xl font-semibold text-foreground">
-                Prepare for your real interview
-              </h3>
-              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                Upload your CV, add the job description, and rehearse a
-                personalized interview grounded in your experience.
-              </p>
-              <p className="mt-4 font-meta text-[11px] text-muted-foreground">
-                CV PDF → Job description → Personalized interview
-              </p>
-            </div>
-            <span className="mt-6 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-foreground group-hover:text-primary">
-              Prepare my interview
-              <ArrowRightIcon className="directional-icon h-4 w-4" />
-            </span>
-          </Link>
-        </div>
-      </section>
-
-      <section
-        className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]"
-        data-od-id="learning-overview"
-      >
-        <div className="rounded-card border border-border-subtle bg-surface-solid p-6 shadow-xs sm:p-8">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h2 className="font-display text-2xl font-semibold text-foreground">
-                Continue where you left off
-              </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Recent practice and feedback, without losing your place.
-              </p>
-            </div>
-            <Link
-              href="/app/history"
-              className="inline-flex min-h-11 shrink-0 items-center text-sm font-semibold text-primary hover:underline"
-            >
-              History
-            </Link>
           </div>
 
-          <div className="mt-6 divide-y divide-border-subtle">
-            {recentHistory.length > 0 ? (
-              recentHistory.map((item) => (
-                <Link
-                  key={item.attemptId}
-                  href={pathHrefForHistory(item)}
-                  className="group flex min-h-20 items-center justify-between gap-4 py-4"
-                  data-od-id={`recent-practice-${item.attemptId}`}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {customScenarios.map((scenario) => {
+              const title = (isArabic && scenario.titleAr) || scenario.title;
+              const summary =
+                (isArabic && scenario.summaryAr) || scenario.summary;
+              const rawCreated = (scenario as { createdAt?: string | Date })
+                .createdAt;
+              const createdDate = rawCreated
+                ? new Date(rawCreated).toLocaleDateString(
+                    isArabic ? "ar-EG" : "en-US",
+                    { month: "short", day: "numeric", year: "numeric" },
+                  )
+                : null;
+
+              return (
+                <div
+                  key={scenario.key}
+                  className="group flex flex-col justify-between rounded-card border border-border-subtle bg-surface-solid p-5 sm:p-6 shadow-xs transition-colors hover:border-primary/30"
+                  data-od-id={`custom-scenario-${scenario.key}`}
                 >
-                  <div className="min-w-0">
-                    <p className="truncate font-semibold text-foreground group-hover:text-primary">
-                      {item.scenario.title}
-                    </p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {item.difficulty.toLowerCase()} ·{" "}
-                      {formatHistoryStatus(item.status)}
-                    </p>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-3">
-                    {item.overallScore !== null && (
-                      <span className="font-mono text-sm font-semibold text-foreground">
-                        {item.overallScore}/100
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="inline-flex items-center rounded-full bg-primary/10 border border-primary/20 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                        {isArabic ? "مقابلة مخصصة" : "Custom Interview"}
                       </span>
-                    )}
-                    <ArrowRightIcon className="directional-icon h-4 w-4 text-muted-foreground group-hover:text-primary" />
-                  </div>
-                </Link>
-              ))
-            ) : (
-              <div className="py-10 text-center">
-                <p className="text-sm text-muted-foreground">
-                  Your recent sessions will appear here after your first
-                  practice.
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="rounded-card border border-border-subtle bg-surface-solid p-6 shadow-xs sm:p-8">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h2 className="font-display text-2xl font-semibold text-foreground">
-                Communication profile
-              </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Your latest eligible practice sessions.
-              </p>
-            </div>
-            <TargetIcon className="h-5 w-5 text-primary" aria-hidden="true" />
-          </div>
-
-          {progress?.skills ? (
-            <div className="mt-6 space-y-4">
-              {SKILL_SCORE_KEYS.map((skillKey) => {
-                const score = progress.skills![skillKey];
-                return (
-                  <div
-                    key={skillKey}
-                    className="grid grid-cols-[7rem_1fr_2.5rem] items-center gap-3"
-                  >
-                    <span className="text-sm font-medium text-foreground">
-                      {getSkillMetadata(skillKey).name}
-                    </span>
-                    <span className="h-1.5 overflow-hidden rounded-full bg-surface-raised">
-                      <span
-                        className="block h-full rounded-full bg-primary"
-                        style={{
-                          width: `${Math.min(100, Math.max(0, score))}%`,
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setScenarioToDelete(scenario);
+                          setDeleteError(null);
                         }}
-                      />
-                    </span>
-                    <span className="text-end font-mono text-xs text-muted-foreground">
-                      {score}
-                    </span>
+                        aria-label={
+                          isArabic ? `حذف ${title}` : `Delete ${title}`
+                        }
+                        className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-control text-muted-foreground hover:bg-alert/10 hover:text-alert transition-colors cursor-pointer"
+                      >
+                        <TrashIcon className="h-4 w-4" aria-hidden="true" />
+                      </button>
+                    </div>
+
+                    <div>
+                      <h3 className="font-display text-lg font-bold text-foreground">
+                        {title}
+                      </h3>
+                      <p className="mt-1 font-meta text-xs text-muted-foreground">
+                        {isArabic
+                          ? "المحاور: محاور التوظيف الذكي"
+                          : "Counterpart: AI Hiring Manager"}
+                      </p>
+                      <p className="mt-2 line-clamp-2 text-sm text-muted-foreground leading-relaxed">
+                        {summary}
+                      </p>
+                    </div>
                   </div>
-                );
-              })}
-              <Link
-                href="/app/progress"
-                className="mt-2 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-primary hover:underline"
-              >
-                View progress and next focus
-                <ArrowRightIcon className="directional-icon h-4 w-4" />
-              </Link>
-            </div>
-          ) : (
-            <div className="mt-8 rounded-xl bg-surface-subtle p-5">
-              <p className="text-sm font-medium text-foreground">
-                Complete three conversation turns to start your profile.
-              </p>
-              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                Kalemny tracks clarity, assertiveness, empathy, structure, and
-                conciseness from eligible sessions.
-              </p>
-            </div>
-          )}
-        </div>
-      </section>
+
+                  <div className="mt-4 pt-4 border-t border-border-subtle flex items-center justify-between gap-2">
+                    <span className="font-meta text-xs text-muted-foreground">
+                      {createdDate ?? (isArabic ? "مخصص" : "Custom")}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleSelectScenario(scenario.key)}
+                      className="inline-flex min-h-[44px] items-center gap-1.5 font-display text-xs font-bold uppercase tracking-wider text-primary hover:underline cursor-pointer"
+                    >
+                      <span>
+                        {isArabic ? "تفاصيل التدرّب" : "Practice Setup"}
+                      </span>
+                      <ArrowRightIcon className="directional-icon h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* 6. Scenario Briefing Modal */}
+      <ScenarioBriefingModal
+        open={Boolean(activeScenarioKey)}
+        scenario={activeScenarioDetail}
+        loading={modalLoading}
+        error={modalError}
+        remainingQuota={entitlements?.remaining ?? 3}
+        onClose={handleCloseModal}
+        onStartPractice={handleStartPractice}
+      />
+
+      {/* Delete Custom Scenario Dialog */}
+      {scenarioToDelete && (
+        <DeleteCustomScenarioDialog
+          open={Boolean(scenarioToDelete)}
+          scenarioTitle={scenarioToDelete.title}
+          deleteError={deleteError}
+          deleteLoading={deleteLoading}
+          onClose={() => {
+            if (!deleteLoading) {
+              setScenarioToDelete(null);
+              setDeleteError(null);
+            }
+          }}
+          onConfirm={handleConfirmDelete}
+        />
+      )}
     </div>
+  );
+}
+
+export default function PracticeHubPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="space-y-8 py-8" role="status" aria-busy="true">
+          <div className="h-8 w-40 animate-pulse rounded-lg bg-surface-subtle" />
+          <div className="h-20 max-w-2xl animate-pulse rounded-card bg-surface-subtle" />
+        </div>
+      }
+    >
+      <PracticeHubContent />
+    </Suspense>
   );
 }
