@@ -21,6 +21,7 @@ export interface PendingTurnState {
 
 export interface VisibleTranscriptViewProps {
   turns: ConversationTurn[];
+  openingMessage?: string | null;
   pendingTurn?: PendingTurnState | null;
   counterpartName: string;
   counterpartRole: string;
@@ -32,6 +33,7 @@ export interface VisibleTranscriptViewProps {
 
 export function VisibleTranscriptView({
   turns,
+  openingMessage,
   pendingTurn,
   counterpartName,
   counterpartRole,
@@ -84,7 +86,7 @@ export function VisibleTranscriptView({
     performScrollToBottom(true);
   }, [turns.length, pendingTurn?.text, pendingTurn?.status]);
 
-  const isEmpty = turns.length === 0 && !pendingTurn;
+  const isEmpty = turns.length === 0 && !pendingTurn && !openingMessage;
 
   return (
     <div
@@ -111,6 +113,68 @@ export function VisibleTranscriptView({
           </div>
         ) : (
           <>
+            {/* Opening message bubble */}
+            {openingMessage && (
+              <div
+                data-testid="counterpart-turn-bubble"
+                data-turn-role="counterpart"
+                className="ms-0 me-auto max-w-[88%] sm:max-w-[80%] rounded-card border border-border-subtle bg-surface-solid p-4 text-foreground shadow-xs"
+              >
+                {/* Header */}
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-border-subtle/60 pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="font-display text-xs font-bold text-foreground sm:text-sm">
+                      {counterpartName}
+                    </span>
+                    <span className="font-meta text-[11px] text-muted-foreground">
+                      • {counterpartRole}
+                    </span>
+                  </div>
+
+                  {/* On-demand speech button */}
+                  {onReplaySpeech && (
+                    <button
+                      type="button"
+                      onClick={() => onReplaySpeech("opening", openingMessage)}
+                      aria-label={
+                        playingTurnId === "opening"
+                          ? isRtl
+                            ? "جارٍ تشغيل الصوت"
+                            : "Playing speech"
+                          : isRtl
+                            ? "إعادة تشغيل الصوت"
+                            : "Replay speech"
+                      }
+                      className={cn(
+                        "inline-flex min-h-[44px] min-w-[44px] cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors",
+                        playingTurnId === "opening"
+                          ? "border-primary bg-primary-muted text-primary"
+                          : "border-border bg-surface-subtle text-foreground hover:bg-surface-raised",
+                      )}
+                    >
+                      <VolumeIcon
+                        className={cn("h-4 w-4", playingTurnId === "opening" && "animate-pulse")}
+                        aria-hidden="true"
+                      />
+                      <span>
+                        {playingTurnId === "opening"
+                          ? isRtl
+                            ? "جارٍ التشغيل…"
+                            : "Playing…"
+                          : isRtl
+                            ? "تشغيل الصوت"
+                            : "Replay"}
+                      </span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Body */}
+                <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground sm:text-base">
+                  {openingMessage}
+                </p>
+              </div>
+            )}
             {turns.map((turn, index) => {
               const counterpartText =
                 turn.assistantText ?? (turn as unknown as { counterpartResponse?: string }).counterpartResponse;

@@ -25,12 +25,12 @@ export interface CounterpartStageProps {
   counterpartRole: string;
   userRole: string;
   userObjective: string;
-  stakes?: string;
-  isCustom?: boolean;
+  stakes?: string | undefined;
+  isCustom?: boolean | undefined;
   uiState: SimulationUiState;
   counterpartSpeechStatus: SpeechPlaybackStatus;
   onStopAudio: () => void;
-  isKeyboardOpen?: boolean;
+  isKeyboardOpen?: boolean | undefined;
 }
 
 const STATE_BADGE_CONFIG: Record<

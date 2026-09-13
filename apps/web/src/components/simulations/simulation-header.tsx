@@ -143,6 +143,7 @@ export function SimulationHeader({
             type="button"
             onClick={onOpenFinishDialog}
             disabled={finishing}
+            aria-label="Finish rehearsal session"
             className={cn(
               "inline-flex min-h-11 min-w-fit shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-control border px-3 text-xs font-semibold transition-colors sm:px-4",
               turnCount >= 1

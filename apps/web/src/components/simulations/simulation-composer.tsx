@@ -351,6 +351,7 @@ export function SimulationComposer({
 
   return (
     <footer
+      data-testid="simulation-composer"
       dir={isRtl ? "rtl" : "ltr"}
       className="border-t border-border bg-surface-solid px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-5 sm:pt-4 sm:pb-5 shadow-xs shrink-0 flex flex-col gap-3"
     >

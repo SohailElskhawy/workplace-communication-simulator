@@ -118,6 +118,7 @@ export function LiveCallBar({
         {isCounterpartSpeaking && (
           <button
             type="button"
+            data-testid="interrupt-button"
             onClick={onInterruptAudio}
             aria-label={isAr ? "اضغط للمقاطعة" : "Tap to interrupt"}
             className="min-h-[44px] min-w-[44px] px-4 rounded-full bg-primary text-primary-foreground font-semibold flex items-center gap-2 hover:bg-primary/90 transition-colors shadow-xs cursor-pointer"
@@ -133,6 +134,7 @@ export function LiveCallBar({
         {connected && (
           <button
             type="button"
+            data-testid="mute-toggle-button"
             onClick={onToggleMute}
             aria-label={
               isMuted
@@ -170,6 +172,7 @@ export function LiveCallBar({
         {/* Hybrid Typing Toggle */}
         <button
           type="button"
+          data-testid="typing-toggle-button"
           onClick={onToggleTyping}
           aria-expanded={isTypingOpen}
           aria-label={

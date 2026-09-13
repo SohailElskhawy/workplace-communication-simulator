@@ -13,21 +13,36 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { EmptyState, ErrorState, LoadingState } from "@/components/route-state";
 import { BriefingSidebar } from "@/components/simulations/briefing-sidebar";
 import {
-  ConversationStage,
+  CounterpartStage,
   type SimulationUiState,
-} from "@/components/simulations/conversation-stage";
+} from "@/components/simulations/counterpart-stage";
 import { FinishSimulationDialog } from "@/components/simulations/finish-simulation-dialog";
-import { LiveCallStage } from "@/components/simulations/live-call-stage";
+import { LiveCallBar } from "@/components/simulations/live-call-bar";
 import { SimulationComposer } from "@/components/simulations/simulation-composer";
 import { SimulationHeader } from "@/components/simulations/simulation-header";
 import {
-  TranscriptDrawer,
+  VisibleTranscriptView,
   type PendingTurnState,
-} from "@/components/simulations/transcript-drawer";
+} from "@/components/simulations/visible-transcript-view";
+import { useContinuousLiveCall } from "@/hooks/use-continuous-live-call";
 import { ApiClientError, createApiClient } from "@/lib/api-client";
+import { cn } from "@/lib/cn";
 import { isConversationInputDisabled } from "@/lib/conversation-input-state";
+import { LocaleProvider } from "@/lib/locale-context";
 import { isPersistedRoleplayFailure } from "@/lib/roleplay-recovery";
-import type { SpeechPlaybackStatus } from "@/lib/speech-playback-controller";
+import {
+  SpeechPlaybackController,
+  type SpeechPlaybackStatus,
+} from "@/lib/speech-playback-controller";
+
+const COUNTERPART_NAMES: Record<string, { en: string; ar: string }> = {
+  "salary-negotiation": { en: "Sarah Chen", ar: "سارة تشن" },
+  "behavioral-interview": { en: "Marcus Vance", ar: "ماركوس فانس" },
+  "promotion-request": { en: "David Rodriguez", ar: "ديفيد رودريغيز" },
+  "manager-pushback": { en: "Elena Rostova", ar: "إيلينا روستوفا" },
+  "difficult-feedback": { en: "Tariq Al-Mansoor", ar: "طارق المنصور" },
+  "scope-creep": { en: "Amira Patel", ar: "أميرة باتيل" },
+};
 
 export default function SimulationPage() {
   const params = useParams();
@@ -48,45 +63,56 @@ export default function SimulationPage() {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [isNotFound, setIsNotFound] = useState(false);
+  const loadedAttemptIdRef = useRef<string | null>(null);
 
   // In-conversation state
   const [composerText, setComposerText] = useState("");
-  // Persistent input mode (VOICE/TEXT). Independent of transient conversation
-  // state: once the learner picks VOICE it stays active across recording,
-  // transcription, review, send, and AI turns until they choose "Type instead".
   const [inputMode, setInputMode] = useState<InputMethod>("TEXT");
   const [sendingTurn, setSendingTurn] = useState(false);
   const [pendingTurn, setPendingTurn] = useState<PendingTurnState | null>(null);
-  const [pendingError, setPendingError] = useState<string | null>(null);
   const [retryingTurnId, setRetryingTurnId] = useState<string | null>(null);
   const [generalError, setGeneralError] = useState<string | null>(null);
 
-  // Dialog and navigation state
-  const [showFinishDialog, setShowFinishDialog] = useState(false);
-  const [finishing, setFinishing] = useState(false);
-  const [briefingOpen, setBriefingOpen] = useState(false);
-  const [transcriptOpen, setTranscriptOpen] = useState(false);
-  const [autoPlaySpeech, setAutoPlaySpeech] = useState(true);
+  // Speech and Audio playback state
+  const [counterpartSpeechStatus, setCounterpartSpeechStatus] =
+    useState<SpeechPlaybackStatus>("idle");
+  const [playingTurnId, setPlayingTurnId] = useState<string | null>(null);
+  const speechControllerRef = useRef<SpeechPlaybackController | null>(null);
+  const hasAutoPlayedOpeningRef = useRef(false);
+
+  // Voice recording state
   const [voiceStatus, setVoiceStatus] = useState<
     "idle" | "requesting_permission" | "recording" | "transcribing" | "error"
   >("idle");
   const [hasVoiceDraft, setHasVoiceDraft] = useState(false);
   const [microphoneLevel, setMicrophoneLevel] = useState(0);
-  const [counterpartSpeechStatus, setCounterpartSpeechStatus] =
-    useState<SpeechPlaybackStatus>("idle");
+
+  // Dialog, Header, and Navigation state
+  const [showFinishDialog, setShowFinishDialog] = useState(false);
+  const [finishing, setFinishing] = useState(false);
+  const [briefingOpen, setBriefingOpen] = useState(false);
+  const [autoPlaySpeech, setAutoPlaySpeech] = useState(true);
+
+  // Realtime mode hybrid typing toggle
+  const [isTypingOpen, setIsTypingOpen] = useState(false);
+
+  // Mobile layout state
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
 
   // Timer and Expiry state
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [isExpired, setIsExpired] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
+
+  const isLiveCallMode = attempt?.interactionMode === "REALTIME";
 
   // Reload handler for user retry button
   const reloadSimulationData = useCallback(async () => {
     if (!attemptId) return;
     try {
+      loadedAttemptIdRef.current = null;
       setLoading(true);
       const token = await getToken();
       if (!token) throw new Error("Authentication token not available.");
@@ -95,6 +121,7 @@ export default function SimulationPage() {
       const attemptData = await client.fetchAttempt(token, attemptId);
 
       setAttempt(attemptData);
+      loadedAttemptIdRef.current = attemptId;
       setFetchError(null);
       setIsNotFound(false);
 
@@ -135,6 +162,7 @@ export default function SimulationPage() {
 
     async function initialLoad() {
       if (!isLoaded || !isSignedIn || !attemptId) return;
+      if (loadedAttemptIdRef.current === attemptId) return;
 
       try {
         const token = await getToken();
@@ -145,6 +173,7 @@ export default function SimulationPage() {
         if (!isMounted) return;
 
         setAttempt(attemptData);
+        loadedAttemptIdRef.current = attemptId;
         setFetchError(null);
         setIsNotFound(false);
 
@@ -212,6 +241,215 @@ export default function SimulationPage() {
     return () => clearInterval(interval);
   }, [attempt]);
 
+  // Mobile Keyboard Detection via textarea focus/blur and visualViewport
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const handleFocus = () => {
+      if (typeof window !== "undefined" && window.innerWidth < 1024) {
+        setIsKeyboardOpen(true);
+      }
+    };
+    const handleBlur = () => {
+      setIsKeyboardOpen(false);
+    };
+
+    textarea.addEventListener("focus", handleFocus);
+    textarea.addEventListener("blur", handleBlur);
+
+    return () => {
+      textarea.removeEventListener("focus", handleFocus);
+      textarea.removeEventListener("blur", handleBlur);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.visualViewport) return;
+    const viewport = window.visualViewport;
+    const initialHeight = window.innerHeight;
+
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setIsKeyboardOpen(false);
+        return;
+      }
+      if (viewport.height < initialHeight * 0.75) {
+        setIsKeyboardOpen(true);
+      } else if (document.activeElement !== textareaRef.current) {
+        setIsKeyboardOpen(false);
+      }
+    };
+
+    viewport.addEventListener("resize", handleResize);
+    return () => {
+      viewport.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
+  // Audio Playback & Barge-In for Stored Turns (PTT Mode & On-Demand Replay)
+  const playTurnSpeech = useCallback(
+    async (turnId: string) => {
+      if (!attemptId) return;
+      speechControllerRef.current?.stop();
+      setPlayingTurnId(turnId);
+
+      const controller = new SpeechPlaybackController({
+        requestAudio: async (signal) => {
+          const token = await getToken();
+          if (!token) throw new Error("Authentication token not available.");
+          return createApiClient(apiUrl).generateSpeech(
+            token,
+            attemptId,
+            turnId,
+            signal,
+          );
+        },
+        createObjectUrl: (blob) => URL.createObjectURL(blob),
+        revokeObjectUrl: (url) => URL.revokeObjectURL(url),
+        createAudio: (url) => new Audio(url),
+        onStatusChange: (status) => {
+          setCounterpartSpeechStatus(status);
+          if (status === "idle" || status === "error") {
+            setPlayingTurnId((prev) => (prev === turnId ? null : prev));
+          }
+        },
+      });
+
+      speechControllerRef.current = controller;
+      await controller.play();
+    },
+    [apiUrl, attemptId, getToken],
+  );
+
+  // Live call turn sender for realtime mode
+  const handleSendLiveTurn = useCallback(
+    async (textToSend: string): Promise<string | null> => {
+      if (!attemptId || !textToSend.trim()) return null;
+      const client = createApiClient(apiUrl);
+      const clientRequestId =
+        typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+          ? crypto.randomUUID()
+          : `req_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      try {
+        const token = await getToken();
+        if (!token) throw new Error("Authentication token not available.");
+
+        const newTurn = await client.createTurn(token, attemptId, {
+          clientRequestId,
+          text: textToSend.trim(),
+          inputMethod: "VOICE",
+        });
+
+        setAttempt((prev) => {
+          if (!prev) return prev;
+          const exists = prev.turns.some((t) => t.id === newTurn.id);
+          const updatedTurns = exists
+            ? prev.turns.map((t) => (t.id === newTurn.id ? newTurn : t))
+            : [...prev.turns, newTurn];
+          return { ...prev, turns: updatedTurns };
+        });
+
+        return newTurn.id;
+      } catch {
+        return null;
+      }
+    },
+    [apiUrl, attemptId, getToken],
+  );
+
+  const openingMessage = useMemo(() => {
+    if (attempt?.scenario?.openingMessage) {
+      return attempt.scenario.openingMessage;
+    }
+    const key = attempt?.scenario?.key ?? "";
+    const defaults: Record<string, string> = {
+      "salary-negotiation":
+        "Thanks for making time to talk. We're excited about the possibility of you joining the team. I understand you wanted to discuss the offer—what would you like us to consider?",
+      "behavioral-interview":
+        "Thanks for joining us today. To start off, could you tell me about a time when a project didn't go according to plan and how you handled it?",
+      "promotion-request":
+        "Hi, thanks for setting up this 1-on-1. You mentioned you wanted to discuss your career progression and role—what's on your mind?",
+      "manager-pushback":
+        "Thanks for meeting on short notice. As you know, leadership wants to pull the release date forward by two weeks. We need your team to commit to this new deadline.",
+      "difficult-feedback":
+        "Hey, thanks for catching up. What was it you wanted to discuss regarding our recent project collaboration?",
+      "scope-creep":
+        "Thanks for taking the call. We've decided we really need the analytics dashboard and multi-currency export included in this sprint before launch.",
+    };
+    return defaults[key] ?? null;
+  }, [attempt]);
+
+  // Hook for Continuous Hands-Free Call (REALTIME Mode)
+  const liveCall = useContinuousLiveCall({
+    hasOpeningMessage: Boolean(openingMessage),
+    onTranscribeAudio: async (audioBlob, durationMs) => {
+      const token = await getToken();
+      if (!token) throw new Error("Authentication required");
+      return createApiClient(apiUrl).transcribeAudio(
+        token,
+        attemptId,
+        audioBlob,
+        durationMs,
+      );
+    },
+    onSendTurn: handleSendLiveTurn,
+    onRequestAudioStream: async (turnId) => {
+      const token = await getToken();
+      if (!token) throw new Error("Authentication required");
+      return createApiClient(apiUrl).generateSpeech(token, attemptId, turnId);
+    },
+    onError: (err) => setGeneralError(err),
+  });
+
+  const {
+    isConnected: isLiveCallConnected,
+    startCall: startLiveCall,
+    endCall: endLiveCall,
+    interruptAi: interruptLiveCallAi,
+    toggleMute: toggleLiveCallMute,
+  } = liveCall;
+
+  // Auto-connect call in REALTIME mode when active
+  useEffect(() => {
+    if (
+      isLiveCallMode &&
+      attempt?.status === "ACTIVE" &&
+      !isLiveCallConnected
+    ) {
+      void startLiveCall();
+    }
+    return () => {
+      if (isLiveCallMode) {
+        endLiveCall();
+      }
+    };
+  }, [
+    isLiveCallMode,
+    attempt?.status,
+    isLiveCallConnected,
+    startLiveCall,
+    endLiveCall,
+  ]);
+
+  // Dual-anchor barge-in: immediately halts counterpart audio in both modes
+  const handleStopAudio = useCallback(() => {
+    if (isLiveCallMode) {
+      interruptLiveCallAi();
+    } else {
+      speechControllerRef.current?.stop();
+      setCounterpartSpeechStatus("idle");
+      setPlayingTurnId(null);
+    }
+  }, [isLiveCallMode, interruptLiveCallAi]);
+
+  useEffect(() => {
+    return () => {
+      speechControllerRef.current?.dispose();
+    };
+  }, []);
+
+  // Counterpart Identity mapping
   const counterpartRole = useMemo(() => {
     if (attempt?.language === "ar" && scenarioDetail?.context?.aiRoleAr) {
       return scenarioDetail.context.aiRoleAr;
@@ -240,6 +478,25 @@ export default function SimulationPage() {
     return "Counterpart";
   }, [scenarioDetail, attempt?.scenario?.key, attempt?.language]);
 
+  const counterpartName = useMemo(() => {
+    const key = attempt?.scenario?.key ?? "";
+    const isAr = attempt?.language === "ar";
+    if (COUNTERPART_NAMES[key]) {
+      return isAr ? COUNTERPART_NAMES[key].ar : COUNTERPART_NAMES[key].en;
+    }
+    return counterpartRole || (isAr ? "المحاور" : "Interviewer");
+  }, [attempt?.scenario?.key, attempt?.language, counterpartRole]);
+
+  const userRole = useMemo(() => {
+    if (attempt?.language === "ar" && scenarioDetail?.context?.userRoleAr) {
+      return scenarioDetail.context.userRoleAr;
+    }
+    if (scenarioDetail?.context?.userRole) {
+      return scenarioDetail.context.userRole;
+    }
+    return attempt?.language === "ar" ? "أنت" : "You";
+  }, [scenarioDetail, attempt?.language]);
+
   const userObjective = useMemo(() => {
     if (attempt?.language === "ar") {
       return (
@@ -254,31 +511,32 @@ export default function SimulationPage() {
     );
   }, [scenarioDetail, attempt?.language]);
 
-  const openingMessage = useMemo(() => {
-    if (attempt?.scenario?.openingMessage) {
-      return attempt.scenario.openingMessage;
+  const stakes = useMemo(() => {
+    if (attempt?.language === "ar") {
+      return scenarioDetail?.context?.stakesAr ?? scenarioDetail?.context?.stakes;
     }
-    const key = attempt?.scenario?.key ?? "";
-    const defaults: Record<string, string> = {
-      "salary-negotiation":
-        "Thanks for making time to talk. We're excited about the possibility of you joining the team. I understand you wanted to discuss the offer—what would you like us to consider?",
-      "behavioral-interview":
-        "Thanks for joining us today. To start off, could you tell me about a time when a project didn't go according to plan and how you handled it?",
-      "promotion-request":
-        "Hi, thanks for setting up this 1-on-1. You mentioned you wanted to discuss your career progression and role—what's on your mind?",
-      "manager-pushback":
-        "Thanks for meeting on short notice. As you know, leadership wants to pull the release date forward by two weeks. We need your team to commit to this new deadline.",
-      "difficult-feedback":
-        "Hey, thanks for catching up. What was it you wanted to discuss regarding our recent project collaboration?",
-      "scope-creep":
-        "Thanks for taking the call. We've decided we really need the analytics dashboard and multi-currency export included in this sprint before launch.",
-    };
-    return defaults[key] ?? null;
-  }, [attempt]);
+    return scenarioDetail?.context?.stakes;
+  }, [scenarioDetail, attempt?.language]);
+
+  const isCustom = useMemo(() => {
+    return Boolean(
+      scenarioDetail?.isCustom ||
+        attempt?.scenario?.key?.startsWith("custom-"),
+    );
+  }, [scenarioDetail, attempt?.scenario?.key]);
 
   const isLimitReached = (attempt?.turns.length ?? 0) >= 20;
+
+  const activeSpeechStatus: SpeechPlaybackStatus = isLiveCallMode
+    ? liveCall.callState === "AI_SPEAKING"
+      ? "playing"
+      : liveCall.callState === "AI_THINKING"
+        ? "loading"
+        : "idle"
+    : counterpartSpeechStatus;
+
   const isComposerDisabled = isConversationInputDisabled({
-    counterpartSpeechStatus,
+    counterpartSpeechStatus: activeSpeechStatus,
     finishing,
     isExpired,
     isLimitReached,
@@ -289,21 +547,14 @@ export default function SimulationPage() {
   const displayTurnCount = attempt?.turns.length ?? 0;
   const drawerTurns = attempt?.turns ?? [];
 
-  const autoPlayStageSpeech = autoPlaySpeech && !finishing;
-
-  const latestAssistantMessage = useMemo(() => {
-    const latestTurnWithReply = [...(attempt?.turns ?? [])]
-      .reverse()
-      .find((turn) => Boolean(turn.assistantText));
-    return latestTurnWithReply?.assistantText
-      ? {
-          turnId: latestTurnWithReply.id,
-          text: latestTurnWithReply.assistantText,
-        }
-      : null;
-  }, [attempt?.turns]);
-
   const simulationUiState = useMemo<SimulationUiState>(() => {
+    if (isLiveCallMode) {
+      if (liveCall.callState === "AI_SPEAKING") return "AI_SPEAKING";
+      if (liveCall.callState === "AI_THINKING") return "AI_THINKING";
+      if (liveCall.callState === "USER_SPEAKING") return "LISTENING";
+      if (liveCall.callState === "ERROR") return "MIC_ERROR";
+      return "YOUR_TURN";
+    }
     if (
       voiceStatus === "recording" ||
       voiceStatus === "requesting_permission"
@@ -321,7 +572,38 @@ export default function SimulationPage() {
     }
     if (hasVoiceDraft) return "REVIEWING";
     return "YOUR_TURN";
-  }, [counterpartSpeechStatus, hasVoiceDraft, sendingTurn, voiceStatus]);
+  }, [
+    counterpartSpeechStatus,
+    hasVoiceDraft,
+    isLiveCallMode,
+    liveCall.callState,
+    sendingTurn,
+    voiceStatus,
+  ]);
+
+  // Autoplay opening message once on initial load (PTT mode only)
+  useEffect(() => {
+    if (
+      !hasAutoPlayedOpeningRef.current &&
+      autoPlaySpeech &&
+      !finishing &&
+      attempt &&
+      attempt.status === "ACTIVE" &&
+      attempt.turns.length === 0 &&
+      openingMessage &&
+      !isLiveCallMode
+    ) {
+      hasAutoPlayedOpeningRef.current = true;
+      void playTurnSpeech("opening");
+    }
+  }, [
+    attempt,
+    autoPlaySpeech,
+    finishing,
+    isLiveCallMode,
+    openingMessage,
+    playTurnSpeech,
+  ]);
 
   const handleSendTurn = async (
     overrideText?: string,
@@ -330,13 +612,14 @@ export default function SimulationPage() {
     const textToSend = (overrideText ?? composerText).trim();
     if (!textToSend || composerDisabled || !attemptId) return;
 
-    // Per-turn input method reflects how this draft was produced (voice
-    // transcript vs typed text), not the persistent composer mode.
     const inputMethod =
       overrideInputMethod ?? (hasVoiceDraft ? "VOICE" : "TEXT");
     const clientRequestId = `req_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    setPendingTurn({ clientRequestId, inputMethod, text: textToSend });
-    setPendingError(null);
+    setPendingTurn({
+      text: textToSend,
+      inputMethod,
+      status: "sending",
+    });
     setGeneralError(null);
     setSendingTurn(true);
     setComposerText("");
@@ -365,6 +648,12 @@ export default function SimulationPage() {
       });
 
       setPendingTurn(null);
+
+      // Autoplay counterpart audio reply in PTT mode
+      if (newTurn.assistantText && autoPlaySpeech && !isLiveCallMode) {
+        void playTurnSpeech(newTurn.id);
+      }
+
       setTimeout(() => {
         textareaRef.current?.focus();
       }, 50);
@@ -381,14 +670,12 @@ export default function SimulationPage() {
           );
           setAttempt(recoveredAttempt);
           setPendingTurn(null);
-          setPendingError(null);
           setGeneralError(
             "Your response was saved. Retry the counterpart response from the transcript.",
           );
-          setTranscriptOpen(true);
           return;
         } catch {
-          // Preserve the original provider error when recovery cannot load the stored turn.
+          // Preserve the original error if recovery fails
         }
       }
 
@@ -396,9 +683,12 @@ export default function SimulationPage() {
         setGeneralError(
           "Rate limit reached. Please wait a moment before sending your next message.",
         );
-        setPendingError(null);
+        setPendingTurn(null);
       } else {
-        setPendingError(
+        setPendingTurn((prev) =>
+          prev ? { ...prev, status: "error" } : null,
+        );
+        setGeneralError(
           err instanceof Error
             ? err.message
             : "Failed to exchange conversation turn. Please retry.",
@@ -406,40 +696,6 @@ export default function SimulationPage() {
       }
     } finally {
       setSendingTurn(false);
-    }
-  };
-
-  const handleSendLiveTurn = async (
-    textToSend: string,
-  ): Promise<string | null> => {
-    if (!attemptId || !textToSend.trim()) return null;
-    const client = createApiClient(apiUrl);
-    const clientRequestId =
-      typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-        ? crypto.randomUUID()
-        : `req_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    try {
-      const token = await getToken();
-      if (!token) throw new Error("Authentication token not available.");
-
-      const newTurn = await client.createTurn(token, attemptId, {
-        clientRequestId,
-        text: textToSend.trim(),
-        inputMethod: "VOICE",
-      });
-
-      setAttempt((prev) => {
-        if (!prev) return prev;
-        const exists = prev.turns.some((t) => t.id === newTurn.id);
-        const updatedTurns = exists
-          ? prev.turns.map((t) => (t.id === newTurn.id ? newTurn : t))
-          : [...prev.turns, newTurn];
-        return { ...prev, turns: updatedTurns };
-      });
-
-      return newTurn.id;
-    } catch {
-      return null;
     }
   };
 
@@ -464,6 +720,10 @@ export default function SimulationPage() {
           ),
         };
       });
+
+      if (updatedTurn.assistantText && autoPlaySpeech && !isLiveCallMode) {
+        void playTurnSpeech(updatedTurn.id);
+      }
     } catch (err: unknown) {
       setGeneralError(
         err instanceof Error
@@ -521,31 +781,164 @@ export default function SimulationPage() {
   }
 
   const isRtl = attempt.language === "ar";
-  const isLiveCallMode = attempt.interactionMode === "REALTIME";
+  const locale = isRtl ? "ar" : "en";
 
   return (
-    <div
-      dir={isRtl ? "rtl" : "ltr"}
-      className="flex flex-col h-full w-full max-w-container-max mx-auto overflow-hidden font-sans bg-surface-solid sm:border-x sm:border-border"
-    >
-      {/* 1. Header */}
-      <SimulationHeader
-        scenarioTitle={attempt.scenario.title}
-        difficulty={attempt.difficulty}
-        counterpartRole={counterpartRole}
-        turnCount={displayTurnCount}
-        elapsedSeconds={elapsedSeconds}
-        finishing={finishing}
-        autoPlaySpeech={autoPlaySpeech}
-        showAutoPlayToggle={!isLiveCallMode}
-        onToggleAutoPlay={() => setAutoPlaySpeech((prev) => !prev)}
-        onOpenFinishDialog={() => setShowFinishDialog(true)}
-        onOpenBriefing={() => setBriefingOpen(true)}
-      />
+    <LocaleProvider defaultLocale={locale} key={attempt.language}>
+      <div
+        dir={isRtl ? "rtl" : "ltr"}
+        className="flex flex-col h-full w-full max-w-container-max mx-auto overflow-hidden bg-background sm:border-x sm:border-border font-sans"
+      >
+        {/* 1. Header */}
+        <SimulationHeader
+          scenarioTitle={attempt.scenario.title}
+          difficulty={attempt.difficulty}
+          counterpartRole={counterpartRole}
+          turnCount={displayTurnCount}
+          elapsedSeconds={elapsedSeconds}
+          finishing={finishing}
+          autoPlaySpeech={autoPlaySpeech}
+          showAutoPlayToggle={!isLiveCallMode}
+          onToggleAutoPlay={() => setAutoPlaySpeech((prev) => !prev)}
+          onOpenFinishDialog={() => setShowFinishDialog(true)}
+          onOpenBriefing={() => setBriefingOpen(true)}
+        />
 
-      {/* 2. Main Workspace Layout */}
-      <div className="flex flex-1 overflow-hidden relative min-h-0">
-        {/* Briefing Sidebar (Desktop Sidebar + Mobile Modal) */}
+        {/* 2. Main Workspace Layout: Desktop 2-column Split / Mobile Budgeted Stack */}
+        <div className="flex flex-col lg:grid lg:grid-cols-[360px_1fr] flex-1 min-h-0 overflow-hidden">
+          {/* Left Column (Desktop) / Top Section (Mobile): Counterpart Stage */}
+          <div
+            className={cn(
+              "shrink-0 lg:h-full lg:overflow-y-auto lg:border-e lg:border-border-subtle",
+              isKeyboardOpen ? "" : "p-3 sm:p-4",
+            )}
+          >
+            <CounterpartStage
+              scenarioKey={attempt.scenario.key}
+              scenarioTitle={attempt.scenario.title}
+              counterpartName={counterpartName}
+              counterpartRole={counterpartRole}
+              userRole={userRole}
+              userObjective={userObjective}
+              stakes={stakes}
+              isCustom={isCustom}
+              uiState={simulationUiState}
+              counterpartSpeechStatus={activeSpeechStatus}
+              onStopAudio={handleStopAudio}
+              isKeyboardOpen={isKeyboardOpen}
+            />
+          </div>
+
+          {/* Right Column (Desktop) / Main Stack Area (Mobile) */}
+          <main
+            id="main-content"
+            className="flex flex-col flex-1 h-full min-h-0 overflow-hidden"
+          >
+            {/* Top / Middle: Visible Transcript View */}
+            <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+              <VisibleTranscriptView
+                turns={drawerTurns}
+                openingMessage={openingMessage}
+                pendingTurn={pendingTurn}
+                counterpartName={counterpartName}
+                counterpartRole={counterpartRole}
+                onReplaySpeech={playTurnSpeech}
+                onRetryTurn={handleRetryTurn}
+                retryingTurnId={retryingTurnId}
+                playingTurnId={playingTurnId}
+              />
+            </div>
+
+            {/* Bottom: Docked Interaction Controller */}
+            <div className="shrink-0 border-t border-border-subtle bg-surface-solid">
+              {isLiveCallMode ? (
+                <div className="flex flex-col w-full">
+                  {/* Hybrid Typing Composer */}
+                  {isTypingOpen && (
+                    <div className="border-b border-border-subtle p-3 sm:p-4">
+                      <SimulationComposer
+                        attemptId={attempt.id}
+                        composerText={composerText}
+                        sendingTurn={sendingTurn}
+                        isComposerDisabled={composerDisabled}
+                        isExpired={isExpired}
+                        isLimitReached={isLimitReached}
+                        turnCount={attempt.turns.length}
+                        generalError={generalError}
+                        textareaRef={textareaRef}
+                        inputMode="TEXT"
+                        onInputModeChange={setInputMode}
+                        hasVoiceDraft={false}
+                        microphoneLevel={0}
+                        language={attempt.language ?? "en"}
+                        onChangeText={setComposerText}
+                        onSendTurn={(text) => void handleSendTurn(text, "TEXT")}
+                        onVoiceStatusChange={setVoiceStatus}
+                        onVoiceTranscriptReady={() => setHasVoiceDraft(true)}
+                        onMicrophoneLevelChange={setMicrophoneLevel}
+                        isCounterpartSpeaking={activeSpeechStatus === "playing"}
+                        onInterruptAudio={handleStopAudio}
+                        isKeyboardOpen={isKeyboardOpen}
+                      />
+                    </div>
+                  )}
+
+                  {/* Live Call Control Bar */}
+                  <LiveCallBar
+                    connected={isLiveCallConnected}
+                    microphoneLevel={liveCall.microphoneLevel}
+                    isMuted={liveCall.isMuted}
+                    onToggleMute={toggleLiveCallMute}
+                    isCounterpartSpeaking={liveCall.callState === "AI_SPEAKING"}
+                    onInterruptAudio={handleStopAudio}
+                    onToggleTyping={() => setIsTypingOpen((prev) => !prev)}
+                    isTypingOpen={isTypingOpen}
+                    language={attempt.language}
+                  />
+                </div>
+              ) : (
+                <SimulationComposer
+                  attemptId={attempt.id}
+                  composerText={composerText}
+                  sendingTurn={sendingTurn}
+                  isComposerDisabled={composerDisabled}
+                  isExpired={isExpired}
+                  isLimitReached={isLimitReached}
+                  turnCount={attempt.turns.length}
+                  generalError={generalError}
+                  textareaRef={textareaRef}
+                  inputMode={inputMode}
+                  onInputModeChange={setInputMode}
+                  hasVoiceDraft={hasVoiceDraft}
+                  microphoneLevel={microphoneLevel}
+                  language={attempt.language ?? "en"}
+                  onChangeText={setComposerText}
+                  onSendTurn={(text, method) =>
+                    void handleSendTurn(text, method)
+                  }
+                  onVoiceStatusChange={(status) => {
+                    setVoiceStatus(status);
+                    if (
+                      status === "recording" ||
+                      status === "requesting_permission"
+                    ) {
+                      handleStopAudio();
+                    }
+                  }}
+                  onVoiceTranscriptReady={() => {
+                    setHasVoiceDraft(true);
+                  }}
+                  onMicrophoneLevelChange={setMicrophoneLevel}
+                  isCounterpartSpeaking={activeSpeechStatus === "playing"}
+                  onInterruptAudio={handleStopAudio}
+                  isKeyboardOpen={isKeyboardOpen}
+                />
+              )}
+            </div>
+          </main>
+        </div>
+
+        {/* 3. Mobile Briefing Modal (via header briefing button) */}
         <BriefingSidebar
           scenarioDetail={scenarioDetail}
           scenarioTitle={attempt.scenario.title}
@@ -556,144 +949,15 @@ export default function SimulationPage() {
           language={attempt.language}
         />
 
-        {/* Conversation stage, response controls, and transcript drawer */}
-        <main
-          id="main-content"
-          className="relative flex-1 flex flex-col h-full min-h-0 overflow-hidden bg-background"
-        >
-          {/* Slim Mobile Goal Banner (Tap to open full briefing) */}
-          <div className="md:hidden shrink-0 border-b border-border/30 bg-surface px-3 py-1.5 shadow-2xs">
-            <button
-              type="button"
-              onClick={() => setBriefingOpen(true)}
-              className="w-full flex items-center justify-between text-start font-meta text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer py-0.5"
-            >
-              <span className="truncate mr-2">
-                <strong className="text-primary font-bold uppercase tracking-wider mr-1">
-                  {isRtl ? "الهدف:" : "Goal:"}
-                </strong>
-                <span className="text-foreground font-medium">
-                  {userObjective}
-                </span>
-              </span>
-              <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full">
-                {isRtl ? "← التعليمات" : "Briefing →"}
-              </span>
-            </button>
-          </div>
-
-          {isLiveCallMode ? (
-            <LiveCallStage
-              attemptId={attempt.id}
-              counterpartRole={counterpartRole}
-              language={attempt.language ?? "en"}
-              latestMessage={
-                latestAssistantMessage
-                  ? { role: "assistant", text: latestAssistantMessage.text }
-                  : openingMessage
-                    ? { role: "assistant", text: openingMessage }
-                    : null
-              }
-              turnCount={displayTurnCount}
-              hasOpeningMessage={Boolean(openingMessage)}
-              onFinish={() => setShowFinishDialog(true)}
-              onOpenTranscript={() => setTranscriptOpen(true)}
-              onSendTurn={handleSendLiveTurn}
-              onRequestAudioStream={async (turnId) => {
-                const token = await getToken();
-                if (!token) throw new Error("Authentication required");
-                const client = createApiClient(apiUrl);
-                return client.generateSpeech(token, attempt.id, turnId);
-              }}
-              onTranscribeAudio={async (audioBlob, durationMs) => {
-                const token = await getToken();
-                if (!token) throw new Error("Authentication required");
-                const client = createApiClient(apiUrl);
-                return client.transcribeAudio(
-                  token,
-                  attempt.id,
-                  audioBlob,
-                  durationMs,
-                );
-              }}
-            />
-          ) : (
-            <>
-              <ConversationStage
-                attemptId={attempt.id}
-                counterpartRole={counterpartRole}
-                openingMessage={openingMessage}
-                latestAssistantMessage={latestAssistantMessage}
-                turnCount={displayTurnCount}
-                uiState={simulationUiState}
-                autoPlaySpeech={autoPlayStageSpeech}
-                cancelSpeechPlayback={
-                  finishing ||
-                  voiceStatus === "requesting_permission" ||
-                  voiceStatus === "recording"
-                }
-                onSpeechStatusChange={setCounterpartSpeechStatus}
-                microphoneLevel={microphoneLevel}
-                onOpenTranscript={() => setTranscriptOpen(true)}
-                language={attempt.language ?? "en"}
-              />
-
-              <SimulationComposer
-                attemptId={attempt.id}
-                composerText={composerText}
-                sendingTurn={sendingTurn}
-                isComposerDisabled={composerDisabled}
-                isExpired={isExpired}
-                isLimitReached={isLimitReached}
-                turnCount={attempt.turns.length}
-                generalError={generalError}
-                textareaRef={textareaRef}
-                inputMode={inputMode}
-                onInputModeChange={setInputMode}
-                hasVoiceDraft={hasVoiceDraft}
-                microphoneLevel={microphoneLevel}
-                language={attempt.language ?? "en"}
-                onChangeText={setComposerText}
-                onSendTurn={(text, method) => void handleSendTurn(text, method)}
-                onVoiceStatusChange={setVoiceStatus}
-                onVoiceTranscriptReady={() => {
-                  setHasVoiceDraft(true);
-                }}
-                onMicrophoneLevelChange={setMicrophoneLevel}
-              />
-            </>
-          )}
-
-          <TranscriptDrawer
-            open={transcriptOpen}
-            attemptId={attempt.id}
-            turns={drawerTurns}
-            counterpartRole={counterpartRole}
-            openingMessage={openingMessage}
-            pendingTurn={pendingTurn}
-            sendingTurn={sendingTurn}
-            pendingError={pendingError}
-            retryingTurnId={retryingTurnId}
-            onClose={() => setTranscriptOpen(false)}
-            onRetryTurn={handleRetryTurn}
-            onRetryPending={() => {
-              if (pendingTurn) {
-                void handleSendTurn(pendingTurn.text, pendingTurn.inputMethod);
-              }
-            }}
-            language={attempt.language ?? "en"}
-          />
-        </main>
+        {/* 4. Finish Simulation Dialog */}
+        <FinishSimulationDialog
+          open={showFinishDialog}
+          turnCount={displayTurnCount}
+          finishing={finishing}
+          onClose={() => setShowFinishDialog(false)}
+          onConfirm={handleFinishSimulation}
+        />
       </div>
-
-      {/* 3. Finish Simulation Dialog */}
-      <FinishSimulationDialog
-        open={showFinishDialog}
-        turnCount={displayTurnCount}
-        finishing={finishing}
-        onClose={() => setShowFinishDialog(false)}
-        onConfirm={handleFinishSimulation}
-      />
-    </div>
+    </LocaleProvider>
   );
 }
