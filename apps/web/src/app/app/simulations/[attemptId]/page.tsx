@@ -879,6 +879,9 @@ export default function SimulationPage() {
                         isCounterpartSpeaking={activeSpeechStatus === "playing"}
                         onInterruptAudio={handleStopAudio}
                         isKeyboardOpen={isKeyboardOpen}
+                        hideMicRow={true}
+                        onFocus={() => setIsKeyboardOpen(true)}
+                        onBlur={() => setIsKeyboardOpen(false)}
                       />
                     </div>
                   )}
@@ -932,6 +935,8 @@ export default function SimulationPage() {
                   isCounterpartSpeaking={activeSpeechStatus === "playing"}
                   onInterruptAudio={handleStopAudio}
                   isKeyboardOpen={isKeyboardOpen}
+                  onFocus={() => setIsKeyboardOpen(true)}
+                  onBlur={() => setIsKeyboardOpen(false)}
                 />
               )}
             </div>

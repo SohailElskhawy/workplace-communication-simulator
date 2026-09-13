@@ -56,6 +56,9 @@ export interface SimulationComposerProps {
   isCounterpartSpeaking?: boolean;
   onInterruptAudio?: () => void;
   isKeyboardOpen?: boolean;
+  hideMicRow?: boolean;
+  onFocus?: () => void;
+  onBlur?: () => void;
 }
 
 function formatRecordDuration(seconds: number): string {
@@ -112,6 +115,9 @@ export function SimulationComposer({
   isCounterpartSpeaking = false,
   onInterruptAudio,
   isKeyboardOpen = false,
+  hideMicRow = false,
+  onFocus,
+  onBlur,
 }: SimulationComposerProps) {
   const { locale: contextLocale } = useLocale();
   const activeLocale = language ?? contextLocale;
@@ -447,6 +453,8 @@ export function SimulationComposer({
                 onChangeText(e.target.value.slice(0, MAX_TURN_TEXT_LENGTH))
               }
               onKeyDown={handleKeyDown}
+              onFocus={onFocus}
+              onBlur={onBlur}
               disabled={isComposerDisabled}
               placeholder={placeholderText}
               className={cn(
@@ -456,8 +464,8 @@ export function SimulationComposer({
             />
           </div>
 
-          {/* Inline mic icon: visible ONLY when isKeyboardOpen === true on mobile */}
-          {isKeyboardOpen && (
+          {/* Inline mic icon: visible ONLY when isKeyboardOpen === true on mobile and mic not hidden */}
+          {isKeyboardOpen && !hideMicRow && (
             <button
               type="button"
               onClick={isRecording ? () => void stopAndTranscribe() : handleStartVoice}
@@ -503,8 +511,8 @@ export function SimulationComposer({
           </button>
         </div>
 
-        {/* Row 2: Dedicated Microphone Row (hidden when isKeyboardOpen === true) */}
-        {!isKeyboardOpen && (
+        {/* Row 2: Dedicated Microphone Row (hidden when isKeyboardOpen === true or hideMicRow === true) */}
+        {!isKeyboardOpen && !hideMicRow && (
           <div data-testid="dedicated-mic-row" className="flex flex-col items-center justify-center w-full pt-1">
             {isRecording ? (
               <div className="flex items-center justify-between gap-3 sm:gap-4 w-full p-2 rounded-full bg-surface-subtle border border-border-subtle shadow-xs">

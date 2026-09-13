@@ -771,4 +771,42 @@ describe("SimulationComposer", () => {
       expect(mockStartRecording).toHaveBeenCalledTimes(1);
     });
   });
+
+  describe("Focus, Blur, and hideMicRow Behavior", () => {
+    it("calls onFocus and onBlur when textarea focus state changes", () => {
+      const onFocus = vi.fn();
+      const onBlur = vi.fn();
+      const props = createProps({ onFocus, onBlur });
+
+      render(<SimulationComposer {...props} />);
+      const textarea = screen.getByRole("textbox", {
+        name: /type your response/i,
+      });
+
+      fireEvent.focus(textarea);
+      expect(onFocus).toHaveBeenCalledTimes(1);
+
+      fireEvent.blur(textarea);
+      expect(onBlur).toHaveBeenCalledTimes(1);
+    });
+
+    it("hides both dedicated mic row and inline mobile mic button when hideMicRow is true", () => {
+      // 1. Normal state: dedicated mic row visible
+      const { rerender } = render(
+        <SimulationComposer {...createProps({ hideMicRow: true })} />,
+      );
+      expect(screen.queryByTestId("dedicated-mic-row")).toBeNull();
+      expect(screen.queryByRole("button", { name: /record voice/i })).toBeNull();
+
+      // 2. Mobile keyboard open state: inline mic button also hidden when hideMicRow is true
+      rerender(
+        <SimulationComposer
+          {...createProps({ hideMicRow: true, isKeyboardOpen: true })}
+        />,
+      );
+      expect(screen.queryByTestId("dedicated-mic-row")).toBeNull();
+      expect(screen.queryByRole("button", { name: /record voice/i })).toBeNull();
+    });
+  });
 });
+

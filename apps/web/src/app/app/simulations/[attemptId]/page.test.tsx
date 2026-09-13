@@ -109,12 +109,13 @@ describe("SimulationPage", () => {
     mockGenerateSpeech.mockResolvedValue(new Blob(["audio-data"]));
     window.URL.createObjectURL = vi.fn().mockReturnValue("blob:mock-audio");
     window.URL.revokeObjectURL = vi.fn();
-    window.Audio = vi.fn().mockImplementation(() => ({
-      play: vi.fn().mockResolvedValue(undefined),
-      pause: vi.fn(),
-      onended: null,
-      onerror: null,
-    })) as unknown as typeof Audio;
+    class MockAudio {
+      play = vi.fn().mockResolvedValue(undefined);
+      pause = vi.fn();
+      onended: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+    }
+    window.Audio = MockAudio as unknown as typeof Audio;
     mockLiveCallState = {
       callState: "LISTENING",
       microphoneLevel: 0.2,
