@@ -39,12 +39,12 @@
 - [x] R14 Redesign scenario briefing modal/screen (context, objectives, difficulty, language/dialect, mode).
 - [x] R15 Redesign CV/JD custom interview wizard (in-memory PDF upload, JD input, generation review).
 
-#### M05 — Call Simulation Workspace
-- [ ] R16 Integrate static fictional counterpart portraits with name/role/voice alignment.
-- [ ] R17 Implement continuously visible transcript layout (desktop side-by-side; mobile below portrait).
-- [ ] R18 Build mobile controls: dedicated full-width composer row + separate dedicated microphone row.
-- [ ] R19 Connect push-to-talk audio capture, Whisper STT, and barge-in / interruption controls.
-- [ ] R20 Adapt continuous hands-free call mode (`REALTIME`) to Warm Coral workspace.
+#### M05 — Call Simulation Workspace (Completed)
+- [x] R16 Integrate static fictional counterpart portraits with name/role/voice alignment.
+- [x] R17 Implement continuously visible transcript layout (desktop side-by-side; mobile below portrait).
+- [x] R18 Build mobile controls: dedicated full-width composer row + separate dedicated microphone row.
+- [x] R19 Connect push-to-talk audio capture, Whisper STT, and barge-in / interruption controls.
+- [x] R20 Adapt continuous hands-free call mode (`REALTIME`) to Warm Coral workspace.
 
 ### Phase 4 — Evaluation & Coaching
 #### M06 — Results & Retry
