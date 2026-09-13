@@ -8,6 +8,7 @@ export interface AccessibleDialogProps {
   description: string;
   onClose: () => void;
   children: ReactNode;
+  maxWidthClass?: string;
 }
 
 export function AccessibleDialog({
@@ -16,6 +17,7 @@ export function AccessibleDialog({
   description,
   onClose,
   children,
+  maxWidthClass = "max-w-md",
 }: AccessibleDialogProps) {
   const titleId = useId();
   const descriptionId = useId();
@@ -82,7 +84,7 @@ export function AccessibleDialog({
         aria-labelledby={titleId}
         aria-describedby={descriptionId}
         tabIndex={-1}
-        className="flex max-h-[92dvh] w-full max-w-md flex-col overflow-y-auto rounded-card border border-border bg-surface-solid p-5 shadow-overlay outline-none sm:p-7"
+        className={`flex max-h-[92dvh] w-full ${maxWidthClass ?? "max-w-md"} flex-col overflow-y-auto rounded-card border border-border bg-surface-solid p-5 shadow-overlay outline-none sm:p-7`}
       >
         <h2
           id={titleId}
