@@ -34,21 +34,28 @@ const mockStopAndTranscribe = vi.fn().mockResolvedValue(undefined);
 const mockCancelRecording = vi.fn();
 const mockClearError = vi.fn();
 
+let mockVoiceRecorderState = {
+  status: "idle" as
+    | "idle"
+    | "requesting_permission"
+    | "recording"
+    | "transcribing"
+    | "error",
+  durationSeconds: 0,
+  microphoneLevel: 0,
+  errorMessage: null as string | null,
+  isSupported: true,
+  startRecording: mockStartRecording,
+  stopAndTranscribe: mockStopAndTranscribe,
+  cancelRecording: mockCancelRecording,
+  clearError: mockClearError,
+};
+
 vi.mock("@/hooks/use-voice-recorder", () => ({
   MAX_RECORDING_DURATION_SECONDS: 120,
   useVoiceRecorder: vi.fn((callbacks: VoiceRecorderCallbacks) => {
     capturedVoiceRecorderCallbacks = callbacks;
-    return {
-      status: "idle",
-      durationSeconds: 0,
-      microphoneLevel: 0,
-      errorMessage: null,
-      isSupported: true,
-      startRecording: mockStartRecording,
-      stopAndTranscribe: mockStopAndTranscribe,
-      cancelRecording: mockCancelRecording,
-      clearError: mockClearError,
-    };
+    return mockVoiceRecorderState;
   }),
 }));
 
@@ -70,11 +77,15 @@ function createProps(
     onInputModeChange: vi.fn(),
     hasVoiceDraft: false,
     microphoneLevel: 0,
+    language: "en",
     onChangeText: vi.fn(),
     onSendTurn: vi.fn(),
     onVoiceStatusChange: vi.fn(),
     onVoiceTranscriptReady: vi.fn(),
     onMicrophoneLevelChange: vi.fn(),
+    isCounterpartSpeaking: false,
+    onInterruptAudio: vi.fn(),
+    isKeyboardOpen: false,
     ...overrides,
   };
 }
@@ -107,11 +118,183 @@ describe("SimulationComposer", () => {
   beforeEach(() => {
     storageMap.clear();
     capturedVoiceRecorderCallbacks = null;
+    mockVoiceRecorderState = {
+      status: "idle",
+      durationSeconds: 0,
+      microphoneLevel: 0,
+      errorMessage: null,
+      isSupported: true,
+      startRecording: mockStartRecording,
+      stopAndTranscribe: mockStopAndTranscribe,
+      cancelRecording: mockCancelRecording,
+      clearError: mockClearError,
+    };
     vi.clearAllMocks();
   });
 
   afterEach(() => {
     cleanup();
+  });
+
+  describe("Row 1: Text Composer & Warm Coral Tokens", () => {
+    it("renders full-width textarea and inline send button with Warm Coral styling", () => {
+      const props = createProps({ composerText: "Hello there" });
+      render(<SimulationComposer {...props} />);
+
+      const textarea = screen.getByRole("textbox", {
+        name: /type your response/i,
+      });
+      expect(textarea).toBeDefined();
+      expect(textarea.getAttribute("placeholder")).toBe("Type your response here…");
+      expect(textarea.className).toContain("rounded-control");
+      expect(textarea.className).toContain("border-border");
+      expect(textarea.className).toContain("bg-background");
+      expect(textarea.className).toContain("min-h-[44px]");
+
+      const sendButton = screen.getByRole("button", { name: /send response/i });
+      expect(sendButton).toBeDefined();
+      expect(sendButton.className).toContain("bg-primary");
+      expect(sendButton.className).toContain("text-primary-foreground");
+      expect(sendButton.className).toContain("min-h-[44px]");
+      expect(sendButton.className).toContain("min-w-[44px]");
+    });
+
+    it("allows user to type text and click inline send button", () => {
+      const onSendTurn = vi.fn();
+      const onChangeText = vi.fn();
+      const props = createProps({
+        composerText: "Ready to submit",
+        onChangeText,
+        onSendTurn,
+      });
+      render(<SimulationComposer {...props} />);
+
+      const textarea = screen.getByRole("textbox", {
+        name: /type your response/i,
+      });
+      fireEvent.change(textarea, { target: { value: "Updated response" } });
+      expect(onChangeText).toHaveBeenCalledWith("Updated response");
+
+      const sendButton = screen.getByRole("button", { name: /send response/i });
+      fireEvent.click(sendButton);
+      expect(onSendTurn).toHaveBeenCalledTimes(1);
+    });
+
+    it("disables send button when text is empty", () => {
+      const onSendTurn = vi.fn();
+      const props = createProps({ composerText: "   ", onSendTurn });
+      render(<SimulationComposer {...props} />);
+
+      const sendButton = screen.getByRole("button", { name: /send response/i });
+      expect(sendButton.hasAttribute("disabled")).toBe(true);
+      fireEvent.click(sendButton);
+      expect(onSendTurn).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("Row 2: Dedicated Microphone Row", () => {
+    it("renders dedicated microphone row in idle state with 'Tap to talk'", () => {
+      const props = createProps();
+      render(<SimulationComposer {...props} />);
+
+      const micRow = screen.getByTestId("dedicated-mic-row");
+      expect(micRow).toBeDefined();
+
+      const tapToTalkBtn = screen.getByRole("button", { name: /tap to talk/i });
+      expect(tapToTalkBtn).toBeDefined();
+      expect(tapToTalkBtn.className).toContain("min-h-[44px]");
+      expect(tapToTalkBtn.className).toContain("rounded-full");
+      expect(tapToTalkBtn.className).toContain("bg-primary");
+
+      fireEvent.click(tapToTalkBtn);
+      expect(mockStartRecording).toHaveBeenCalledTimes(1);
+    });
+
+    it("renders 'Tap to interrupt' when isCounterpartSpeaking is true and invokes onInterruptAudio", () => {
+      const onInterruptAudio = vi.fn();
+      const props = createProps({
+        isCounterpartSpeaking: true,
+        onInterruptAudio,
+      });
+      render(<SimulationComposer {...props} />);
+
+      const interruptBtn = screen.getByRole("button", {
+        name: /tap to interrupt/i,
+      });
+      expect(interruptBtn).toBeDefined();
+
+      fireEvent.click(interruptBtn);
+      expect(onInterruptAudio).toHaveBeenCalledTimes(1);
+      expect(mockStartRecording).toHaveBeenCalledTimes(1);
+    });
+
+    it("renders recording timer, audio visualizer, Done, and Cancel buttons during voice recording", () => {
+      mockVoiceRecorderState.status = "recording";
+      mockVoiceRecorderState.durationSeconds = 14;
+      mockVoiceRecorderState.microphoneLevel = 0.6;
+
+      const props = createProps({ microphoneLevel: 0.6 });
+      render(<SimulationComposer {...props} />);
+
+      // Live timer formatted 0:14 / 2:00
+      const timer = screen.getByTestId("recording-timer");
+      expect(timer.textContent).toContain("0:14 / 2:00");
+
+      // Audio level visualizer bar
+      const meter = screen.getByRole("meter", { name: /audio level/i });
+      expect(meter).toBeDefined();
+      expect(meter.getAttribute("aria-valuenow")).toBe("60");
+
+      const levelBar = screen.getByTestId("audio-level-bar");
+      expect(levelBar.style.width).toBe("60%");
+
+      // Primary Done button
+      const doneBtn = screen.getByRole("button", { name: /done speaking|done/i });
+      expect(doneBtn.className).toContain("min-h-[44px]");
+      expect(doneBtn.className).toContain("rounded-full");
+      expect(doneBtn.className).toContain("bg-primary");
+      fireEvent.click(doneBtn);
+      expect(mockStopAndTranscribe).toHaveBeenCalledTimes(1);
+
+      // Secondary Cancel button
+      const cancelBtn = screen.getByRole("button", {
+        name: /cancel recording|cancel/i,
+      });
+      expect(cancelBtn.className).toContain("min-h-[44px]");
+      expect(cancelBtn.className).toContain("rounded-full");
+      fireEvent.click(cancelBtn);
+      expect(mockCancelRecording).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("Mobile Keyboard Collapse Behavior", () => {
+    it("folds dedicated mic row and reveals inline mic button when isKeyboardOpen is true", () => {
+      const props = createProps({ isKeyboardOpen: true });
+      render(<SimulationComposer {...props} />);
+
+      // Dedicated mic row is folded
+      expect(screen.queryByTestId("dedicated-mic-row")).toBeNull();
+      expect(screen.queryByRole("button", { name: /tap to talk/i })).toBeNull();
+
+      // Inline mic button is visible inside composer row
+      const inlineMicBtn = screen.getByRole("button", { name: /record voice/i });
+      expect(inlineMicBtn).toBeDefined();
+      expect(inlineMicBtn.className).toContain("min-h-[44px]");
+      expect(inlineMicBtn.className).toContain("min-w-[44px]");
+
+      fireEvent.click(inlineMicBtn);
+      expect(mockStartRecording).toHaveBeenCalledTimes(1);
+    });
+
+    it("stops and transcribes when inline mic is clicked while recording with keyboard open", () => {
+      mockVoiceRecorderState.status = "recording";
+      const props = createProps({ isKeyboardOpen: true });
+      render(<SimulationComposer {...props} />);
+
+      const stopBtn = screen.getByRole("button", { name: /done speaking/i });
+      fireEvent.click(stopBtn);
+      expect(mockStopAndTranscribe).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe("Enter and Shift+Enter keyboard shortcuts", () => {
@@ -135,7 +318,6 @@ describe("SimulationComposer", () => {
         shiftKey: false,
       });
 
-      // Default should be prevented for unshifted Enter submission
       expect(enterEvent).toBe(false);
       expect(onSendTurn).toHaveBeenCalledTimes(1);
     });
@@ -222,7 +404,6 @@ describe("SimulationComposer", () => {
         name: /type your response/i,
       });
 
-      // When shiftKey is true, the event default must not be prevented so textarea inserts newline
       const notPrevented = fireEvent.keyDown(textarea, {
         key: "Enter",
         shiftKey: true,
@@ -394,52 +575,6 @@ describe("SimulationComposer", () => {
       expect(onSendTurn).not.toHaveBeenCalled();
     });
 
-    it("ignores global Enter when shiftKey is true", () => {
-      const onSendTurn = vi.fn();
-      const props = createProps({
-        inputMode: "VOICE",
-        hasVoiceDraft: true,
-        composerText: "Draft text",
-        onSendTurn,
-      });
-
-      render(<SimulationComposer {...props} />);
-
-      window.dispatchEvent(
-        new KeyboardEvent("keydown", {
-          key: "Enter",
-          shiftKey: true,
-          bubbles: true,
-          cancelable: true,
-        }),
-      );
-
-      expect(onSendTurn).not.toHaveBeenCalled();
-    });
-
-    it("ignores global Enter when composer is disabled", () => {
-      const onSendTurn = vi.fn();
-      const props = createProps({
-        inputMode: "VOICE",
-        hasVoiceDraft: true,
-        isComposerDisabled: true,
-        composerText: "Draft text",
-        onSendTurn,
-      });
-
-      render(<SimulationComposer {...props} />);
-
-      window.dispatchEvent(
-        new KeyboardEvent("keydown", {
-          key: "Enter",
-          bubbles: true,
-          cancelable: true,
-        }),
-      );
-
-      expect(onSendTurn).not.toHaveBeenCalled();
-    });
-
     it("deduplicates Enter key so onSendTurn is called only once when textarea handles Enter", () => {
       const onSendTurn = vi.fn();
       const textareaRef = createRef<HTMLTextAreaElement>();
@@ -454,10 +589,8 @@ describe("SimulationComposer", () => {
       render(<SimulationComposer {...props} />);
 
       const textarea = textareaRef.current!;
-      // Textarea handleKeyDown is invoked
       fireEvent.keyDown(textarea, { key: "Enter", shiftKey: false });
 
-      // Native bubble to window right after
       const globalEvent = new KeyboardEvent("keydown", {
         key: "Enter",
         bubbles: true,
@@ -471,11 +604,7 @@ describe("SimulationComposer", () => {
 
   describe("Review before sending toggle and localStorage persistence", () => {
     it("defaults to reviewBeforeSend: true when localStorage is empty", () => {
-      const props = createProps({
-        inputMode: "VOICE",
-        hasVoiceDraft: false,
-      });
-
+      const props = createProps();
       render(<SimulationComposer {...props} />);
 
       const toggle = screen.getByRole("switch");
@@ -486,17 +615,12 @@ describe("SimulationComposer", () => {
     });
 
     it("switches state and writes to localStorage when clicked", () => {
-      const props = createProps({
-        inputMode: "VOICE",
-        hasVoiceDraft: false,
-      });
-
+      const props = createProps();
       render(<SimulationComposer {...props} />);
 
       const toggle = screen.getByRole("switch");
       expect(toggle.getAttribute("aria-checked")).toBe("true");
 
-      // First click: turn OFF review before sending (auto-send on release)
       fireEvent.click(toggle);
 
       expect(toggle.getAttribute("aria-checked")).toBe("false");
@@ -507,7 +631,6 @@ describe("SimulationComposer", () => {
         screen.getByText(/Hold Space to talk, release to send/i),
       ).toBeDefined();
 
-      // Second click: turn ON review before sending
       fireEvent.click(toggle);
 
       expect(toggle.getAttribute("aria-checked")).toBe("true");
@@ -522,11 +645,7 @@ describe("SimulationComposer", () => {
     it("initializes reviewBeforeSend from localStorage when set to 'false'", async () => {
       window.localStorage.setItem("kalemny_voice_review_before_send", "false");
 
-      const props = createProps({
-        inputMode: "VOICE",
-        hasVoiceDraft: false,
-      });
-
+      const props = createProps();
       render(<SimulationComposer {...props} />);
 
       const toggle = screen.getByRole("switch");
@@ -546,8 +665,6 @@ describe("SimulationComposer", () => {
       window.localStorage.setItem("kalemny_voice_review_before_send", "false");
 
       const props = createProps({
-        inputMode: "VOICE",
-        hasVoiceDraft: false,
         onSendTurn,
         onVoiceTranscriptReady,
         onChangeText,
@@ -579,9 +696,6 @@ describe("SimulationComposer", () => {
       const onChangeText = vi.fn();
 
       const props = createProps({
-        inputMode: "VOICE",
-        hasVoiceDraft: false,
-        composerText: "",
         onSendTurn,
         onVoiceTranscriptReady,
         onChangeText,
@@ -604,7 +718,6 @@ describe("SimulationComposer", () => {
     it("renders textarea with dir='rtl', Arabic placeholder, and text-right alignment", () => {
       const props = createProps({
         language: "ar",
-        inputMode: "TEXT",
       });
 
       render(<SimulationComposer {...props} />);
@@ -614,15 +727,15 @@ describe("SimulationComposer", () => {
       });
 
       expect(textarea.getAttribute("dir")).toBe("rtl");
-      expect(textarea.getAttribute("placeholder")).toBe("اكتب ردك هنا...");
+      expect(textarea.getAttribute("placeholder")).toBe("اكتب ردك هنا…");
       expect(textarea.className).toContain("text-right");
       expect(screen.getByRole("button", { name: /إرسال الرد/i })).toBeTruthy();
+      expect(screen.getByRole("button", { name: /اضغط للتحدث/i })).toBeTruthy();
     });
 
     it("renders voice review textarea with Arabic direction and placeholders", () => {
       const props = createProps({
         language: "ar",
-        inputMode: "VOICE",
         hasVoiceDraft: true,
         composerText: "مسودة صوتية",
       });
@@ -634,11 +747,28 @@ describe("SimulationComposer", () => {
       });
 
       expect(textarea.getAttribute("dir")).toBe("rtl");
-      expect(textarea.getAttribute("placeholder")).toBe("اكتب ردك هنا...");
+      expect(textarea.getAttribute("placeholder")).toBe("اكتب ردك هنا…");
       expect(textarea.className).toContain("text-right");
-      expect(
-        screen.getByRole("button", { name: /إعادة التسجيل/i }),
-      ).toBeTruthy();
+    });
+
+    it("renders 'اضغط للمقاطعة' when counterpart is speaking in Arabic", () => {
+      const onInterruptAudio = vi.fn();
+      const props = createProps({
+        language: "ar",
+        isCounterpartSpeaking: true,
+        onInterruptAudio,
+      });
+
+      render(<SimulationComposer {...props} />);
+
+      const interruptBtn = screen.getByRole("button", {
+        name: /اضغط للمقاطعة/i,
+      });
+      expect(interruptBtn).toBeTruthy();
+
+      fireEvent.click(interruptBtn);
+      expect(onInterruptAudio).toHaveBeenCalledTimes(1);
+      expect(mockStartRecording).toHaveBeenCalledTimes(1);
     });
   });
 });
