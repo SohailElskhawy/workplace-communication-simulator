@@ -1,7 +1,10 @@
+"use client";
+
 import type { ArabicDialect, SupportedLanguage } from "@kalemny/contracts";
 
 import { CheckIcon } from "@/components/icons";
 import { cn } from "@/lib/cn";
+import { useLocale } from "@/lib/locale-context";
 
 export interface LanguageOption {
   key: SupportedLanguage;
@@ -72,19 +75,25 @@ export function LanguageDialectSelector({
   onSelectLanguage,
   onSelectDialect,
 }: LanguageDialectSelectorProps) {
+  const { locale, direction } = useLocale();
+  const isAr = locale === "ar";
+
   return (
     <section
-      aria-label="Select simulation language and dialect"
+      aria-label={isAr ? "اختر لغة التدريب واللهجة" : "Select simulation language and dialect"}
       className="space-y-4 sm:space-y-5"
+      dir={direction}
     >
       {/* 1. Language Selection */}
       <div className="space-y-3 sm:space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
           <h2 className="font-display text-2xl font-semibold text-foreground">
-            Choose language
+            {isAr ? "اختر لغة المحادثة" : "Choose language"}
           </h2>
           <span className="font-meta text-[11px] sm:text-xs text-muted-foreground">
-            Sets the primary dialogue and counterpart language
+            {isAr
+              ? "تحدد لغة الحوار الأساسية ولغة المحاور"
+              : "Sets the primary dialogue and counterpart language"}
           </span>
         </div>
 
@@ -100,10 +109,10 @@ export function LanguageDialectSelector({
                 onClick={() => onSelectLanguage(langKey)}
                 aria-pressed={isSelected}
                 className={cn(
-                  "relative flex min-h-36 flex-col justify-between rounded-card border bg-surface-solid p-4 text-start shadow-xs transition sm:p-5 cursor-pointer",
+                  "relative flex min-h-[44px] flex-col justify-between rounded-card border p-4 text-start transition sm:p-5 cursor-pointer",
                   isSelected
-                    ? "border-primary bg-primary-muted"
-                    : "border-border-subtle hover:border-border",
+                    ? "border-primary bg-selected-surface text-primary shadow-xs ring-1 ring-primary/30"
+                    : "border-border-subtle bg-surface-solid text-foreground hover:border-border hover:bg-surface-subtle",
                 )}
               >
                 <div>
@@ -154,13 +163,15 @@ export function LanguageDialectSelector({
 
       {/* 2. Dialect Selection (Conditional on Arabic) */}
       {language === "ar" && (
-        <div className="space-y-3 sm:space-y-4 pt-4 border-t border-border/20">
+        <div className="space-y-3 sm:space-y-4 pt-4 border-t border-border-subtle">
           <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
             <h3 className="font-display text-xl font-semibold text-foreground">
-              اختر اللهجة (Choose Dialect)
+              {isAr ? "اختر اللهجة" : "اختر اللهجة (Choose Dialect)"}
             </h3>
             <span className="font-meta text-[11px] sm:text-xs text-muted-foreground">
-              Select colloquial Arabic counterpart dialect
+              {isAr
+                ? "اختر اللهجة العامية العربية للمحاور"
+                : "Select colloquial Arabic counterpart dialect"}
             </span>
           </div>
 
@@ -176,10 +187,10 @@ export function LanguageDialectSelector({
                   onClick={() => onSelectDialect(dialectKey)}
                   aria-pressed={isSelected}
                   className={cn(
-                    "relative flex min-h-36 flex-col justify-between rounded-card border bg-surface-solid p-4 text-start shadow-xs transition sm:p-5 cursor-pointer",
+                    "relative flex min-h-[44px] flex-col justify-between rounded-card border p-4 text-start transition sm:p-5 cursor-pointer",
                     isSelected
-                      ? "border-primary bg-primary-muted"
-                      : "border-border-subtle hover:border-border",
+                      ? "border-primary bg-selected-surface text-primary shadow-xs ring-1 ring-primary/30"
+                      : "border-border-subtle bg-surface-solid text-foreground hover:border-border hover:bg-surface-subtle",
                   )}
                 >
                   <div>
@@ -223,9 +234,9 @@ export function LanguageDialectSelector({
                   </div>
 
                   {opt.recommended && (
-                    <div className="mt-3 sm:mt-4 pt-2 border-t border-border/10">
+                    <div className="mt-3 sm:mt-4 pt-2 border-t border-border-subtle/50">
                       <span className="font-meta text-[9px] sm:text-[10px] uppercase font-bold text-primary">
-                        Default / الافتراضية
+                        {isAr ? "الافتراضية" : "Default / الافتراضية"}
                       </span>
                     </div>
                   )}
